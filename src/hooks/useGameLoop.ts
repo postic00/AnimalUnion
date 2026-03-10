@@ -36,11 +36,17 @@ function getNextTarget(
   return { targetX: center.x, targetY: center.y, dx: dir.dx, dy: dir.dy }
 }
 
-export function useGameLoop(board: Board, cellSize: number) {
+export function useGameLoop(
+  board: Board,
+  cellSize: number,
+  onGoldEarned: (amount: number) => void
+) {
   const [items, setItems] = useState<Item[]>([])
   const itemsRef = useRef<Item[]>([])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
+  const onGoldEarnedRef = useRef(onGoldEarned)
+  onGoldEarnedRef.current = onGoldEarned
 
   useEffect(() => {
     if (cellSize === 0) return
@@ -81,6 +87,13 @@ export function useGameLoop(board: Board, cellSize: number) {
             if (rsRow === -1) return
 
             const center = getCellCenter(rsRow, rsCol, cellSize)
+
+            // RS에 이미 아이템이 있으면 스킵
+            const rsOccupied = items.some(it =>
+              Math.sqrt((it.x - center.x) ** 2 + (it.y - center.y) ** 2) < itemSize
+            )
+            if (rsOccupied) return
+
             const dir = getCellDirection('RS')
 
             // 다음 waypoint 계산
@@ -96,9 +109,7 @@ export function useGameLoop(board: Board, cellSize: number) {
               targetX: next.targetX,
               targetY: next.targetY,
             }
-            if (!isBlocked(newItem, items, itemSize)) {
-              items = [...items, newItem]
-            }
+            items = [...items, newItem]
           }
         })
       })
@@ -137,7 +148,7 @@ export function useGameLoop(board: Board, cellSize: number) {
         }
       })
 
-      // RE 도달 아이템 제거 (셀 중앙 기준)
+      // RE 도달 아이템 제거 + 골드 획득
       items = items.filter(item => {
         const col = Math.round(item.x / cellSize - 0.5)
         const row = Math.round(item.y / cellSize - 0.5)
@@ -145,7 +156,9 @@ export function useGameLoop(board: Board, cellSize: number) {
         if (cell?.type !== 'RE') return true
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
-        return dist > cellSize * 0.3
+        if (dist > cellSize * 0.3) return true
+        onGoldEarnedRef.current(1)
+        return false
       })
 
       itemsRef.current = items

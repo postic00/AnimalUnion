@@ -16,4 +16,29 @@ export const CONFIG = {
   PRODUCER_UPGRADE_EXPONENT: 2**2, // PR 업그레이드 비용 지수
 
   CLICKER_THRESHOLD: 2,          // 클릭커 아이템 1개 생산에 필요한 클릭 수
+
+  // FA 등급별 보너스 배열 (인덱스 0 = 1등급)
+  WA_BONUS: Array(20).fill(0.2) as number[],  // WA 등급당 +20%
+  PA_BONUS: Array(20).fill(0.3) as number[],  // PA 등급당 +30%
+  PK_BONUS: Array(20).fill(0.5) as number[],  // PK 등급당 +50%
+
+  // FA 처리 시간
+  FA_PICK_TIME: 800,             // 기본 처리 시간 (ms)
+  FA_PICK_TIME_MULTIPLIER: 1,    // 레벨당 감소 배수
+
+  // FA 건설 비용
+  FA_BUILD_COST_BASE: 1,
+  FA_BUILD_COST_EXPONENT: 2**2,
+
+  // FA 등급 업그레이드 비용
+  FA_GRADE_UPGRADE_BASE: 1,
+  FA_GRADE_UPGRADE_EXPONENT: 2**2,
+
+  // FA 레벨 업그레이드 비용
+  FA_LEVEL_UPGRADE_BASE: 1,
+  FA_LEVEL_UPGRADE_EXPONENT: 2**2,
+
+  // PR 건설 비용
+  PR_BUILD_COST_BASE: 1,
+  PR_BUILD_COST_EXPONENT: 2**2,
 } as const

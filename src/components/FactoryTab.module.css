@@ -1,0 +1,187 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.floor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.floorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.floorLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.floorArrow {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #191f28;
+  margin: 0 0 4px;
+}
+
+.card {
+  padding: 8px 10px;
+  background: #f9fafb;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #191f28;
+}
+
+.status {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #6b7280;
+  min-width: 32px;
+}
+
+.typeButton {
+  padding: 4px 10px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.typeButton.active {
+  border-color: #3182f6;
+  background: #eff6ff;
+  color: #3182f6;
+}
+
+.upgradeButton {
+  padding: 6px 0;
+  width: 80px;
+  background: #3182f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.upgradeButton:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: default;
+}
+
+.buildButton {
+  padding: 8px 14px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.buildButton:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: default;
+}
+
+.arrowButton {
+  padding: 2px 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.arrowButton:disabled {
+  color: #d1d5db;
+  cursor: default;
+}
+
+.ml {
+  margin-left: auto;
+}
+
+.groupRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.lvLabel {
+  font-size: 12px;
+  color: #6b7280;
+  min-width: 36px;
+  text-align: left;
+}
+
+.gradeLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #191f28;
+  min-width: 36px;
+  text-align: center;
+}

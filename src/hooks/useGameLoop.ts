@@ -3,7 +3,8 @@ import { CONFIG } from '../config'
 import type { Board } from '../types/board'
 import type { Item } from '../types/item'
 import type { Producer } from '../types/producer'
-import { getProducerValue, getProducerInterval } from '../balance'
+import type { Factory } from '../types/factory'
+import { getProducerValue, getProducerInterval, getFinalGold, getFactoryBonus, getFactoryPickTime } from '../balance'
 import {
   getCellCenter,
   getCellDirection,
@@ -12,6 +13,29 @@ import {
 } from '../utils/boardUtils'
 
 let nextId = 0
+
+type FAPhase = 'IDLE' | 'PICKING' | 'WAITING'
+interface FAState {
+  state: FAPhase
+  timer: number
+  heldItem: Item | null
+}
+
+function applyFactoryBonus(item: Item, factory: Factory): Item {
+  const { type, grade } = factory
+  if (grade === 0) return item
+  const bonus = getFactoryBonus(type, grade)
+  if (type === 'WA') {
+    if (item.waGrades.includes(grade)) return item
+    return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
+  } else if (type === 'PA') {
+    if (item.paGrades.includes(grade)) return item
+    return { ...item, paBonus: item.paBonus + bonus, paGrades: [...item.paGrades, grade] }
+  } else {
+    if (item.pkGrades.includes(grade)) return item
+    return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
+  }
+}
 
 function getNextTarget(
   board: Board,
@@ -22,7 +46,6 @@ function getNextTarget(
   const col = Math.round(currentX / cellSize - 0.5)
   const row = Math.round(currentY / cellSize - 0.5)
 
-  // 현재 셀의 방향으로 다음 셀 결정
   const cell = getCell(board, row, col)
   if (!cell) return null
 
@@ -42,7 +65,8 @@ export function useGameLoop(
   board: Board,
   cellSize: number,
   onGoldEarned: (amount: number) => void,
-  producers: Producer[]
+  producers: Producer[],
+  factories: Factory[],
 ) {
   const [items, setItems] = useState<Item[]>([])
   const itemsRef = useRef<Item[]>([])
@@ -52,6 +76,9 @@ export function useGameLoop(
   onGoldEarnedRef.current = onGoldEarned
   const producersRef = useRef(producers)
   producersRef.current = producers
+  const factoriesRef = useRef(factories)
+  factoriesRef.current = factories
+  const faStatesRef = useRef<Record<string, FAState>>({})
   const pendingClickerSpawnsRef = useRef(0)
 
   useEffect(() => {
@@ -79,9 +106,8 @@ export function useGameLoop(
           }
           produceTimersRef.current[key] += delta
 
-          // PR 레벨 확인 (level 0 = 비활성, 타이머 리셋)
           const producer = producersRef.current.find(p => p.row === rowIdx && p.col === colIdx)
-          if (!producer || producer.level === 0) {
+          if (!producer || !producer.built || producer.level === 0) {
             produceTimersRef.current[key] = 0
             return
           }
@@ -89,7 +115,6 @@ export function useGameLoop(
           if (produceTimersRef.current[key] >= getProducerInterval(producer.level)) {
             produceTimersRef.current[key] = 0
 
-            // PR 아래에서 RS 찾기
             let rsRow = -1, rsCol = -1
             for (let r = rowIdx + 1; r < board.length; r++) {
               for (let c = 0; c < board[r].length; c++) {
@@ -101,15 +126,12 @@ export function useGameLoop(
 
             const center = getCellCenter(rsRow, rsCol, cellSize)
 
-            // RS에 이미 아이템이 있으면 스킵
             const rsOccupied = items.some(it =>
               Math.sqrt((it.x - center.x) ** 2 + (it.y - center.y) ** 2) < itemSize
             )
             if (rsOccupied) return
 
             const dir = getCellDirection('RS')
-
-            // 다음 waypoint 계산
             const next = getNextTarget(board, cellSize, center.x, center.y)
             if (!next) return
 
@@ -122,6 +144,12 @@ export function useGameLoop(
               targetX: next.targetX,
               targetY: next.targetY,
               value: getProducerValue(),
+              waBonus: 0,
+              paBonus: 0,
+              pkBonus: 0,
+              waGrades: [],
+              paGrades: [],
+              pkGrades: [],
             }
             items = [...items, newItem]
           }
@@ -138,7 +166,6 @@ export function useGameLoop(
         const step = pixelsPerMs * delta
 
         if (step >= distToTarget) {
-          // waypoint 도달 → 다음 waypoint 계산
           const next = getNextTarget(board, cellSize, item.targetX, item.targetY)
           if (!next) return { ...item, x: item.targetX, y: item.targetY }
 
@@ -153,12 +180,79 @@ export function useGameLoop(
           }
         }
 
-        // waypoint 방향으로 이동
         const ratio = step / distToTarget
         return {
           ...item,
           x: item.x + (item.targetX - item.x) * ratio,
           y: item.y + (item.targetY - item.y) * ratio,
+        }
+      })
+
+      // FA 처리
+      factoriesRef.current.forEach(factory => {
+        if (!factory.built || factory.level < 1) return
+
+        const key = `fa-${factory.row}-${factory.col}`
+        if (!faStatesRef.current[key]) {
+          faStatesRef.current[key] = { state: 'IDLE', timer: 0, heldItem: null }
+        }
+        const fas = faStatesRef.current[key]
+
+        const inputRow = factory.dir === 'UP_TO_DOWN' ? factory.row - 1 : factory.row + 1
+        const inputCol = factory.col
+        const outputRow = factory.dir === 'UP_TO_DOWN' ? factory.row + 1 : factory.row - 1
+        const outputCol = factory.col
+
+        if (!getCell(board, inputRow, inputCol) || !getCell(board, outputRow, outputCol)) return
+
+        const inputCenter = getCellCenter(inputRow, inputCol, cellSize)
+        const outputCenter = getCellCenter(outputRow, outputCol, cellSize)
+
+        if (fas.state === 'IDLE') {
+          const idx = items.findIndex(it => {
+            if (it.pkGrades.length > 0) return false
+            const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
+            return dist <= cellSize * 0.3
+          })
+          if (idx !== -1) {
+            const picked = items[idx]
+            items = items.filter((_, i) => i !== idx)
+            faStatesRef.current[key] = { state: 'PICKING', timer: 0, heldItem: picked }
+          }
+        } else if (fas.state === 'PICKING') {
+          const newTimer = fas.timer + delta
+          if (newTimer >= getFactoryPickTime(factory.level)) {
+            const processed = applyFactoryBonus(fas.heldItem!, factory)
+            const occupied = items.some(it => {
+              const dist = Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2)
+              return dist <= cellSize * 0.3
+            })
+            if (!occupied) {
+              const next = getNextTarget(board, cellSize, outputCenter.x, outputCenter.y)
+              const placed = next
+                ? { ...processed, x: outputCenter.x, y: outputCenter.y, dx: next.dx, dy: next.dy, targetX: next.targetX, targetY: next.targetY }
+                : { ...processed, x: outputCenter.x, y: outputCenter.y }
+              items = [...items, placed]
+              faStatesRef.current[key] = { state: 'IDLE', timer: 0, heldItem: null }
+            } else {
+              faStatesRef.current[key] = { state: 'WAITING', timer: 0, heldItem: processed }
+            }
+          } else {
+            faStatesRef.current[key] = { ...fas, timer: newTimer }
+          }
+        } else if (fas.state === 'WAITING') {
+          const occupied = items.some(it => {
+            const dist = Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2)
+            return dist <= cellSize * 0.3
+          })
+          if (!occupied) {
+            const next = getNextTarget(board, cellSize, outputCenter.x, outputCenter.y)
+            const placed = next
+              ? { ...fas.heldItem!, x: outputCenter.x, y: outputCenter.y, dx: next.dx, dy: next.dy, targetX: next.targetX, targetY: next.targetY }
+              : { ...fas.heldItem!, x: outputCenter.x, y: outputCenter.y }
+            items = [...items, placed]
+            faStatesRef.current[key] = { state: 'IDLE', timer: 0, heldItem: null }
+          }
         }
       })
 
@@ -187,6 +281,8 @@ export function useGameLoop(
           dx: dir.dx, dy: dir.dy,
           targetX: next.targetX, targetY: next.targetY,
           value: 1,
+          waBonus: 0, paBonus: 0, pkBonus: 0,
+          waGrades: [], paGrades: [], pkGrades: [],
         }]
       }
 
@@ -199,7 +295,7 @@ export function useGameLoop(
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
         if (dist > cellSize * 0.3) return true
-        onGoldEarnedRef.current(item.value)
+        onGoldEarnedRef.current(getFinalGold(item.value, item.waBonus, item.paBonus, item.pkBonus))
         return false
       })
 

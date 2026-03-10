@@ -24,14 +24,14 @@ export default function TabBar({ clicker, onClickerClick, onTabChange, sheetOpen
 
   return (
     <div className={styles.tabBar}>
-      {['생산', '탭2', '탭3'].map((label, i) => (
+      {['생산', '공장', '탭3'].map((label, i) => (
         <div key={i} className={styles.tab} onClick={() => handleTab(i)}>
           {label}
         </div>
       ))}
       <button
         className={styles.clickerButton}
-        style={{ bottom: sheetOpen ? 360 : 68 }}
+        style={{ bottom: sheetOpen ? 'calc(40vh + 68px)' : 68 }}
         onClick={onClickerClick}
       >
         <svg className={styles.clickerRing} viewBox="0 0 56 56">

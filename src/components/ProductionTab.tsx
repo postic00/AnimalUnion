@@ -1,35 +1,57 @@
 import type { Producer } from '../types/producer'
-import { getProducerValue, getProducerUpgradeCost } from '../balance'
+import { getProducerValue, getProducerUpgradeCost, getProducerBuildCost } from '../balance'
+import { formatGold } from '../utils/formatGold'
 import styles from './ProductionTab.module.css'
 
 interface Props {
   producers: Producer[]
   gold: number
+  onBuild: (index: number) => void
   onUpgrade: (index: number) => void
 }
 
-export default function ProductionTab({ producers, gold, onUpgrade }: Props) {
+export default function ProductionTab({ producers, gold, onBuild, onUpgrade }: Props) {
+  const buildCost = getProducerBuildCost()
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>생산</h2>
       {producers.map((producer, index) => {
+        if (!producer.built) {
+          return (
+            <div key={index} className={styles.row}>
+              <div className={styles.info}>
+                <span className={styles.name}>생산기 {index + 1}</span>
+                <span className={styles.level}>미건설</span>
+              </div>
+              <button
+                className={styles.upgradeButton}
+                onClick={() => onBuild(index)}
+                disabled={gold < buildCost}
+              >
+                🪙{formatGold(buildCost)}
+              </button>
+            </div>
+          )
+        }
         const cost = getProducerUpgradeCost(producer.level)
-        const canUpgrade = gold >= cost
         return (
           <div key={index} className={styles.row}>
             <div className={styles.info}>
               <span className={styles.name}>생산기 {index + 1}</span>
               <span className={styles.level}>
-                Lv.{producer.level} · {producer.level === 0 ? '비활성' : `🪙${getProducerValue()}/개`}
+                {producer.level === 0 ? '비활성' : '가동중'}
               </span>
             </div>
-            <button
-              className={styles.upgradeButton}
-              onClick={() => onUpgrade(index)}
-              disabled={!canUpgrade}
-            >
-              업그레이드 🪙{cost.toLocaleString()}
-            </button>
+            <div className={styles.btnGroup}>
+              <span className={styles.level}>Lv.{producer.level}</span>
+              <button
+                className={styles.upgradeButton}
+                onClick={() => onUpgrade(index)}
+                disabled={gold < cost}
+              >
+                🪙{formatGold(cost)}
+              </button>
+            </div>
           </div>
         )
       })}

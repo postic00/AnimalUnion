@@ -4,11 +4,19 @@ import Navigation from './components/Navigation'
 import TabBar from './components/TabBar'
 import BottomSheet from './components/BottomSheet'
 import ProductionTab from './components/ProductionTab'
+import FactoryTab from './components/FactoryTab'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
-import { getBundleCost, getProducerUpgradeCost } from './balance'
+import type { Factory } from './types/factory'
+import {
+  getBundleCost,
+  getProducerBuildCost,
+  getProducerUpgradeCost,
+  getFactoryBuildCost,
+  getFactoryLevelUpgradeCost,
+} from './balance'
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
@@ -40,7 +48,6 @@ export default function App() {
   const spawnClickerItemRef = useRef<(() => void) | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
 
-  // 초당 수익 계산 (1초마다 갱신)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now()
@@ -69,6 +76,16 @@ export default function App() {
     })
   }, [])
 
+  const handleBuildProducer = useCallback((index: number) => {
+    setGameState(prev => {
+      const cost = getProducerBuildCost()
+      if (prev.gold < cost) return prev
+      const producers = [...prev.producers]
+      producers[index] = { ...producers[index], built: true, level: 1 }
+      return { ...prev, gold: prev.gold - cost, producers }
+    })
+  }, [])
+
   const handleUpgradeProducer = useCallback((index: number) => {
     setGameState(prev => {
       const producer = prev.producers[index]
@@ -87,6 +104,56 @@ export default function App() {
     setBoard(prev => addBundle(prev))
   }
 
+  const handleBuildFactory = useCallback((row: number, col: number) => {
+    setGameState(prev => {
+      const cost = getFactoryBuildCost()
+      if (prev.gold < cost) return prev
+      const newFactory: Factory = {
+        row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN',
+      }
+      return { ...prev, gold: prev.gold - cost, factories: [...prev.factories, newFactory] }
+    })
+  }, [])
+
+  const handleSetFactoryType = useCallback((row: number, col: number, type: Factory['type']) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, type } : f),
+    }))
+  }, [])
+
+  const handleSetFactoryDir = useCallback((row: number, col: number, dir: Factory['dir']) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, dir } : f),
+    }))
+  }, [])
+
+  const handleSetFactoryGrade = useCallback((row: number, col: number, grade: number) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f =>
+        f.row === row && f.col === col ? { ...f, grade } : f
+      ),
+    }))
+  }, [])
+
+  const handleUpgradeFactoryLevel = useCallback((row: number, col: number) => {
+    setGameState(prev => {
+      const factory = prev.factories.find(f => f.row === row && f.col === col)
+      if (!factory) return prev
+      const cost = getFactoryLevelUpgradeCost(factory.level)
+      if (prev.gold < cost) return prev
+      return {
+        ...prev,
+        gold: prev.gold - cost,
+        factories: prev.factories.map(f =>
+          f.row === row && f.col === col ? { ...f, level: f.level + 1 } : f
+        ),
+      }
+    })
+  }, [])
+
   const bundleCost = getBundleCost(gameState.bundleCount)
 
   return (
@@ -99,6 +166,7 @@ export default function App() {
         bundleCost={bundleCost}
         canAddBundle={gameState.gold >= bundleCost}
         producers={gameState.producers}
+        factories={gameState.factories}
         spawnClickerItemRef={spawnClickerItemRef}
       />
       <TabBar
@@ -112,7 +180,21 @@ export default function App() {
           <ProductionTab
             producers={gameState.producers}
             gold={gameState.gold}
+            onBuild={handleBuildProducer}
             onUpgrade={handleUpgradeProducer}
+          />
+        )}
+        {activeTab === 1 && (
+          <FactoryTab
+            board={board}
+            factories={gameState.factories}
+            gold={gameState.gold}
+            onBuild={handleBuildFactory}
+            onSetType={handleSetFactoryType}
+            onSetDir={handleSetFactoryDir}
+            onSetGrade={handleSetFactoryGrade}
+            onUpgradeLevel={handleUpgradeFactoryLevel}
+            maxGrade={20}
           />
         )}
       </BottomSheet>

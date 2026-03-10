@@ -1,0 +1,96 @@
+import { useState } from 'react'
+import type { GameState } from '../types/gameState'
+import type { AnimalId } from '../types/animal'
+import { ANIMAL_NAMES, ANIMAL_IDS } from '../types/animal'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat } from '../balance'
+import { formatGold, formatNumber } from '../utils/formatGold'
+import { CONFIG } from '../config'
+import styles from './PrestigeTab.module.css'
+
+const PRODUCT_NAMES: Record<number, string> = {
+  1: '생파', 2: '파수프', 3: '파타르트', 4: '아토믹파', 5: '아토믹차이브',
+  6: '울트라파', 7: '몬스터파', 8: '몬스터파XXL', 9: '퀀텀파',
+}
+
+interface Props {
+  gameState: GameState
+  onPrestige: () => void
+  onPrestigeReset: () => void
+  onLevelUpItemValue: (gradeIndex: number) => void
+  onUnlockAnimal: (id: AnimalId) => void
+  onUpgradeAnimal: (id: AnimalId) => void
+}
+
+export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal }: Props) {
+  const { totalEarned, prestigePoints, itemValueLevels, animals } = gameState
+  const possible = canPrestige(totalEarned)
+  const earnPoints = getPrestigePoints(totalEarned)
+  const [itemOpen, setItemOpen] = useState(true)
+  const [animalOpen, setAnimalOpen] = useState(true)
+  const unlockCost = getAnimalUnlockCost()
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>환생</h2>
+        <span className={styles.headerInfo}>⭐{formatGold(prestigePoints)} · 🪙{formatGold(totalEarned)}</span>
+      </div>
+
+      <div className={styles.card}>
+        <button className={styles.prestigeButton} onClick={onPrestige} disabled={!possible}>
+          환생 +⭐{formatGold(earnPoints)}
+        </button>
+        <button className={styles.resetButton} onClick={onPrestigeReset}>
+          환생 초기화
+        </button>
+      </div>
+
+      <button className={styles.sectionHeader} onClick={() => setItemOpen(v => !v)}>
+        <span className={styles.title}>아이템 가치</span>
+        <span className={styles.floorArrow}>{itemOpen ? '▲' : '▼'}</span>
+      </button>
+      {itemOpen && Array.from({ length: CONFIG.PRODUCT_GRADE_MAX }, (_, i) => {
+        const grade = i + 1
+        const level = itemValueLevels[i] ?? 1
+        const cost = getItemValueLevelCost(level)
+        const name = PRODUCT_NAMES[grade] ?? `${grade}`
+        return (
+          <div key={grade} className={styles.gradeRow}>
+            <span className={styles.gradeName}>{grade}. {name}</span>
+            <span className={styles.gradeValue}>🪙{formatGold(getItemValue(level))}</span>
+            <button className={styles.unlockButton} onClick={() => onLevelUpItemValue(i)} disabled={prestigePoints < cost}>
+              ⭐{formatGold(cost)}
+            </button>
+          </div>
+        )
+      })}
+
+      <button className={styles.sectionHeader} onClick={() => setAnimalOpen(v => !v)}>
+        <span className={styles.title}>동물</span>
+        <span className={styles.floorArrow}>{animalOpen ? '▲' : '▼'}</span>
+      </button>
+      {animalOpen && ANIMAL_IDS.map(id => {
+        const animal = animals.find(a => a.id === id)!
+        const upgradeCost = getAnimalUpgradeCost(animal.level)
+        return (
+          <div key={id} className={styles.gradeRow}>
+            <span className={styles.gradeName}>{ANIMAL_NAMES[id]}</span>
+            {animal.unlocked ? (
+              <>
+                <span className={styles.gradeStat}>+{formatNumber(getAnimalStat(animal.level) * 100)}%</span>
+                <span className={styles.gradeLv}>Lv.{formatNumber(animal.level)}</span>
+                <button className={styles.unlockButton} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
+                  ⭐{formatGold(upgradeCost)}
+                </button>
+              </>
+            ) : (
+              <button className={styles.unlockButton} onClick={() => onUnlockAnimal(id)} disabled={prestigePoints < unlockCost}>
+                해금 ⭐{formatGold(unlockCost)}
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}

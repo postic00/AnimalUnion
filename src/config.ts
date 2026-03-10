@@ -41,4 +41,21 @@ export const CONFIG = {
   // PR 건설 비용
   PR_BUILD_COST_BASE: 1,
   PR_BUILD_COST_EXPONENT: 2**2,
+
+  // 환생
+  PRESTIGE_CONDITION: 100_000_000,        // 환생 조건 (누적수입)
+  PRESTIGE_POINTS_DIVISOR: 100_000_000,  // 포인트 1당 누적수입
+  PRODUCT_GRADE_MAX: 20,                 // 최대 Product 등급
+
+  // 아이템 기본 가격 레벨업
+  ITEM_VALUE_LEVEL_COST_BASE: 1,         // 레벨업 비용 기준
+  ITEM_VALUE_LEVEL_COST_EXPONENT: 2,     // 레벨업 비용 지수
+  ITEM_VALUE_PER_LEVEL: 1,              // 레벨당 가치 증가량
+
+  // 동물
+  ANIMAL_UNLOCK_COST: 1,               // 해금 비용 (포인트)
+  ANIMAL_UPGRADE_COST_BASE: 1,         // 업그레이드 비용 기준
+  ANIMAL_UPGRADE_COST_EXPONENT: 2,     // 업그레이드 비용 지수
+  ANIMAL_STAT_BASE: 0.1,               // 레벨 1 stat (보너스 +10%)
+  ANIMAL_STAT_PER_LEVEL: 0.05,         // 레벨당 stat 증가 (+5%)
 } as const

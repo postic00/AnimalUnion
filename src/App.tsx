@@ -5,6 +5,7 @@ import TabBar from './components/TabBar'
 import BottomSheet from './components/BottomSheet'
 import ProductionTab from './components/ProductionTab'
 import FactoryTab from './components/FactoryTab'
+import PrestigeTab from './components/PrestigeTab'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import type { Board as BoardType, Cell } from './types/board'
@@ -16,7 +17,14 @@ import {
   getProducerUpgradeCost,
   getFactoryBuildCost,
   getFactoryLevelUpgradeCost,
+  getPrestigePoints,
+  getItemValueLevelCost,
+  getAnimalUnlockCost,
+  getAnimalUpgradeCost,
+  getItemValueResetRefund,
+  getAnimalResetRefund,
 } from './balance'
+import type { AnimalId } from './types/animal'
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
@@ -62,7 +70,7 @@ export default function App() {
 
   const handleGoldEarned = useCallback((amount: number) => {
     earnedInSecRef.current += amount
-    setGameState(prev => ({ ...prev, gold: prev.gold + amount }))
+    setGameState(prev => ({ ...prev, gold: prev.gold + amount, totalEarned: prev.totalEarned + amount }))
   }, [])
 
   const handleClickerClick = useCallback(() => {
@@ -109,7 +117,7 @@ export default function App() {
       const cost = getFactoryBuildCost()
       if (prev.gold < cost) return prev
       const newFactory: Factory = {
-        row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN',
+        row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN', animalId: null,
       }
       return { ...prev, gold: prev.gold - cost, factories: [...prev.factories, newFactory] }
     })
@@ -154,6 +162,77 @@ export default function App() {
     })
   }, [])
 
+  const handlePrestige = useCallback(() => {
+    setBoard(initialBoard)
+    setGameState(prev => ({
+      ...prev,
+      gold: initialGameState.gold,
+      goldPerSec: 0,
+      bundleCount: 0,
+      producers: initialGameState.producers,
+      factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
+      totalEarned: 0,
+      prestigeCount: prev.prestigeCount + 1,
+      prestigePoints: prev.prestigePoints + getPrestigePoints(prev.totalEarned),
+    }))
+  }, [])
+
+  const handlePrestigeReset = useCallback(() => {
+    setGameState(prev => {
+      const refund = getItemValueResetRefund(prev.itemValueLevels) + getAnimalResetRefund(prev.animals)
+      return {
+        ...prev,
+        prestigePoints: prev.prestigePoints + refund,
+        itemValueLevels: initialGameState.itemValueLevels,
+        animals: initialGameState.animals,
+      }
+    })
+  }, [])
+
+  const handleUnlockAnimal = useCallback((id: AnimalId) => {
+    setGameState(prev => {
+      const cost = getAnimalUnlockCost()
+      if (prev.prestigePoints < cost) return prev
+      return {
+        ...prev,
+        prestigePoints: prev.prestigePoints - cost,
+        animals: prev.animals.map(a => a.id === id ? { ...a, unlocked: true } : a),
+      }
+    })
+  }, [])
+
+  const handleUpgradeAnimal = useCallback((id: AnimalId) => {
+    setGameState(prev => {
+      const animal = prev.animals.find(a => a.id === id)
+      if (!animal || !animal.unlocked) return prev
+      const cost = getAnimalUpgradeCost(animal.level)
+      if (prev.prestigePoints < cost) return prev
+      return {
+        ...prev,
+        prestigePoints: prev.prestigePoints - cost,
+        animals: prev.animals.map(a => a.id === id ? { ...a, level: a.level + 1 } : a),
+      }
+    })
+  }, [])
+
+  const handleSetFactoryAnimal = useCallback((row: number, col: number, animalId: AnimalId | null) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId } : f),
+    }))
+  }, [])
+
+  const handleLevelUpItemValue = useCallback((gradeIndex: number) => {
+    setGameState(prev => {
+      const level = prev.itemValueLevels[gradeIndex] ?? 1
+      const cost = getItemValueLevelCost(level)
+      if (prev.prestigePoints < cost) return prev
+      const itemValueLevels = [...prev.itemValueLevels]
+      itemValueLevels[gradeIndex] = level + 1
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, itemValueLevels }
+    })
+  }, [])
+
   const bundleCost = getBundleCost(gameState.bundleCount)
 
   return (
@@ -167,6 +246,7 @@ export default function App() {
         canAddBundle={gameState.gold >= bundleCost}
         producers={gameState.producers}
         factories={gameState.factories}
+        animals={gameState.animals}
         spawnClickerItemRef={spawnClickerItemRef}
       />
       <TabBar
@@ -194,7 +274,19 @@ export default function App() {
             onSetDir={handleSetFactoryDir}
             onSetGrade={handleSetFactoryGrade}
             onUpgradeLevel={handleUpgradeFactoryLevel}
+            onSetAnimal={handleSetFactoryAnimal}
+            animals={gameState.animals}
             maxGrade={20}
+          />
+        )}
+        {activeTab === 2 && (
+          <PrestigeTab
+            gameState={gameState}
+            onPrestige={handlePrestige}
+            onPrestigeReset={handlePrestigeReset}
+            onLevelUpItemValue={handleLevelUpItemValue}
+            onUnlockAnimal={handleUnlockAnimal}
+            onUpgradeAnimal={handleUpgradeAnimal}
           />
         )}
       </BottomSheet>

@@ -22,9 +22,19 @@ export function getProducerInterval(level: number): number {
   return CONFIG.PRODUCE_INTERVAL / (level * CONFIG.PRODUCE_INTERVAL_MULTIPLIER)
 }
 
-// PR 아이템 가치: 고정값 (FA 처리로 증가)
-export function getProducerValue(): number {
-  return CONFIG.ITEM_BASE_VALUE
+// 아이템 가치: itemValueLevel 반영
+export function getItemValue(itemValueLevel = 1): number {
+  return CONFIG.ITEM_BASE_VALUE + (itemValueLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL
+}
+
+// PR 아이템 가치 (하위호환)
+export function getProducerValue(itemValueLevel = 1): number {
+  return getItemValue(itemValueLevel)
+}
+
+// 아이템 가치 레벨업 비용: BASE * level^EXPONENT
+export function getItemValueLevelCost(level: number): number {
+  return Math.floor(CONFIG.ITEM_VALUE_LEVEL_COST_BASE * Math.pow(level, CONFIG.ITEM_VALUE_LEVEL_COST_EXPONENT))
 }
 
 // 클릭커 임계값
@@ -65,4 +75,52 @@ export function getFactoryBonus(type: Factory['type'], grade: number): number {
 // 아이템 최종 골드 계산
 export function getFinalGold(value: number, waBonus: number, paBonus: number, pkBonus: number): number {
   return value * (1 + waBonus) * (1 + paBonus) * (1 + pkBonus)
+}
+
+// 동물 해금 비용
+export function getAnimalUnlockCost(): number {
+  return CONFIG.ANIMAL_UNLOCK_COST
+}
+
+// 동물 업그레이드 비용: BASE * level^EXPONENT
+export function getAnimalUpgradeCost(level: number): number {
+  return Math.floor(CONFIG.ANIMAL_UPGRADE_COST_BASE * Math.pow(level, CONFIG.ANIMAL_UPGRADE_COST_EXPONENT))
+}
+
+// 동물 stat: BASE + (level-1) * PER_LEVEL
+export function getAnimalStat(level: number): number {
+  return CONFIG.ANIMAL_STAT_BASE + (level - 1) * CONFIG.ANIMAL_STAT_PER_LEVEL
+}
+
+// 아이템 가치 초기화 시 환급 포인트
+export function getItemValueResetRefund(itemValueLevels: number[]): number {
+  return itemValueLevels.reduce((total, level) => {
+    for (let l = 1; l < level; l++) total += getItemValueLevelCost(l)
+    return total
+  }, 0)
+}
+
+// 동물 초기화 시 환급 포인트
+export function getAnimalResetRefund(animals: { unlocked: boolean; level: number }[]): number {
+  return animals.reduce((total, a) => {
+    if (!a.unlocked) return total
+    total += getAnimalUnlockCost()
+    for (let l = 1; l < a.level; l++) total += getAnimalUpgradeCost(l)
+    return total
+  }, 0)
+}
+
+// 환생 가능 여부
+export function canPrestige(totalEarned: number): boolean {
+  return totalEarned >= CONFIG.PRESTIGE_CONDITION
+}
+
+// 환생 시 획득 포인트
+export function getPrestigePoints(totalEarned: number): number {
+  return Math.floor(totalEarned / CONFIG.PRESTIGE_POINTS_DIVISOR)
+}
+
+// productGrade 해금 비용: 2^(grade-2) 포인트
+export function getProductGradeUnlockCost(grade: number): number {
+  return Math.pow(2, grade - 2)
 }

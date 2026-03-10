@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Board as BoardType } from '../types/board'
 import Cell from './Cell'
+import ItemLayer from './ItemLayer'
+import { useGameLoop } from '../hooks/useGameLoop'
 import styles from './Board.module.css'
 
 interface Props {
@@ -20,17 +22,22 @@ export default function Board({ board, onAddBundle }: Props) {
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
+  const items = useGameLoop(board, cellSize)
+
   if (cellSize === 0) return null
 
   return (
     <div className={styles.board}>
-      {board.map((row, rowIdx) => (
-        <div key={rowIdx} className={styles.row}>
-          {row.map((cell, colIdx) => (
-            <Cell key={colIdx} cell={cell} size={cellSize} />
-          ))}
-        </div>
-      ))}
+      <div className={styles.grid} style={{ position: 'relative' }}>
+        {board.map((row, rowIdx) => (
+          <div key={rowIdx} className={styles.row}>
+            {row.map((cell, colIdx) => (
+              <Cell key={colIdx} cell={cell} size={cellSize} />
+            ))}
+          </div>
+        ))}
+        <ItemLayer items={items} cellSize={cellSize} />
+      </div>
       <button
         onClick={onAddBundle}
         className={styles.addButton}

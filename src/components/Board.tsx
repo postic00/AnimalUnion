@@ -8,9 +8,12 @@ import styles from './Board.module.css'
 interface Props {
   board: BoardType
   onAddBundle: () => void
+  onGoldEarned: (amount: number) => void
+  bundleCost: number
+  canAddBundle: boolean
 }
 
-export default function Board({ board, onAddBundle }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export default function Board({ board, onAddBundle }: Props) {
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const items = useGameLoop(board, cellSize)
+  const items = useGameLoop(board, cellSize, onGoldEarned)
 
   if (cellSize === 0) return null
 
@@ -42,8 +45,9 @@ export default function Board({ board, onAddBundle }: Props) {
         onClick={onAddBundle}
         className={styles.addButton}
         style={{ width: cellSize * 7, height: cellSize * 2 }}
+        disabled={!canAddBundle}
       >
-        묶음을 추가해요
+        공장 라인 확장 🪙{bundleCost.toLocaleString()}
       </button>
     </div>
   )

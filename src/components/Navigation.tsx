@@ -1,4 +1,5 @@
 import type { GameState } from '../types/gameState'
+import { formatGold } from '../utils/formatGold'
 import styles from './Navigation.module.css'
 
 interface Props {
@@ -8,8 +9,8 @@ interface Props {
 export default function Navigation({ gameState }: Props) {
   return (
     <nav className={styles.nav}>
-      <span className={styles.gold}>🪙 {gameState.gold.toLocaleString()}</span>
-      <span className={styles.perSec}>+{gameState.goldPerSec}/s</span>
+      <span className={styles.gold}>🪙 {formatGold(gameState.gold)}</span>
+      <span className={styles.perSec}>+{formatGold(gameState.goldPerSec)}/s</span>
     </nav>
   )
 }

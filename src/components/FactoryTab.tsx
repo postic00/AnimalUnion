@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Board } from '../types/board'
 import type { Factory } from '../types/factory'
+import type { Animal, AnimalId } from '../types/animal'
+import { ANIMAL_NAMES, ANIMAL_IDS } from '../types/animal'
 import { getFactoryBuildCost, getFactoryLevelUpgradeCost } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import styles from './FactoryTab.module.css'
@@ -9,15 +11,17 @@ interface Props {
   board: Board
   factories: Factory[]
   gold: number
+  animals: Animal[]
   onBuild: (row: number, col: number) => void
   onSetType: (row: number, col: number, type: Factory['type']) => void
   onSetDir: (row: number, col: number, dir: Factory['dir']) => void
   onSetGrade: (row: number, col: number, grade: number) => void
   onUpgradeLevel: (row: number, col: number) => void
+  onSetAnimal: (row: number, col: number, animalId: AnimalId | null) => void
   maxGrade: number
 }
 
-export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade }: Props) {
+export default function FactoryTab({ board, factories, gold, animals, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, onSetAnimal, maxGrade }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -47,9 +51,8 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
           </button>
           {!closedFloors[floorIdx] && cells.map(({ row, col }, i) => {
             const factory = factories.find(f => f.row === row && f.col === col)
-            const slotNum = floorIdx * 3 + i + 1
 
-            if (!factory) {
+            if (!factory || !factory.built) {
               return (
                 <div key={i} className={styles.card}>
                   <div className={styles.row}>
@@ -68,6 +71,7 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
             }
 
             const levelCost = getFactoryLevelUpgradeCost(factory.level)
+            const unlockedAnimals = animals.filter(a => a.unlocked)
 
             return (
               <div key={i} className={styles.card}>
@@ -101,6 +105,23 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
                     <button className={styles.arrowButton} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= 1}>←</button>
                     <span className={styles.gradeLabel}>{factory.grade}</span>
                     <button className={styles.arrowButton} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>→</button>
+                  </div>
+                  <div className={styles.group}>
+                    <button
+                      className={`${styles.typeButton} ${factory.animalId === null ? styles.active : ''}`}
+                      onClick={() => onSetAnimal(row, col, null)}
+                    >
+                      없음
+                    </button>
+                    {unlockedAnimals.map(a => (
+                      <button
+                        key={a.id}
+                        className={`${styles.typeButton} ${factory.animalId === a.id ? styles.active : ''}`}
+                        onClick={() => onSetAnimal(row, col, a.id)}
+                      >
+                        {ANIMAL_NAMES[a.id]}
+                      </button>
+                    ))}
                   </div>
                   <div className={styles.group}>
                     <span className={styles.lvLabel}>Lv.{factory.level}</span>

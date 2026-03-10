@@ -4,7 +4,8 @@ import type { Board } from '../types/board'
 import type { Item } from '../types/item'
 import type { Producer } from '../types/producer'
 import type { Factory } from '../types/factory'
-import { getProducerValue, getProducerInterval, getFinalGold, getFactoryBonus, getFactoryPickTime } from '../balance'
+import { getProducerValue, getProducerInterval, getFinalGold, getFactoryBonus, getFactoryPickTime, getAnimalStat } from '../balance'
+import type { Animal } from '../types/animal'
 import {
   getCellCenter,
   getCellDirection,
@@ -21,10 +22,13 @@ interface FAState {
   heldItem: Item | null
 }
 
-function applyFactoryBonus(item: Item, factory: Factory): Item {
+function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[]): Item {
   const { type, grade } = factory
   if (grade === 0) return item
-  const bonus = getFactoryBonus(type, grade)
+  const baseBonus = getFactoryBonus(type, grade)
+  const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
+  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const bonus = baseBonus + animalBonus
   if (type === 'WA') {
     if (item.waGrades.includes(grade)) return item
     return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
@@ -67,6 +71,7 @@ export function useGameLoop(
   onGoldEarned: (amount: number) => void,
   producers: Producer[],
   factories: Factory[],
+  animals: Animal[],
 ) {
   const [items, setItems] = useState<Item[]>([])
   const itemsRef = useRef<Item[]>([])
@@ -78,6 +83,8 @@ export function useGameLoop(
   producersRef.current = producers
   const factoriesRef = useRef(factories)
   factoriesRef.current = factories
+  const animalsRef = useRef(animals)
+  animalsRef.current = animals
   const faStatesRef = useRef<Record<string, FAState>>({})
   const pendingClickerSpawnsRef = useRef(0)
 
@@ -222,7 +229,7 @@ export function useGameLoop(
         } else if (fas.state === 'PICKING') {
           const newTimer = fas.timer + delta
           if (newTimer >= getFactoryPickTime(factory.level)) {
-            const processed = applyFactoryBonus(fas.heldItem!, factory)
+            const processed = applyFactoryBonus(fas.heldItem!, factory, animalsRef.current)
             const occupied = items.some(it => {
               const dist = Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2)
               return dist <= cellSize * 0.3

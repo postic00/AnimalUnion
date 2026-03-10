@@ -18,4 +18,52 @@
   font-size: 14px;
   font-weight: 500;
   color: #6b7280;
+  cursor: pointer;
+}
+
+.clickerButton {
+  position: fixed;
+  bottom: 68px;
+  right: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #3182f6;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  z-index: 22;
+  transition: bottom 0.25s ease;
+}
+
+
+.clickerRing {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  transform: rotate(-90deg);
+}
+
+.ringBg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.2);
+  stroke-width: 4;
+}
+
+.ringFill {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+
+.clickerIcon {
+  position: relative;
+  font-size: 24px;
+  line-height: 1;
 }

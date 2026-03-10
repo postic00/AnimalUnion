@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CONFIG } from '../config'
 import type { Board } from '../types/board'
 import type { Item } from '../types/item'
+import type { Producer } from '../types/producer'
+import { getProducerValue, getProducerInterval } from '../balance'
 import {
   getCellCenter,
   getCellDirection,
@@ -39,7 +41,8 @@ function getNextTarget(
 export function useGameLoop(
   board: Board,
   cellSize: number,
-  onGoldEarned: (amount: number) => void
+  onGoldEarned: (amount: number) => void,
+  producers: Producer[]
 ) {
   const [items, setItems] = useState<Item[]>([])
   const itemsRef = useRef<Item[]>([])
@@ -47,6 +50,9 @@ export function useGameLoop(
   const produceTimersRef = useRef<Record<string, number>>({})
   const onGoldEarnedRef = useRef(onGoldEarned)
   onGoldEarnedRef.current = onGoldEarned
+  const producersRef = useRef(producers)
+  producersRef.current = producers
+  const pendingClickerSpawnsRef = useRef(0)
 
   useEffect(() => {
     if (cellSize === 0) return
@@ -73,7 +79,14 @@ export function useGameLoop(
           }
           produceTimersRef.current[key] += delta
 
-          if (produceTimersRef.current[key] >= CONFIG.PRODUCE_INTERVAL) {
+          // PR 레벨 확인 (level 0 = 비활성, 타이머 리셋)
+          const producer = producersRef.current.find(p => p.row === rowIdx && p.col === colIdx)
+          if (!producer || producer.level === 0) {
+            produceTimersRef.current[key] = 0
+            return
+          }
+
+          if (produceTimersRef.current[key] >= getProducerInterval(producer.level)) {
             produceTimersRef.current[key] = 0
 
             // PR 아래에서 RS 찾기
@@ -108,6 +121,7 @@ export function useGameLoop(
               dy: dir.dy,
               targetX: next.targetX,
               targetY: next.targetY,
+              value: getProducerValue(),
             }
             items = [...items, newItem]
           }
@@ -148,6 +162,34 @@ export function useGameLoop(
         }
       })
 
+      // 클릭커 스폰
+      while (pendingClickerSpawnsRef.current > 0) {
+        pendingClickerSpawnsRef.current -= 1
+        let rsRow = -1, rsCol = -1
+        for (let r = 0; r < board.length; r++) {
+          for (let c = 0; c < board[r].length; c++) {
+            if (board[r][c].type === 'RS') { rsRow = r; rsCol = c; break }
+          }
+          if (rsRow !== -1) break
+        }
+        if (rsRow === -1) break
+        const center = getCellCenter(rsRow, rsCol, cellSize)
+        const rsOccupied = items.some(it =>
+          Math.sqrt((it.x - center.x) ** 2 + (it.y - center.y) ** 2) < itemSize
+        )
+        if (rsOccupied) break
+        const dir = getCellDirection('RS')
+        const next = getNextTarget(board, cellSize, center.x, center.y)
+        if (!next) break
+        items = [...items, {
+          id: `item-${nextId++}`,
+          x: center.x, y: center.y,
+          dx: dir.dx, dy: dir.dy,
+          targetX: next.targetX, targetY: next.targetY,
+          value: 1,
+        }]
+      }
+
       // RE 도달 아이템 제거 + 골드 획득
       items = items.filter(item => {
         const col = Math.round(item.x / cellSize - 0.5)
@@ -157,7 +199,7 @@ export function useGameLoop(
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
         if (dist > cellSize * 0.3) return true
-        onGoldEarnedRef.current(1)
+        onGoldEarnedRef.current(item.value)
         return false
       })
 
@@ -170,5 +212,9 @@ export function useGameLoop(
     return () => cancelAnimationFrame(animId)
   }, [board, cellSize])
 
-  return items
+  const spawnClickerItem = useCallback(() => {
+    pendingClickerSpawnsRef.current += 1
+  }, [])
+
+  return { items, spawnClickerItem }
 }

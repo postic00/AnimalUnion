@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import type { MutableRefObject } from 'react'
 import type { Board as BoardType } from '../types/board'
+import type { Producer } from '../types/producer'
 import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
@@ -11,9 +13,11 @@ interface Props {
   onGoldEarned: (amount: number) => void
   bundleCost: number
   canAddBundle: boolean
+  producers: Producer[]
+  spawnClickerItemRef: MutableRefObject<(() => void) | null>
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, spawnClickerItemRef }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -25,7 +29,8 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const items = useGameLoop(board, cellSize, onGoldEarned)
+  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers)
+  spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null
 

@@ -1,0 +1,16 @@
+.sheet {
+  position: fixed;
+  bottom: 56px;
+  left: 0;
+  right: 0;
+  z-index: 21;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
+  padding: 12px 16px 24px;
+  animation: slideUp 0.25s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

@@ -2,11 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Board from './components/Board'
 import Navigation from './components/Navigation'
 import TabBar from './components/TabBar'
+import BottomSheet from './components/BottomSheet'
+import ProductionTab from './components/ProductionTab'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
-import { getBundleCost } from './config'
+import { getBundleCost, getProducerUpgradeCost } from './balance'
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
@@ -35,6 +37,8 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>(initialGameState)
   const earnedInSecRef = useRef(0)
   const lastSecRef = useRef(Date.now())
+  const spawnClickerItemRef = useRef<(() => void) | null>(null)
+  const [activeTab, setActiveTab] = useState<number | null>(null)
 
   // 초당 수익 계산 (1초마다 갱신)
   useEffect(() => {
@@ -52,6 +56,28 @@ export default function App() {
   const handleGoldEarned = useCallback((amount: number) => {
     earnedInSecRef.current += amount
     setGameState(prev => ({ ...prev, gold: prev.gold + amount }))
+  }, [])
+
+  const handleClickerClick = useCallback(() => {
+    setGameState(prev => {
+      const next = prev.clicker.clickCount + 1
+      if (next >= prev.clicker.threshold) {
+        spawnClickerItemRef.current?.()
+        return { ...prev, clicker: { ...prev.clicker, clickCount: 0 } }
+      }
+      return { ...prev, clicker: { ...prev.clicker, clickCount: next } }
+    })
+  }, [])
+
+  const handleUpgradeProducer = useCallback((index: number) => {
+    setGameState(prev => {
+      const producer = prev.producers[index]
+      const cost = getProducerUpgradeCost(producer.level)
+      if (prev.gold < cost) return prev
+      const producers = [...prev.producers]
+      producers[index] = { ...producer, level: producer.level + 1 }
+      return { ...prev, gold: prev.gold - cost, producers }
+    })
   }, [])
 
   const handleAddBundle = () => {
@@ -72,8 +98,24 @@ export default function App() {
         onGoldEarned={handleGoldEarned}
         bundleCost={bundleCost}
         canAddBundle={gameState.gold >= bundleCost}
+        producers={gameState.producers}
+        spawnClickerItemRef={spawnClickerItemRef}
       />
-      <TabBar />
+      <TabBar
+        clicker={gameState.clicker}
+        onClickerClick={handleClickerClick}
+        onTabChange={setActiveTab}
+        sheetOpen={activeTab !== null}
+      />
+      <BottomSheet open={activeTab !== null} onClose={() => setActiveTab(null)}>
+        {activeTab === 0 && (
+          <ProductionTab
+            producers={gameState.producers}
+            gold={gameState.gold}
+            onUpgrade={handleUpgradeProducer}
+          />
+        )}
+      </BottomSheet>
     </div>
   )
 }

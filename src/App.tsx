@@ -7,8 +7,10 @@ import ProductionTab from './components/ProductionTab'
 import FactoryTab from './components/FactoryTab'
 import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
+import SettingsTab from './components/SettingsTab'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
+import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
@@ -52,13 +54,24 @@ function addBundle(board: BoardType): BoardType {
 }
 
 export default function App() {
-  const [board, setBoard] = useState<BoardType>(initialBoard)
-  const [gameState, setGameState] = useState<GameState>(initialGameState)
+  const saved = loadGame()
+  const [board, setBoard] = useState<BoardType>(saved?.board ?? initialBoard)
+  const [gameState, setGameState] = useState<GameState>(saved?.gameState ?? initialGameState)
+  const [savedAt, setSavedAt] = useState<number | null>(saved?.savedAt ?? getSavedAt())
   const earnedInSecRef = useRef(0)
   const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<(() => void) | null>(null)
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
+  const [muted, setMuted] = useState<boolean>(loadMuted())
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveGame(board, gameState)
+      setSavedAt(Date.now())
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [board, gameState])
 
   useEffect(() => {
     const WINDOW = 60
@@ -167,6 +180,21 @@ export default function App() {
           f.row === row && f.col === col ? { ...f, level: f.level + 1 } : f
         ),
       }
+    })
+  }, [])
+
+  const handleHardReset = useCallback(() => {
+    deleteSave()
+    setBoard(initialBoard)
+    setGameState(initialGameState)
+    setSavedAt(null)
+    setActiveTab(null)
+  }, [])
+
+  const handleToggleMute = useCallback(() => {
+    setMuted(prev => {
+      saveMuted(!prev)
+      return !prev
     })
   }, [])
 
@@ -318,7 +346,11 @@ export default function App() {
       <TabBar
         clicker={gameState.clicker}
         onClickerClick={handleClickerClick}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab)
+          saveGame(board, gameState)
+          setSavedAt(Date.now())
+        }}
         sheetOpen={activeTab !== null}
       />
       <BottomSheet open={activeTab !== null} onClose={() => setActiveTab(null)}>
@@ -364,6 +396,14 @@ export default function App() {
             onRecallAnimal={handleRecallAnimal}
             onUpgradeRsBuffer={handleUpgradeRsBuffer}
             onUpgradeFaBuffer={handleUpgradeFaBuffer}
+          />
+        )}
+        {activeTab === 4 && (
+          <SettingsTab
+            savedAt={savedAt}
+            muted={muted}
+            onToggleMute={handleToggleMute}
+            onHardReset={handleHardReset}
           />
         )}
       </BottomSheet>

@@ -144,6 +144,24 @@
   font-weight: 600;
 }
 
+.placeButton {
+  padding: 6px 0;
+  width: 40px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.placed {
+  background: #6b7280;
+}
+
 .unlockButton {
   padding: 6px 0;
   width: 80px;

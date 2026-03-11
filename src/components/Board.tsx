@@ -5,6 +5,7 @@ import type { Board as BoardType } from '../types/board'
 import type { Producer } from '../types/producer'
 import type { Factory } from '../types/factory'
 import type { Animal } from '../types/animal'
+import type { AnimalId } from '../types/animal'
 import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
@@ -19,10 +20,14 @@ interface Props {
   producers: Producer[]
   factories: Factory[]
   animals: Animal[]
+  materialQuantityLevels: number[]
+  placingAnimalId: AnimalId | null
+  onPlaceAnimal: (row: number, col: number) => void
+  onCancelPlacing: () => void
   spawnClickerItemRef: MutableRefObject<(() => void) | null>
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, spawnClickerItemRef }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -34,7 +39,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals)
+  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels)
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null
@@ -45,10 +50,21 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
         {board.map((row, rowIdx) => (
           <div key={rowIdx} className={styles.row}>
             {row.map((cell, colIdx) => (
-              <Cell key={colIdx} cell={cell} size={cellSize} />
+              <Cell
+                key={colIdx}
+                cell={cell}
+                size={cellSize}
+                placing={!!placingAnimalId && cell.type === 'FA'}
+                onClick={placingAnimalId && cell.type === 'FA' ? () => onPlaceAnimal(rowIdx, colIdx) : undefined}
+              />
             ))}
           </div>
         ))}
+        {placingAnimalId && (
+          <button className={styles.cancelPlacing} onClick={onCancelPlacing}>
+            배치 취소
+          </button>
+        )}
         <ItemLayer items={items} cellSize={cellSize} />
       </div>
       <button

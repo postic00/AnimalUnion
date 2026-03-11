@@ -52,6 +52,10 @@ export const CONFIG = {
   ITEM_VALUE_LEVEL_COST_EXPONENT: 2,     // 레벨업 비용 지수
   ITEM_VALUE_PER_LEVEL: 1,              // 레벨당 가치 증가량
 
+  // 재료 수량
+  MATERIAL_QUANTITY_COST_BASE: 10,     // 수량 레벨업 기본 비용 (골드)
+  MATERIAL_QUANTITY_COST_EXPONENT: 3,  // 수량 레벨업 비용 지수
+
   // 동물
   ANIMAL_UNLOCK_COST: 1,               // 해금 비용 (포인트)
   ANIMAL_UPGRADE_COST_BASE: 1,         // 업그레이드 비용 기준

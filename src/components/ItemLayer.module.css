@@ -9,4 +9,23 @@
   position: absolute;
   background-color: #22c55e;
   border: 2px solid #16a34a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.grade {
+  font-size: 9px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.quantity {
+  font-size: 9px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
 }

@@ -1,5 +1,7 @@
 import { CONFIG } from './config'
 import type { Factory } from './types/factory'
+import type { Item } from './types/item'
+import type { Animal } from './types/animal'
 
 // 라인 확장 비용: BASE * (count+1)^EXPONENT
 export function getBundleCost(bundleCount: number): number {
@@ -73,8 +75,38 @@ export function getFactoryBonus(type: Factory['type'], grade: number): number {
 }
 
 // 아이템 최종 골드 계산
-export function getFinalGold(value: number, waBonus: number, paBonus: number, pkBonus: number): number {
-  return value * (1 + waBonus) * (1 + paBonus) * (1 + pkBonus)
+export function getFinalGold(item: Item): number {
+  return item.value * item.quantity * (1 + item.waBonus) * (1 + item.paBonus) * (1 + item.pkBonus)
+}
+
+// FA 보너스 적용 (공장 처리 후 아이템 수치 갱신)
+export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[]): Item {
+  const { type, grade } = factory
+  if (grade === 0) return item
+  const baseBonus = getFactoryBonus(type, grade)
+  const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
+  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const bonus = baseBonus + animalBonus
+  if (type === 'WA') {
+    if (item.waGrades.includes(grade)) return item
+    return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
+  } else if (type === 'PA') {
+    if (item.paGrades.includes(grade)) return item
+    return { ...item, paBonus: item.paBonus + bonus, paGrades: [...item.paGrades, grade] }
+  } else {
+    if (item.pkGrades.includes(grade)) return item
+    return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
+  }
+}
+
+// 재료 수량: 2^(level-1)
+export function getMaterialQuantity(level: number): number {
+  return Math.pow(2, level - 1)
+}
+
+// 재료 수량 레벨업 비용
+export function getMaterialQuantityLevelCost(level: number): number {
+  return Math.floor(CONFIG.MATERIAL_QUANTITY_COST_BASE * Math.pow(level, CONFIG.MATERIAL_QUANTITY_COST_EXPONENT))
 }
 
 // 동물 해금 비용

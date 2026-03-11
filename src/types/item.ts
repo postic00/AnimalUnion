@@ -6,7 +6,9 @@ export interface Item {
   dy: number
   targetX: number // 다음 셀 중앙 (waypoint)
   targetY: number
+  grade: number   // 재료 등급 (1~20)
   value: number   // RE 도달 시 획득 골드 (기본값)
+  quantity: number // 재료 수량 (1, 2, 4, 8...)
   waBonus: number    // 누적 WA 보너스
   paBonus: number    // 누적 PA 보너스
   pkBonus: number    // 누적 PK 보너스

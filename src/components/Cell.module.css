@@ -17,4 +17,6 @@
 .RU { background-color: #60a5fa; }
 .RD { background-color: #60a5fa; }
 .FA { background-color: #d97706; }
+.placing { background-color: #f59e0b; outline: 3px solid #fbbf24; animation: pulse 0.8s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
 .CR { background-color: #7c3aed; }

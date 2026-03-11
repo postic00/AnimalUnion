@@ -19,9 +19,11 @@ interface Props {
   onLevelUpItemValue: (gradeIndex: number) => void
   onUnlockAnimal: (id: AnimalId) => void
   onUpgradeAnimal: (id: AnimalId) => void
+  onStartPlacing: (id: AnimalId) => void
+  onRecallAnimal: (id: AnimalId) => void
 }
 
-export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal }: Props) {
+export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal }: Props) {
   const { totalEarned, prestigePoints, itemValueLevels, animals } = gameState
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
@@ -72,6 +74,7 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, on
       {animalOpen && ANIMAL_IDS.map(id => {
         const animal = animals.find(a => a.id === id)!
         const upgradeCost = getAnimalUpgradeCost(animal.level)
+        const isPlaced = gameState.factories.some(f => f.animalId === id)
         return (
           <div key={id} className={styles.gradeRow}>
             <span className={styles.gradeName}>{ANIMAL_NAMES[id]}</span>
@@ -79,6 +82,12 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, on
               <>
                 <span className={styles.gradeStat}>+{formatNumber(getAnimalStat(animal.level) * 100)}%</span>
                 <span className={styles.gradeLv}>Lv.{formatNumber(animal.level)}</span>
+                <button
+                  className={`${styles.placeButton} ${isPlaced ? styles.placed : ''}`}
+                  onClick={() => isPlaced ? onRecallAnimal(id) : onStartPlacing(id)}
+                >
+                  {isPlaced ? '회수' : '배치'}
+                </button>
                 <button className={styles.unlockButton} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
                   ⭐{formatGold(upgradeCost)}
                 </button>

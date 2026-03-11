@@ -1,17 +1,19 @@
 import type { Producer } from '../types/producer'
-import { getProducerValue, getProducerUpgradeCost, getProducerBuildCost } from '../balance'
-import { formatGold } from '../utils/formatGold'
+import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity } from '../balance'
+import { formatGold, formatQuantity } from '../utils/formatGold'
 import styles from './ProductionTab.module.css'
 
 interface Props {
   producers: Producer[]
   gold: number
+  materialQuantityLevels: number[]
   onBuild: (index: number) => void
   onUpgrade: (index: number) => void
 }
 
-export default function ProductionTab({ producers, gold, onBuild, onUpgrade }: Props) {
+export default function ProductionTab({ producers, gold, materialQuantityLevels, onBuild, onUpgrade }: Props) {
   const buildCost = getProducerBuildCost()
+  const quantity = getMaterialQuantity(materialQuantityLevels[0] ?? 1)
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>생산</h2>
@@ -39,7 +41,7 @@ export default function ProductionTab({ producers, gold, onBuild, onUpgrade }: P
             <div className={styles.info}>
               <span className={styles.name}>생산기 {index + 1}</span>
               <span className={styles.level}>
-                {producer.level === 0 ? '비활성' : '가동중'}
+                {producer.level === 0 ? '비활성' : `가동중 x${formatQuantity(quantity)}`}
               </span>
             </div>
             <div className={styles.btnGroup}>

@@ -6,6 +6,7 @@ import BottomSheet from './components/BottomSheet'
 import ProductionTab from './components/ProductionTab'
 import FactoryTab from './components/FactoryTab'
 import PrestigeTab from './components/PrestigeTab'
+import MaterialTab from './components/MaterialTab'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import type { Board as BoardType, Cell } from './types/board'
@@ -23,6 +24,7 @@ import {
   getAnimalUpgradeCost,
   getItemValueResetRefund,
   getAnimalResetRefund,
+  getMaterialQuantityLevelCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
 
@@ -52,18 +54,23 @@ export default function App() {
   const [board, setBoard] = useState<BoardType>(initialBoard)
   const [gameState, setGameState] = useState<GameState>(initialGameState)
   const earnedInSecRef = useRef(0)
-  const lastSecRef = useRef(Date.now())
+  const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<(() => void) | null>(null)
+  const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
 
   useEffect(() => {
+    const WINDOW = 60
     const interval = setInterval(() => {
-      const now = Date.now()
-      const elapsed = (now - lastSecRef.current) / 1000
-      const perSec = Math.round(earnedInSecRef.current / elapsed)
-      setGameState(prev => ({ ...prev, goldPerSec: perSec }))
+      const bucket = earnedInSecRef.current
       earnedInSecRef.current = 0
-      lastSecRef.current = now
+      bucketHistoryRef.current.push(bucket)
+      if (bucketHistoryRef.current.length > WINDOW) {
+        bucketHistoryRef.current.shift()
+      }
+      const total = bucketHistoryRef.current.reduce((a, b) => a + b, 0)
+      const perSec = Math.round(total / bucketHistoryRef.current.length)
+      setGameState(prev => ({ ...prev, goldPerSec: perSec }))
     }, 1000)
     return () => clearInterval(interval)
   }, [])
@@ -172,6 +179,7 @@ export default function App() {
       producers: initialGameState.producers,
       factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
       totalEarned: 0,
+      materialQuantityLevels: initialGameState.materialQuantityLevels,
       prestigeCount: prev.prestigeCount + 1,
       prestigePoints: prev.prestigePoints + getPrestigePoints(prev.totalEarned),
     }))
@@ -222,6 +230,27 @@ export default function App() {
     }))
   }, [])
 
+  const handleStartPlacing = useCallback((id: AnimalId) => {
+    setPlacingAnimalId(id)
+    setActiveTab(null)
+  }, [])
+
+  const handlePlaceAnimal = useCallback((row: number, col: number) => {
+    if (!placingAnimalId) return
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId: placingAnimalId } : f),
+    }))
+    setPlacingAnimalId(null)
+  }, [placingAnimalId])
+
+  const handleRecallAnimal = useCallback((id: AnimalId) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
+    }))
+  }, [])
+
   const handleLevelUpItemValue = useCallback((gradeIndex: number) => {
     setGameState(prev => {
       const level = prev.itemValueLevels[gradeIndex] ?? 1
@@ -230,6 +259,17 @@ export default function App() {
       const itemValueLevels = [...prev.itemValueLevels]
       itemValueLevels[gradeIndex] = level + 1
       return { ...prev, prestigePoints: prev.prestigePoints - cost, itemValueLevels }
+    })
+  }, [])
+
+  const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number) => {
+    setGameState(prev => {
+      const level = prev.materialQuantityLevels[gradeIndex] ?? 1
+      const cost = getMaterialQuantityLevelCost(level)
+      if (prev.gold < cost) return prev
+      const materialQuantityLevels = [...prev.materialQuantityLevels]
+      materialQuantityLevels[gradeIndex] = level + 1
+      return { ...prev, gold: prev.gold - cost, materialQuantityLevels }
     })
   }, [])
 
@@ -247,6 +287,10 @@ export default function App() {
         producers={gameState.producers}
         factories={gameState.factories}
         animals={gameState.animals}
+        materialQuantityLevels={gameState.materialQuantityLevels}
+        placingAnimalId={placingAnimalId}
+        onPlaceAnimal={handlePlaceAnimal}
+        onCancelPlacing={() => setPlacingAnimalId(null)}
         spawnClickerItemRef={spawnClickerItemRef}
       />
       <TabBar
@@ -260,6 +304,7 @@ export default function App() {
           <ProductionTab
             producers={gameState.producers}
             gold={gameState.gold}
+            materialQuantityLevels={gameState.materialQuantityLevels}
             onBuild={handleBuildProducer}
             onUpgrade={handleUpgradeProducer}
           />
@@ -280,6 +325,12 @@ export default function App() {
           />
         )}
         {activeTab === 2 && (
+          <MaterialTab
+            gameState={gameState}
+            onUpgradeQuantity={handleUpgradeMaterialQuantity}
+          />
+        )}
+        {activeTab === 3 && (
           <PrestigeTab
             gameState={gameState}
             onPrestige={handlePrestige}
@@ -287,6 +338,8 @@ export default function App() {
             onLevelUpItemValue={handleLevelUpItemValue}
             onUnlockAnimal={handleUnlockAnimal}
             onUpgradeAnimal={handleUpgradeAnimal}
+            onStartPlacing={handleStartPlacing}
+            onRecallAnimal={handleRecallAnimal}
           />
         )}
       </BottomSheet>

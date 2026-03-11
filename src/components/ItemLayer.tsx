@@ -1,5 +1,6 @@
 import type { Item } from '../types/item'
 import { CONFIG } from '../config'
+import { formatQuantity } from '../utils/formatGold'
 import styles from './ItemLayer.module.css'
 
 interface Props {
@@ -23,7 +24,12 @@ export default function ItemLayer({ items, cellSize }: Props) {
             left: item.x - size / 2,
             top: item.y - size / 2,
           }}
-        />
+        >
+          <span className={styles.grade}>{item.grade}</span>
+          {item.quantity > 1 && (
+            <span className={styles.quantity}>x{formatQuantity(item.quantity)}</span>
+          )}
+        </div>
       ))}
     </div>
   )

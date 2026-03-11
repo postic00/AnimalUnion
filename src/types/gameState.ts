@@ -16,6 +16,7 @@ export interface GameState {
   prestigeCount: number
   prestigePoints: number
   itemValueLevels: number[]  // 인덱스 = 아이템 등급-1, 값 = 가치 레벨
+  materialQuantityLevels: number[]  // 등급별 재료 수량 레벨 (환생 시 리셋)
   animals: Animal[]          // 환생 유지
 }
 
@@ -34,5 +35,6 @@ export const initialGameState: GameState = {
   prestigeCount: 0,
   prestigePoints: 100_000_000_000_000,
   itemValueLevels: Array(20).fill(1),
+  materialQuantityLevels: Array(20).fill(1),
   animals: initialAnimals,
 }

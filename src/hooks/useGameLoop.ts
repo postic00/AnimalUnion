@@ -4,7 +4,7 @@ import type { Board } from '../types/board'
 import type { Item } from '../types/item'
 import type { Producer } from '../types/producer'
 import type { Factory } from '../types/factory'
-import { getProducerValue, getProducerInterval, getFinalGold, getFactoryBonus, getFactoryPickTime, getAnimalStat } from '../balance'
+import { getProducerValue, getProducerInterval, getFinalGold, getFactoryPickTime, getMaterialQuantity, applyFactoryBonus } from '../balance'
 import type { Animal } from '../types/animal'
 import {
   getCellCenter,
@@ -22,24 +22,6 @@ interface FAState {
   heldItem: Item | null
 }
 
-function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[]): Item {
-  const { type, grade } = factory
-  if (grade === 0) return item
-  const baseBonus = getFactoryBonus(type, grade)
-  const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
-  const animalBonus = animal ? getAnimalStat(animal.level) : 0
-  const bonus = baseBonus + animalBonus
-  if (type === 'WA') {
-    if (item.waGrades.includes(grade)) return item
-    return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
-  } else if (type === 'PA') {
-    if (item.paGrades.includes(grade)) return item
-    return { ...item, paBonus: item.paBonus + bonus, paGrades: [...item.paGrades, grade] }
-  } else {
-    if (item.pkGrades.includes(grade)) return item
-    return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
-  }
-}
 
 function getNextTarget(
   board: Board,
@@ -72,11 +54,13 @@ export function useGameLoop(
   producers: Producer[],
   factories: Factory[],
   animals: Animal[],
+  materialQuantityLevels: number[],
 ) {
   const [items, setItems] = useState<Item[]>([])
   const itemsRef = useRef<Item[]>([])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
+  const produceCountersRef = useRef<Record<string, number>>({})
   const onGoldEarnedRef = useRef(onGoldEarned)
   onGoldEarnedRef.current = onGoldEarned
   const producersRef = useRef(producers)
@@ -87,6 +71,8 @@ export function useGameLoop(
   animalsRef.current = animals
   const faStatesRef = useRef<Record<string, FAState>>({})
   const pendingClickerSpawnsRef = useRef(0)
+  const materialQuantityLevelsRef = useRef(materialQuantityLevels)
+  materialQuantityLevelsRef.current = materialQuantityLevels
 
   useEffect(() => {
     if (cellSize === 0) return
@@ -122,6 +108,13 @@ export function useGameLoop(
           if (produceTimersRef.current[key] >= getProducerInterval(producer.level)) {
             produceTimersRef.current[key] = 0
 
+            const grade = 1
+            const quantity = getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1)
+            produceCountersRef.current[key] = (produceCountersRef.current[key] ?? 0) + 1
+
+            if (produceCountersRef.current[key] < quantity) return
+            produceCountersRef.current[key] = 0
+
             let rsRow = -1, rsCol = -1
             for (let r = rowIdx + 1; r < board.length; r++) {
               for (let c = 0; c < board[r].length; c++) {
@@ -150,7 +143,9 @@ export function useGameLoop(
               dy: dir.dy,
               targetX: next.targetX,
               targetY: next.targetY,
+              grade,
               value: getProducerValue(),
+              quantity,
               waBonus: 0,
               paBonus: 0,
               pkBonus: 0,
@@ -287,7 +282,9 @@ export function useGameLoop(
           x: center.x, y: center.y,
           dx: dir.dx, dy: dir.dy,
           targetX: next.targetX, targetY: next.targetY,
+          grade: 1,
           value: 1,
+          quantity: getMaterialQuantity(materialQuantityLevelsRef.current[0] ?? 1),
           waBonus: 0, paBonus: 0, pkBonus: 0,
           waGrades: [], paGrades: [], pkGrades: [],
         }]
@@ -302,7 +299,7 @@ export function useGameLoop(
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
         if (dist > cellSize * 0.3) return true
-        onGoldEarnedRef.current(getFinalGold(item.value, item.waBonus, item.paBonus, item.pkBonus))
+        onGoldEarnedRef.current(getFinalGold(item))
         return false
       })
 

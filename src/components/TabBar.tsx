@@ -24,7 +24,7 @@ export default function TabBar({ clicker, onClickerClick, onTabChange, sheetOpen
 
   return (
     <div className={styles.tabBar}>
-      {['생산', '공장', '환생'].map((label, i) => (
+      {['생산', '공장', '재료', '환생'].map((label, i) => (
         <div key={i} className={styles.tab} onClick={() => handleTab(i)}>
           {label}
         </div>

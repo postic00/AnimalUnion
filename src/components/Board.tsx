@@ -21,13 +21,16 @@ interface Props {
   factories: Factory[]
   animals: Animal[]
   materialQuantityLevels: number[]
+  itemValueLevels: number[]
+  faBufferLevel: number
+  rsBufferLevel: number
   placingAnimalId: AnimalId | null
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
   spawnClickerItemRef: MutableRefObject<(() => void) | null>
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels)
+  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null

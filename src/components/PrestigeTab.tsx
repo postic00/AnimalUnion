@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { GameState } from '../types/gameState'
 import type { AnimalId } from '../types/animal'
 import { ANIMAL_NAMES, ANIMAL_IDS } from '../types/animal'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat } from '../balance'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
 import { formatGold, formatNumber } from '../utils/formatGold'
 import { CONFIG } from '../config'
 import styles from './PrestigeTab.module.css'
@@ -21,14 +21,17 @@ interface Props {
   onUpgradeAnimal: (id: AnimalId) => void
   onStartPlacing: (id: AnimalId) => void
   onRecallAnimal: (id: AnimalId) => void
+  onUpgradeRsBuffer: () => void
+  onUpgradeFaBuffer: () => void
 }
 
-export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal }: Props) {
-  const { totalEarned, prestigePoints, itemValueLevels, animals } = gameState
+export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
+  const { totalEarned, prestigePoints, itemValueLevels, animals, rsBufferLevel, faBufferLevel } = gameState
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
   const [itemOpen, setItemOpen] = useState(true)
   const [animalOpen, setAnimalOpen] = useState(true)
+  const [bufferOpen, setBufferOpen] = useState(true)
   const unlockCost = getAnimalUnlockCost()
 
   return (
@@ -59,7 +62,7 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, on
         return (
           <div key={grade} className={styles.gradeRow}>
             <span className={styles.gradeName}>{grade}. {name}</span>
-            <span className={styles.gradeValue}>🪙{formatGold(getItemValue(level))}</span>
+            <span className={styles.gradeValue}>🪙{formatGold(getItemValue(grade, level))}</span>
             <button className={styles.unlockButton} onClick={() => onLevelUpItemValue(i)} disabled={prestigePoints < cost}>
               ⭐{formatGold(cost)}
             </button>
@@ -100,6 +103,30 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeReset, on
           </div>
         )
       })}
+      <button className={styles.sectionHeader} onClick={() => setBufferOpen(v => !v)}>
+        <span className={styles.title}>공장/레일 버퍼</span>
+        <span className={styles.floorArrow}>{bufferOpen ? '▲' : '▼'}</span>
+      </button>
+      {bufferOpen && (
+        <>
+          <div className={styles.gradeRow}>
+            <span className={styles.gradeName}>RS 버퍼</span>
+            <span className={styles.gradeValue}>x{getRsBufferCapacity(rsBufferLevel)}</span>
+            <span className={styles.gradeLv}>Lv.{rsBufferLevel}</span>
+            <button className={styles.unlockButton} onClick={onUpgradeRsBuffer} disabled={prestigePoints < getBufferUpgradeCost(rsBufferLevel)}>
+              ⭐{formatGold(getBufferUpgradeCost(rsBufferLevel))}
+            </button>
+          </div>
+          <div className={styles.gradeRow}>
+            <span className={styles.gradeName}>FA 버퍼</span>
+            <span className={styles.gradeValue}>x{getFaBufferCapacity(faBufferLevel)}</span>
+            <span className={styles.gradeLv}>Lv.{faBufferLevel}</span>
+            <button className={styles.unlockButton} onClick={onUpgradeFaBuffer} disabled={prestigePoints < getBufferUpgradeCost(faBufferLevel)}>
+              ⭐{formatGold(getBufferUpgradeCost(faBufferLevel))}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

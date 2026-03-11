@@ -1,7 +1,6 @@
 export const CONFIG = {
   // 기술적 고정값
   MOVE_SPEED: 1200,              // 레일 한 칸 이동 시간 (ms)
-  PICK_TIME: 800,                // FA 아이템 집는 시간 (ms)
   ITEM_SIZE_RATIO: 0.7,          // 아이템 크기 (cellSize 대비)
 
   // 밸런스 상수
@@ -22,9 +21,10 @@ export const CONFIG = {
   PA_BONUS: Array(20).fill(0.3) as number[],  // PA 등급당 +30%
   PK_BONUS: Array(20).fill(0.5) as number[],  // PK 등급당 +50%
 
-  // FA 처리 시간
-  FA_PICK_TIME: 800,             // 기본 처리 시간 (ms)
-  FA_PICK_TIME_MULTIPLIER: 1,    // 레벨당 감소 배수
+  // FA 처리 시간 (잡기/처리 분리)
+  FA_PICK_TIME: 200,             // 잡기/놓기 시간 (ms, 고정)
+  FA_PROCESS_TIME_BASE: 800,     // 처리 기본 시간 (ms, 수량×레벨 연산)
+  FA_LEVEL_EFFICIENCY: 1,        // 레벨당 처리속도 증가 배수
 
   // FA 건설 비용
   FA_BUILD_COST_BASE: 1,
@@ -47,19 +47,37 @@ export const CONFIG = {
   PRESTIGE_POINTS_DIVISOR: 100_000_000,  // 포인트 1당 누적수입
   PRODUCT_GRADE_MAX: 20,                 // 최대 Product 등급
 
+  // 아이템 등급별 기본 가격
+  GRADE_BASE_VALUES: [
+    1, 3, 6, 10, 20, 35, 55, 80, 120, 180,
+    250, 350, 500, 700, 1000, 1400, 2000, 3000, 5000, 10000,
+  ] as number[],
+
   // 아이템 기본 가격 레벨업
-  ITEM_VALUE_LEVEL_COST_BASE: 1,         // 레벨업 비용 기준
-  ITEM_VALUE_LEVEL_COST_EXPONENT: 2,     // 레벨업 비용 지수
-  ITEM_VALUE_PER_LEVEL: 1,              // 레벨당 가치 증가량
+  ITEM_VALUE_LEVEL_COST_BASE: 1,
+  ITEM_VALUE_LEVEL_COST_EXPONENT: 2,
+  ITEM_VALUE_PER_LEVEL: 1,
 
   // 재료 수량
-  MATERIAL_QUANTITY_COST_BASE: 10,     // 수량 레벨업 기본 비용 (골드)
-  MATERIAL_QUANTITY_COST_EXPONENT: 3,  // 수량 레벨업 비용 지수
+  MATERIAL_QUANTITY_COST_BASE: 10,
+  MATERIAL_QUANTITY_COST_EXPONENT: 3,
+
+  // RS 버퍼
+  RS_BUFFER_BASE: 3,
+  RS_BUFFER_PER_LEVEL: 2,
+
+  // FA 버퍼
+  FA_BUFFER_BASE: 20,
+  FA_BUFFER_PER_LEVEL: 10,
+
+  // 버퍼 업그레이드 비용
+  BUFFER_UPGRADE_COST_BASE: 1,
+  BUFFER_UPGRADE_COST_EXPONENT: 2,
 
   // 동물
-  ANIMAL_UNLOCK_COST: 1,               // 해금 비용 (포인트)
-  ANIMAL_UPGRADE_COST_BASE: 1,         // 업그레이드 비용 기준
-  ANIMAL_UPGRADE_COST_EXPONENT: 2,     // 업그레이드 비용 지수
-  ANIMAL_STAT_BASE: 0.1,               // 레벨 1 stat (보너스 +10%)
-  ANIMAL_STAT_PER_LEVEL: 0.05,         // 레벨당 stat 증가 (+5%)
+  ANIMAL_UNLOCK_COST: 1,
+  ANIMAL_UPGRADE_COST_BASE: 1,
+  ANIMAL_UPGRADE_COST_EXPONENT: 2,
+  ANIMAL_STAT_BASE: 0.1,
+  ANIMAL_STAT_PER_LEVEL: 0.05,
 } as const

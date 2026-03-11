@@ -3,7 +3,7 @@ import type { Factory } from './types/factory'
 import type { Item } from './types/item'
 import type { Animal } from './types/animal'
 
-// 라인 확장 비용: BASE * (count+1)^EXPONENT
+// 라인 확장 비용
 export function getBundleCost(bundleCount: number): number {
   return Math.floor(CONFIG.BUNDLE_COST_BASE * Math.pow(bundleCount + 1, CONFIG.BUNDLE_COST_EXPONENT))
 }
@@ -13,28 +13,29 @@ export function getProducerBuildCost(): number {
   return Math.floor(CONFIG.PR_BUILD_COST_BASE * Math.pow(1, CONFIG.PR_BUILD_COST_EXPONENT))
 }
 
-// PR 업그레이드 비용: BASE * (level+1)^EXPONENT
+// PR 업그레이드 비용
 export function getProducerUpgradeCost(level: number): number {
   return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level + 1, CONFIG.PRODUCER_UPGRADE_EXPONENT))
 }
 
-// PR 생산 주기: PRODUCE_INTERVAL / (level * MULTIPLIER)
+// PR 생산 주기
 export function getProducerInterval(level: number): number {
   if (level === 0) return Infinity
   return CONFIG.PRODUCE_INTERVAL / (level * CONFIG.PRODUCE_INTERVAL_MULTIPLIER)
 }
 
-// 아이템 가치: itemValueLevel 반영
-export function getItemValue(itemValueLevel = 1): number {
-  return CONFIG.ITEM_BASE_VALUE + (itemValueLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL
+// 아이템 가치: 등급 기본값 × 가치레벨 배수
+export function getItemValue(grade: number, itemValueLevel = 1): number {
+  const baseValue = CONFIG.GRADE_BASE_VALUES[Math.min(grade - 1, 19)]
+  return baseValue * (1 + (itemValueLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL)
 }
 
-// PR 아이템 가치 (하위호환)
-export function getProducerValue(itemValueLevel = 1): number {
-  return getItemValue(itemValueLevel)
+// PR 아이템 가치
+export function getProducerValue(grade: number, itemValueLevel = 1): number {
+  return getItemValue(grade, itemValueLevel)
 }
 
-// 아이템 가치 레벨업 비용: BASE * level^EXPONENT
+// 아이템 가치 레벨업 비용
 export function getItemValueLevelCost(level: number): number {
   return Math.floor(CONFIG.ITEM_VALUE_LEVEL_COST_BASE * Math.pow(level, CONFIG.ITEM_VALUE_LEVEL_COST_EXPONENT))
 }
@@ -49,20 +50,25 @@ export function getFactoryBuildCost(): number {
   return Math.floor(CONFIG.FA_BUILD_COST_BASE * Math.pow(1, CONFIG.FA_BUILD_COST_EXPONENT))
 }
 
-// FA 등급 업그레이드 비용: BASE * (grade+1)^EXPONENT
+// FA 등급 업그레이드 비용
 export function getFactoryGradeUpgradeCost(grade: number): number {
   return Math.floor(CONFIG.FA_GRADE_UPGRADE_BASE * Math.pow(grade + 1, CONFIG.FA_GRADE_UPGRADE_EXPONENT))
 }
 
-// FA 레벨 업그레이드 비용: BASE * (level+1)^EXPONENT
+// FA 레벨 업그레이드 비용
 export function getFactoryLevelUpgradeCost(level: number): number {
   return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level + 1, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
 }
 
-// FA 처리 시간: PICK_TIME / (level * MULTIPLIER)
-export function getFactoryPickTime(level: number): number {
-  if (level === 0) return CONFIG.FA_PICK_TIME
-  return CONFIG.FA_PICK_TIME / (level * CONFIG.FA_PICK_TIME_MULTIPLIER)
+// FA 잡기/놓기 시간 (고정)
+export function getFactoryPickTime(): number {
+  return CONFIG.FA_PICK_TIME
+}
+
+// FA 처리 시간: PROCESS_TIME_BASE × quantity / (level × EFFICIENCY)
+export function getFactoryProcessTime(level: number, quantity: number): number {
+  if (level === 0) return CONFIG.FA_PROCESS_TIME_BASE * quantity
+  return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / (level * CONFIG.FA_LEVEL_EFFICIENCY)
 }
 
 // FA 등급 보너스
@@ -79,24 +85,51 @@ export function getFinalGold(item: Item): number {
   return item.value * item.quantity * (1 + item.waBonus) * (1 + item.paBonus) * (1 + item.pkBonus)
 }
 
-// FA 보너스 적용 (공장 처리 후 아이템 수치 갱신)
-export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[]): Item {
-  const { type, grade } = factory
+// WA 보너스 적용 (가치만 증가, 등급 변경 없음)
+export function applyWaBonus(item: Item, factory: Factory, animals: Animal[]): Item {
+  const { grade } = factory
   if (grade === 0) return item
-  const baseBonus = getFactoryBonus(type, grade)
+  if (item.waGrades.includes(grade)) return item
   const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
   const animalBonus = animal ? getAnimalStat(animal.level) : 0
-  const bonus = baseBonus + animalBonus
-  if (type === 'WA') {
-    if (item.waGrades.includes(grade)) return item
-    return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
-  } else if (type === 'PA') {
-    if (item.paGrades.includes(grade)) return item
-    return { ...item, paBonus: item.paBonus + bonus, paGrades: [...item.paGrades, grade] }
-  } else {
-    if (item.pkGrades.includes(grade)) return item
-    return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
+  const bonus = getFactoryBonus('WA', grade) + animalBonus
+  return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
+}
+
+// PA/PK 출력 아이템 생성 (레시피 조합 결과)
+export function createRecipeOutput(
+  outputGrade: number,
+  factory: Factory,
+  animals: Animal[],
+  itemValueLevel: number,
+  materialQuantityLevel: number,
+): Item {
+  const quantity = getMaterialQuantity(materialQuantityLevel)
+  const value = getItemValue(outputGrade, itemValueLevel)
+  const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
+  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const bonus = getFactoryBonus(factory.type, factory.grade) + animalBonus
+  const paBonus = factory.type === 'PA' ? bonus : 0
+  const pkBonus = factory.type === 'PK' ? bonus : 0
+  return {
+    id: '',  // caller sets id
+    x: 0, y: 0, dx: 0, dy: 0, targetX: 0, targetY: 0,
+    grade: outputGrade,
+    value,
+    quantity,
+    waBonus: 0,
+    paBonus,
+    pkBonus,
+    waGrades: [],
+    paGrades: factory.type === 'PA' && factory.grade > 0 ? [factory.grade] : [],
+    pkGrades: factory.type === 'PK' && factory.grade > 0 ? [factory.grade] : [],
   }
+}
+
+// FA 보너스 적용 (하위호환 - WA용)
+export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[]): Item {
+  if (factory.type === 'WA') return applyWaBonus(item, factory, animals)
+  return item
 }
 
 // 재료 수량: 2^(level-1)
@@ -109,17 +142,32 @@ export function getMaterialQuantityLevelCost(level: number): number {
   return Math.floor(CONFIG.MATERIAL_QUANTITY_COST_BASE * Math.pow(level, CONFIG.MATERIAL_QUANTITY_COST_EXPONENT))
 }
 
+// RS 버퍼 용량
+export function getRsBufferCapacity(level: number): number {
+  return CONFIG.RS_BUFFER_BASE + (level - 1) * CONFIG.RS_BUFFER_PER_LEVEL
+}
+
+// FA 버퍼 용량
+export function getFaBufferCapacity(level: number): number {
+  return CONFIG.FA_BUFFER_BASE + (level - 1) * CONFIG.FA_BUFFER_PER_LEVEL
+}
+
+// 버퍼 업그레이드 비용
+export function getBufferUpgradeCost(level: number): number {
+  return Math.floor(CONFIG.BUFFER_UPGRADE_COST_BASE * Math.pow(level, CONFIG.BUFFER_UPGRADE_COST_EXPONENT))
+}
+
 // 동물 해금 비용
 export function getAnimalUnlockCost(): number {
   return CONFIG.ANIMAL_UNLOCK_COST
 }
 
-// 동물 업그레이드 비용: BASE * level^EXPONENT
+// 동물 업그레이드 비용
 export function getAnimalUpgradeCost(level: number): number {
   return Math.floor(CONFIG.ANIMAL_UPGRADE_COST_BASE * Math.pow(level, CONFIG.ANIMAL_UPGRADE_COST_EXPONENT))
 }
 
-// 동물 stat: BASE + (level-1) * PER_LEVEL
+// 동물 stat
 export function getAnimalStat(level: number): number {
   return CONFIG.ANIMAL_STAT_BASE + (level - 1) * CONFIG.ANIMAL_STAT_PER_LEVEL
 }
@@ -152,7 +200,28 @@ export function getPrestigePoints(totalEarned: number): number {
   return Math.floor(totalEarned / CONFIG.PRESTIGE_POINTS_DIVISOR)
 }
 
-// productGrade 해금 비용: 2^(grade-2) 포인트
+// productGrade 해금 비용
 export function getProductGradeUnlockCost(grade: number): number {
   return Math.pow(2, grade - 2)
+}
+
+// 조합 레시피 정의 (outputGrade → 필요 재료)
+export const RECIPES: Record<number, { grade: number; count: number }[]> = {
+  4:  [{ grade: 1, count: 2 }],
+  5:  [{ grade: 2, count: 2 }],
+  6:  [{ grade: 3, count: 2 }],
+  7:  [{ grade: 5, count: 3 }],
+  8:  [{ grade: 4, count: 2 }, { grade: 6, count: 1 }],
+  9:  [{ grade: 5, count: 2 }, { grade: 7, count: 1 }],
+  10: [{ grade: 8, count: 2 }, { grade: 4, count: 2 }],
+  11: [{ grade: 9, count: 2 }, { grade: 7, count: 2 }],
+  12: [{ grade: 10, count: 2 }, { grade: 11, count: 2 }, { grade: 3, count: 3 }],
+  13: [{ grade: 12, count: 1 }, { grade: 10, count: 2 }],
+  14: [{ grade: 12, count: 1 }, { grade: 11, count: 2 }],
+  15: [{ grade: 13, count: 2 }, { grade: 8, count: 2 }],
+  16: [{ grade: 14, count: 2 }, { grade: 9, count: 2 }],
+  17: [{ grade: 15, count: 2 }, { grade: 12, count: 2 }],
+  18: [{ grade: 16, count: 3 }, { grade: 14, count: 2 }],
+  19: [{ grade: 17, count: 2 }, { grade: 15, count: 2 }, { grade: 12, count: 2 }],
+  20: [{ grade: 19, count: 1 }, { grade: 18, count: 1 }],
 }

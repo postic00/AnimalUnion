@@ -18,6 +18,8 @@ export interface GameState {
   itemValueLevels: number[]  // 인덱스 = 아이템 등급-1, 값 = 가치 레벨
   materialQuantityLevels: number[]  // 등급별 재료 수량 레벨 (환생 시 리셋)
   animals: Animal[]          // 환생 유지
+  rsBufferLevel: number      // RS 버퍼 레벨 (환생 유지)
+  faBufferLevel: number      // FA 버퍼 레벨 (환생 유지)
 }
 
 export const initialGameState: GameState = {
@@ -25,9 +27,9 @@ export const initialGameState: GameState = {
   goldPerSec: 0,
   bundleCount: 0,
   producers: [
-    { row: 0, col: 1, built: false, level: 0 },
-    { row: 0, col: 3, built: false, level: 0 },
-    { row: 0, col: 5, built: false, level: 0 },
+    { row: 0, col: 1, built: false, level: 0, grade: 1 },
+    { row: 0, col: 3, built: false, level: 0, grade: 2 },
+    { row: 0, col: 5, built: false, level: 0, grade: 3 },
   ],
   clicker: { clickCount: 0, threshold: 2 },
   factories: [],
@@ -37,4 +39,6 @@ export const initialGameState: GameState = {
   itemValueLevels: Array(20).fill(1),
   materialQuantityLevels: Array(20).fill(1),
   animals: initialAnimals,
+  rsBufferLevel: 1,
+  faBufferLevel: 1,
 }

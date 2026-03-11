@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- 귀 (머리 뒤) -->
+  <circle cx="270" cy="270" r="130" fill="#1a1a1a"/>
+  <circle cx="754" cy="270" r="130" fill="#1a1a1a"/>
+  <circle cx="270" cy="270" r="105" fill="#f59e0b"/>
+  <circle cx="754" cy="270" r="105" fill="#f59e0b"/>
+  <circle cx="270" cy="270" r="68" fill="#fda4af"/>
+  <circle cx="754" cy="270" r="68" fill="#fda4af"/>
+
+  <!-- 머리 -->
+  <circle cx="512" cy="560" r="370" fill="#1a1a1a"/>
+  <circle cx="512" cy="560" r="348" fill="#f59e0b"/>
+
+  <!-- 얼굴 (밝은 부분) -->
+  <ellipse cx="512" cy="610" rx="240" ry="210" fill="#fef3c7"/>
+  <ellipse cx="512" cy="610" rx="225" ry="196" stroke="#1a1a1a" stroke-width="8" fill="none"/>
+
+  <!-- 볼살 -->
+  <ellipse cx="310" cy="640" rx="90" ry="68" fill="#fda4af" opacity="0.9"/>
+  <ellipse cx="714" cy="640" rx="90" ry="68" fill="#fda4af" opacity="0.9"/>
+  <ellipse cx="310" cy="640" rx="90" ry="68" stroke="#1a1a1a" stroke-width="6" fill="none"/>
+  <ellipse cx="714" cy="640" rx="90" ry="68" stroke="#1a1a1a" stroke-width="6" fill="none"/>
+
+  <!-- 눈 흰자 -->
+  <ellipse cx="400" cy="520" rx="72" ry="80" fill="white"/>
+  <ellipse cx="624" cy="520" rx="72" ry="80" fill="white"/>
+  <ellipse cx="400" cy="520" rx="72" ry="80" stroke="#1a1a1a" stroke-width="10" fill="none"/>
+  <ellipse cx="624" cy="520" rx="72" ry="80" stroke="#1a1a1a" stroke-width="10" fill="none"/>
+
+  <!-- 눈동자 -->
+  <circle cx="408" cy="528" r="44" fill="#1a1a1a"/>
+  <circle cx="632" cy="528" r="44" fill="#1a1a1a"/>
+  <!-- 눈 광택 -->
+  <circle cx="422" cy="510" r="16" fill="white"/>
+  <circle cx="646" cy="510" r="16" fill="white"/>
+  <circle cx="400" cy="540" r="8" fill="white"/>
+  <circle cx="624" cy="540" r="8" fill="white"/>
+
+  <!-- 코 -->
+  <ellipse cx="512" cy="610" rx="26" ry="18" fill="#1a1a1a"/>
+  <!-- 콧구멍 -->
+  <ellipse cx="503" cy="612" rx="7" ry="5" fill="#333"/>
+  <ellipse cx="521" cy="612" rx="7" ry="5" fill="#333"/>
+
+  <!-- 입 -->
+  <path d="M 476 638 Q 512 672 548 638" fill="none" stroke="#1a1a1a" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- 탕후루 꼬치 (오른쪽 상단) -->
+  <line x1="740" y1="980" x2="920" y2="120" stroke="#78350f" stroke-width="22" stroke-linecap="round"/>
+  <!-- 과일 3개 -->
+  <circle cx="895" cy="160" r="48" fill="#dc2626" stroke="#1a1a1a" stroke-width="10"/>
+  <circle cx="856" cy="310" r="48" fill="#7c3aed" stroke="#1a1a1a" stroke-width="10"/>
+  <circle cx="817" cy="460" r="48" fill="#dc2626" stroke="#1a1a1a" stroke-width="10"/>
+  <!-- 과일 광택 -->
+  <circle cx="880" cy="144" r="13" fill="rgba(255,255,255,0.7)"/>
+  <circle cx="841" cy="294" r="13" fill="rgba(255,255,255,0.7)"/>
+  <circle cx="802" cy="444" r="13" fill="rgba(255,255,255,0.7)"/>
+</svg>

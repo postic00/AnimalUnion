@@ -8,6 +8,7 @@ import FactoryTab from './components/FactoryTab'
 import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
+import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
@@ -64,6 +65,7 @@ export default function App() {
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
   const [muted, setMuted] = useState<boolean>(loadMuted())
+  const [showSplash, setShowSplash] = useState(true)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -324,6 +326,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', paddingBottom: 56 }}>
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       <Navigation gameState={gameState} />
       <Board
         board={board}

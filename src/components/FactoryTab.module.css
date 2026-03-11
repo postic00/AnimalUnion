@@ -1,187 +1,396 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #191f28;
+  margin: 0;
+  letter-spacing: -0.5px;
 }
 
 .floor {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .floorHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
-  background: #f3f4f6;
+  padding: 0;
+  background: none;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
   width: 100%;
 }
 
-.floorLabel {
-  font-size: 13px;
-  font-weight: 700;
-  color: #374151;
+.floorLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.floorArrow {
-  font-size: 11px;
+.floorBadge {
+  font-size: 15px;
+  font-weight: 800;
+  color: #374151;
+  letter-spacing: -0.3px;
+}
+
+.floorDivider {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0 8px;
+}
+
+.floorCount {
+  font-size: 13px;
+  font-weight: 600;
   color: #9ca3af;
 }
 
-.title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #191f28;
-  margin: 0 0 4px;
+.floorArrow {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-left: 6px;
 }
 
-.card {
-  padding: 8px 10px;
-  background: #f9fafb;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cardHeader {
+/* 미건설 */
+.emptyCard {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
 }
 
-.name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #191f28;
-}
-
-.status {
+.emptyLabel {
   font-size: 12px;
-  color: #6b7280;
+  font-weight: 600;
+  color: #9ca3af;
 }
 
-.row {
+/* 건설된 카드 */
+.card {
+  border: 1.5px solid;
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardBody {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.iconStack {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.typeIcon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.animalBadge {
+  position: absolute;
+  bottom: -6px;
+  right: -8px;
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+}
+
+.noAnimal {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: #d1d5db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nameRow {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.rowBetween {
+.cardName {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.levelBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  width: 40px;
+  height: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.label {
-  font-size: 12px;
-  color: #6b7280;
-  min-width: 32px;
-}
-
-.typeButton {
-  padding: 4px 10px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 6px;
-  background: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-}
-
-.typeButton.active {
-  border-color: #3182f6;
-  background: #eff6ff;
-  color: #3182f6;
-}
-
-.upgradeButton {
-  padding: 6px 0;
-  width: 80px;
-  background: #3182f6;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
+  justify-content: center;
+  border-radius: 20px;
   flex-shrink: 0;
 }
 
-.upgradeButton:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  cursor: default;
-}
-
-.buildButton {
-  padding: 8px 14px;
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
+.animalLabel {
+  font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  align-self: flex-start;
+  color: #6b7280;
 }
 
-.buildButton:disabled {
-  background: #e5e7eb;
-  color: #9ca3af;
-  cursor: default;
+.cardRight {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  align-items: flex-end;
 }
 
-.arrowButton {
-  padding: 2px 8px;
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  padding: 3px 8px;
   border: 1.5px solid #e5e7eb;
-  border-radius: 6px;
-  background: #ffffff;
-  font-size: 12px;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
   cursor: pointer;
-  color: #374151;
+  line-height: 1.2;
 }
 
-.arrowButton:disabled {
+.chipOn {
+  font-weight: 700;
+}
+
+.sep {
+  width: 1px;
+  height: 16px;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.gradeBtn {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.gradeBtn:disabled {
   color: #d1d5db;
   cursor: default;
 }
 
-.ml {
-  margin-left: auto;
+.gradeVal {
+  font-size: 14px;
+  font-weight: 800;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.groupRight {
+/* 세그먼트 컨트롤 */
+.segment {
+  display: flex;
+  gap: 4px;
+}
+
+.segBtn {
+  flex: 1;
+  padding: 6px 0;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  text-align: center;
+}
+
+.segBtnOn {
+  font-weight: 800;
+}
+
+/* 방향 + 등급 행 */
+.row3 {
   display: flex;
   align-items: center;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.lvLabel {
-  font-size: 12px;
-  color: #6b7280;
-  min-width: 36px;
-  text-align: left;
+  gap: 8px;
 }
 
 .gradeLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: #191f28;
-  min-width: 36px;
-  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+/* 콤보박스 */
+.combo {
+  position: relative;
+}
+
+.comboTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 90px;
+  height: 36px;
+  border: 2px solid;
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.comboArrow {
+  font-size: 7px;
+  opacity: 0.5;
+  margin-left: 1px;
+}
+
+.comboPopup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+  overflow: hidden;
+  z-index: 50;
+  min-width: 120px;
+  padding: 4px;
+}
+
+.comboOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.comboOption:hover {
+  background: #f3f4f6;
+}
+
+.comboOptionSelected {
+  color: #f97316;
+  background: #fff7ed;
+}
+
+.comboOptionSelected:hover {
+  background: #fff7ed;
+}
+
+.comboCheck {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+/* 등급 컨트롤 */
+.gradeControl {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 버튼 */
+.buildBtn,
+.upgradeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 90px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.buildBtn {
+  background: #6b7280;
+}
+
+.buildBtn:disabled,
+.upgradeBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btnIcon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }

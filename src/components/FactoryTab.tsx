@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { Board } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Animal, AnimalId } from '../types/animal'
 import { ANIMAL_NAMES } from '../types/animal'
 import { getFactoryBuildCost, getFactoryLevelUpgradeCost } from '../balance'
 import { formatGold } from '../utils/formatGold'
+import coinIcon from '../assets/coin.svg'
 import styles from './FactoryTab.module.css'
 
 interface Props {
@@ -21,6 +22,76 @@ interface Props {
   maxGrade: number
 }
 
+const ANIMAL_EMOJI: Record<string, string> = {
+  hamster: '🐹',
+  cat: '🐱',
+  dog: '🐶',
+}
+
+function getAnimalEmoji(animalId: string | null): string | null {
+  if (!animalId) return null
+  const type = animalId.match(/^([a-z]+)/)?.[1] ?? ''
+  return ANIMAL_EMOJI[type] ?? null
+}
+
+const TYPE_META: Record<Factory['type'], { label: string; icon: string; color: string; bg: string; border: string; sub: string }> = {
+  WA: { label: '세척', icon: '💧', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', sub: '#3b82f6' },
+  PA: { label: '가공', icon: '⚙️', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe', sub: '#8b5cf6' },
+  PK: { label: '포장', icon: '📦', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa', sub: '#f97316' },
+}
+
+type DropKey = 'type' | 'dir' | 'animal'
+
+function ComboBox({ label, options, selected, onSelect, color }: {
+  label: string
+  options: { value: string; label: string }[]
+  selected: string
+  onSelect: (v: string) => void
+  color: string
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div className={styles.combo} ref={ref}>
+      {open && (
+        <div className={styles.comboPopup}>
+          {options.map(o => {
+            const isSelected = o.value === selected
+            return (
+              <button
+                key={o.value}
+                className={`${styles.comboOption} ${isSelected ? styles.comboOptionSelected : ''}`}
+                style={isSelected ? { color } : {}}
+                onClick={() => { onSelect(o.value); setOpen(false) }}
+              >
+                {o.label}
+                {isSelected && <span className={styles.comboCheck}>✓</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <button
+        className={styles.comboTrigger}
+        style={{ borderColor: color, color }}
+        onClick={() => setOpen(v => !v)}
+      >
+        {label}
+        <span className={styles.comboArrow}>{open ? '▼' : '▲'}</span>
+      </button>
+    </div>
+  )
+}
+
 export default function FactoryTab({ board, factories, gold, animals, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, onSetAnimal, maxGrade }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
@@ -29,7 +100,6 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
     })
   })
 
-  // 3개씩 묶어서 층(floor)으로 그룹화
   const floors: { row: number; col: number }[][] = []
   for (let i = 0; i < faCells.length; i += 3) {
     floors.push(faCells.slice(i, i + 3))
@@ -39,99 +109,102 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
   const toggleFloor = (i: number) => setClosedFloors(prev => ({ ...prev, [i]: !prev[i] }))
 
   const buildCost = getFactoryBuildCost()
+  const unlockedAnimals = animals.filter(a => a.unlocked)
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>공장</h2>
+      <h2 className={styles.title}>공장 관리</h2>
       {floors.map((cells, floorIdx) => (
         <div key={floorIdx} className={styles.floor}>
           <button className={styles.floorHeader} onClick={() => toggleFloor(floorIdx)}>
-            <span className={styles.floorLabel}>{floorIdx + 1}F</span>
+            <div className={styles.floorLeft}>
+              <span className={styles.floorBadge}>{floorIdx + 1}F</span>
+              <span className={styles.floorCount}>공장 {cells.length}개</span>
+            </div>
+            <div className={styles.floorDivider} />
             <span className={styles.floorArrow}>{closedFloors[floorIdx] ? '▼' : '▲'}</span>
           </button>
+
           {!closedFloors[floorIdx] && cells.map(({ row, col }, i) => {
             const factory = factories.find(f => f.row === row && f.col === col)
 
             if (!factory || !factory.built) {
               return (
-                <div key={i} className={styles.card}>
-                  <div className={styles.row}>
-                    <span className={styles.name}>{i + 1}</span>
-                    <span className={styles.status}>미건설</span>
-                    <button
-                      className={styles.buildButton}
-                      onClick={() => onBuild(row, col)}
-                      disabled={gold < buildCost}
-                    >
-                      건설 🪙{formatGold(buildCost)}
-                    </button>
-                  </div>
+                <div key={i} className={styles.emptyCard}>
+                  <span className={styles.emptyLabel}>공장 {i + 1} · 미건설</span>
+                  <button className={styles.buildBtn} onClick={() => onBuild(row, col)} disabled={gold < buildCost}>
+                    <img src={coinIcon} className={styles.btnIcon} alt="" />
+                    {formatGold(buildCost)}
+                  </button>
                 </div>
               )
             }
 
+            const meta = TYPE_META[factory.type]
             const levelCost = getFactoryLevelUpgradeCost(factory.level)
-            const unlockedAnimals = animals.filter(a => a.unlocked)
+
+            const typeOptions = (['WA', 'PA', 'PK'] as Factory['type'][]).map(t => ({
+              value: t, label: `${TYPE_META[t].icon} ${TYPE_META[t].label}`
+            }))
+            const dirOptions = [
+              { value: 'UP_TO_DOWN', label: '↓ 하행' },
+              { value: 'DOWN_TO_UP', label: '↑ 상행' },
+            ]
+            const animalOptions = [
+              { value: '__none__', label: '없음' },
+              ...unlockedAnimals.map(a => ({ value: a.id, label: ANIMAL_NAMES[a.id] })),
+            ]
 
             return (
-              <div key={i} className={styles.card}>
-                <div className={styles.rowBetween}>
-                  <span className={styles.name}>{i + 1}</span>
-                  <div className={styles.group}>
-                    {(['WA', 'PA', 'PK'] as Factory['type'][]).map(t => (
-                      <button
-                        key={t}
-                        className={`${styles.typeButton} ${factory.type === t ? styles.active : ''}`}
-                        onClick={() => onSetType(row, col, t)}
-                      >
-                        {t === 'WA' ? '세척' : t === 'PA' ? '가공' : '포장'}
+              <div key={i} className={styles.card} style={{ background: meta.bg, borderColor: meta.border }}>
+                <div className={styles.cardBody}>
+                  {/* 좌측: 아이콘 + 동물 + 이름 + 레벨 */}
+                  <div className={styles.cardLeft}>
+                    <div className={styles.iconStack}>
+                      <span className={styles.typeIcon}>{meta.icon}</span>
+                      <span className={styles.animalBadge}>
+                        {factory.animalId ? getAnimalEmoji(factory.animalId) : <span className={styles.noAnimal}>✕</span>}
+                      </span>
+                    </div>
+                    <div className={styles.cardInfo}>
+                      <div className={styles.nameRow}>
+                        <span className={styles.cardName} style={{ color: meta.color }}>공장 {i + 1}</span>
+                        <span className={styles.levelBadge} style={{ background: meta.sub }}>Lv.{factory.level}</span>
+                      </div>
+                      {factory.animalId && (
+                        <span className={styles.animalLabel}>{ANIMAL_NAMES[factory.animalId]}</span>
+                      )}
+                    </div>
+                  </div>
+                  {/* 우측: 2행 컨트롤 */}
+                  <div className={styles.cardRight}>
+                    <div className={styles.controlRow}>
+                      <div className={styles.gradeControl}>
+                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= 1}>‹</button>
+                        <span className={styles.gradeVal} style={{ color: meta.color }}>{factory.grade}</span>
+                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>›</button>
+                      </div>
+                      <button className={styles.upgradeBtn} style={{ background: meta.sub }} onClick={() => onUpgradeLevel(row, col)} disabled={gold < levelCost}>
+                        <img src={coinIcon} className={styles.btnIcon} alt="" />
+                        {formatGold(levelCost)}
                       </button>
-                    ))}
-                  </div>
-                  <div className={styles.group}>
-                    {(['UP_TO_DOWN', 'DOWN_TO_UP'] as Factory['dir'][]).map(d => (
-                      <button
-                        key={d}
-                        className={`${styles.typeButton} ${factory.dir === d ? styles.active : ''}`}
-                        onClick={() => onSetDir(row, col, d)}
-                      >
-                        {d === 'UP_TO_DOWN' ? '↓' : '↑'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className={styles.rowBetween}>
-                  <div className={styles.group}>
-                    <button className={styles.arrowButton} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= 1}>←</button>
-                    <span className={styles.gradeLabel}>{factory.grade}</span>
-                    <button className={styles.arrowButton} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>→</button>
-                  </div>
-                  <div className={styles.group}>
-                    <button
-                      className={`${styles.typeButton} ${factory.animalId === null ? styles.active : ''}`}
-                      onClick={() => onSetAnimal(row, col, null)}
-                    >
-                      없음
-                    </button>
-                    {unlockedAnimals.map(a => (
-                      <button
-                        key={a.id}
-                        className={`${styles.typeButton} ${factory.animalId === a.id ? styles.active : ''}`}
-                        onClick={() => onSetAnimal(row, col, a.id)}
-                      >
-                        {ANIMAL_NAMES[a.id]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className={styles.group}>
-                    <span className={styles.lvLabel}>Lv.{factory.level}</span>
-                    <button
-                      className={styles.upgradeButton}
-                      onClick={() => onUpgradeLevel(row, col)}
-                      disabled={gold < levelCost}
-                    >
-                      🪙{formatGold(levelCost)}
-                    </button>
+                    </div>
+                    <div className={styles.controlRow}>
+                      <ComboBox
+                        label={`${meta.icon} ${meta.label}`}
+                        options={typeOptions}
+                        selected={factory.type}
+                        onSelect={v => onSetType(row, col, v as Factory['type'])}
+                        color={meta.sub}
+                      />
+                      <ComboBox
+                        label={factory.dir === 'UP_TO_DOWN' ? '↓ 하행' : '↑ 상행'}
+                        options={dirOptions}
+                        selected={factory.dir}
+                        onSelect={v => onSetDir(row, col, v as Factory['dir'])}
+                        color={meta.sub}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

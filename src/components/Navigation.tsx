@@ -1,5 +1,6 @@
 import type { GameState } from '../types/gameState'
 import { formatGold } from '../utils/formatGold'
+import coinIcon from '../assets/coin.svg'
 import styles from './Navigation.module.css'
 
 interface Props {
@@ -9,8 +10,13 @@ interface Props {
 export default function Navigation({ gameState }: Props) {
   return (
     <nav className={styles.nav}>
-      <span className={styles.gold}>🪙 {formatGold(gameState.gold)}</span>
-      <span className={styles.perSec}>+{formatGold(gameState.goldPerSec)}/s</span>
+      <div className={styles.goldCard}>
+        <img src={coinIcon} className={styles.coinIcon} alt="gold" />
+        <div className={styles.goldInfo}>
+          <span className={styles.goldAmount}>{formatGold(gameState.gold)}</span>
+          <span className={styles.perSec}>+{formatGold(gameState.goldPerSec)}/s</span>
+        </div>
+      </div>
     </nav>
   )
 }

@@ -8,7 +8,8 @@
 
 body {
   font-family: system-ui, sans-serif;
-  background-color: #1a1a2e;
-  color: #ffffff;
+  background: linear-gradient(160deg, #fff8f0 0%, #ffe8d0 50%, #ffd4b8 100%);
+  background-attachment: fixed;
+  color: #1a1a1a;
   min-height: 100vh;
 }

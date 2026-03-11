@@ -324,8 +324,40 @@ export default function App() {
 
   const bundleCost = getBundleCost(gameState.bundleCount)
 
+  const bgEmojis = [
+    { emoji: '🍲', top: '6%',  left: '4%',  size: 38, rot: -15, op: 0.13 },
+    { emoji: '🍡', top: '10%', left: '78%', size: 32, rot: 20,  op: 0.13 },
+    { emoji: '🐹', top: '18%', left: '88%', size: 30, rot: -10, op: 0.15 },
+    { emoji: '🌶️', top: '28%', left: '2%',  size: 28, rot: 30,  op: 0.12 },
+    { emoji: '🐱', top: '38%', left: '90%', size: 34, rot: -20, op: 0.13 },
+    { emoji: '🍲', top: '50%', left: '5%',  size: 42, rot: 12,  op: 0.12 },
+    { emoji: '🐶', top: '60%', left: '82%', size: 30, rot: 8,   op: 0.14 },
+    { emoji: '🍡', top: '70%', left: '8%',  size: 36, rot: -8,  op: 0.13 },
+    { emoji: '🌶️', top: '78%', left: '88%', size: 26, rot: 25,  op: 0.12 },
+    { emoji: '🐹', top: '86%', left: '3%',  size: 30, rot: -18, op: 0.14 },
+    { emoji: '⭐', top: '44%', left: '94%', size: 22, rot: 0,   op: 0.15 },
+    { emoji: '⭐', top: '22%', left: '1%',  size: 18, rot: 0,   op: 0.13 },
+    { emoji: '🍡', top: '92%', left: '60%', size: 28, rot: 15,  op: 0.12 },
+    { emoji: '🐱', top: '88%', left: '75%', size: 26, rot: 10,  op: 0.13 },
+  ]
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', paddingBottom: 56 }}>
+    <div style={{ minHeight: '100vh', paddingBottom: 56, position: 'relative' }}>
+      {/* 배경 이모지 레이어 */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {bgEmojis.map((item, i) => (
+          <span key={i} style={{
+            position: 'absolute',
+            top: item.top,
+            left: item.left,
+            fontSize: item.size,
+            opacity: item.op,
+            transform: `rotate(${item.rot}deg)`,
+            userSelect: 'none',
+            lineHeight: 1,
+          }}>{item.emoji}</span>
+        ))}
+      </div>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       <Navigation gameState={gameState} />
       <Board
@@ -354,7 +386,7 @@ export default function App() {
           saveGame(board, gameState)
           setSavedAt(Date.now())
         }}
-        sheetOpen={activeTab !== null}
+        activeTab={activeTab}
       />
       <BottomSheet open={activeTab !== null} onClose={() => setActiveTab(null)}>
         {activeTab === 0 && (

@@ -18,6 +18,8 @@ import {
   getFaBufferCapacity,
   RECIPES,
 } from '../balance'
+
+export type Progresses = Record<string, number>
 import {
   getCellCenter,
   getCellDirection,
@@ -85,6 +87,7 @@ export function useGameLoop(
   rsBufferLevel: number,
 ) {
   const [items, setItems] = useState<Item[]>([])
+  const [progresses, setProgresses] = useState<Progresses>({})
   const itemsRef = useRef<Item[]>([])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
@@ -446,12 +449,47 @@ export function useGameLoop(
     }
 
     animId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(animId)
+
+    const progressInterval = setInterval(() => {
+      const p: Progresses = {}
+      board.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          if (cell.type !== 'PR') return
+          const producer = producersRef.current.find(pr => pr.row === rowIdx && pr.col === colIdx)
+          if (!producer?.built || producer.level === 0) return
+          const key = `${rowIdx}-${colIdx}`
+          const timer = produceTimersRef.current[key] ?? 0
+          p[key] = Math.min(timer / getProducerInterval(producer.level), 1)
+        })
+      })
+      factoriesRef.current.forEach(factory => {
+        if (!factory.built) return
+        const key = `fa-${factory.row}-${factory.col}`
+        const fas = faStatesRef.current[key]
+        if (!fas) return
+        const cellKey = `${factory.row}-${factory.col}`
+        if (fas.state === 'PROCESSING') {
+          const qty = fas.grabbed?.quantity ?? getMaterialQuantity(1)
+          const processTime = getFactoryProcessTime(factory.level, qty)
+          p[cellKey] = Math.min(fas.timer / processTime, 1)
+        } else if (fas.state === 'GRABBING' || fas.state === 'PLACING') {
+          p[cellKey] = fas.timer / pickTime
+        } else if (fas.state === 'WAITING') {
+          p[cellKey] = 1
+        }
+      })
+      setProgresses(p)
+    }, 100)
+
+    return () => {
+      cancelAnimationFrame(animId)
+      clearInterval(progressInterval)
+    }
   }, [board, cellSize])
 
   const spawnClickerItem = useCallback(() => {
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items, spawnClickerItem }
+  return { items, progresses, spawnClickerItem }
 }

@@ -10,17 +10,66 @@
 .addButton {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background-color: #3b82f6;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 700;
+  justify-content: space-between;
+  height: 80px;
+  padding: 0 24px;
+  background: rgba(255, 248, 240, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: none;
+  border-radius: 28px;
   cursor: pointer;
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.1);
 }
 
-.addButton:active {
-  background-color: #2563eb;
+.addButtonLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.addButtonPlus {
+  font-size: 28px;
+  font-weight: 900;
+  color: #DAA520;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.addButtonText {
+  font-size: 18px;
+  font-weight: 800;
+  color: #7c2d12;
+  letter-spacing: -0.5px;
+}
+
+.addButtonCostIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.addButtonCost {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #0c4a6e;
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+  border: 2.5px solid #0ea5e9;
+  border-radius: 20px;
+  padding: 6px 16px;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+}
+
+.addButton:active .addButtonPlus {
+  color: #B8860B;
+}
+
+.addButton:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .cancelPlacing {

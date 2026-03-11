@@ -2,21 +2,109 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: #ffffff;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgba(0,0,0,0.1);
+  overflow: hidden;
+  position: relative;
 }
 
-.EM { background-color: #f3f4f6; color: transparent; }
+/* 빈 셀 */
+.EM {
+  background-color: rgba(255, 236, 210, 0.35);
+  color: transparent;
+}
+
+/* 레일 공통 — 컨베이어 벨트 */
+.RS, .RE, .RL, .RR, .RU, .RD {
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* 좌우 레일 — 가로 줄무늬 */
+.RR, .RL {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #cbd5e1 0px, #cbd5e1 10px,
+      #94a3b8 10px, #94a3b8 18px
+    );
+  background-size: 18px 100%;
+  animation: beltH 0.5s linear infinite;
+  color: rgba(71, 85, 105, 0.9);
+}
+
+.RL {
+  animation-direction: reverse;
+}
+
+/* 상하 레일 — 세로 줄무늬 */
+.RD, .RU {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      #cbd5e1 0px, #cbd5e1 10px,
+      #94a3b8 10px, #94a3b8 18px
+    );
+  background-size: 100% 18px;
+  animation: beltV 0.5s linear infinite;
+  color: rgba(71, 85, 105, 0.9);
+}
+
+.RU {
+  animation-direction: reverse;
+}
+
+/* RS — 시작점 (민트/초록 강조) */
+.RS {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #34d399 0px, #34d399 10px,
+      #10b981 10px, #10b981 18px
+    );
+  background-size: 18px 100%;
+  animation: beltH 0.5s linear infinite;
+  color: rgba(6, 78, 59, 0.9);
+}
+
+/* RE — 판매 종료점 (빨강/코랄) */
+.RE {
+  background: #f87171;
+  animation: none;
+  font-size: 18px;
+  color: #7f1d1d;
+}
+
+/* 생산자 */
 .PR { background-color: #15803d; }
-.RS { background-color: #2563eb; }
-.RE { background-color: #dc2626; }
-.RL { background-color: #60a5fa; }
-.RR { background-color: #60a5fa; }
-.RU { background-color: #60a5fa; }
-.RD { background-color: #60a5fa; }
+
+/* 공장 */
 .FA { background-color: #d97706; }
-.placing { background-color: #f59e0b; outline: 3px solid #fbbf24; animation: pulse 0.8s infinite alternate; }
-@keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
+
+/* 크레인 */
 .CR { background-color: #7c3aed; }
+
+/* 배치 모드 */
+.placing {
+  background-color: #f59e0b !important;
+  outline: 3px solid #fbbf24;
+  animation: pulse 0.8s infinite alternate !important;
+}
+
+/* 애니메이션 */
+@keyframes beltH {
+  from { background-position: 0 0; }
+  to   { background-position: 18px 0; }
+}
+
+@keyframes beltV {
+  from { background-position: 0 0; }
+  to   { background-position: 0 18px; }
+}
+
+@keyframes pulse {
+  from { opacity: 1; }
+  to   { opacity: 0.6; }
+}

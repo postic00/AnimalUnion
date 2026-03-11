@@ -9,6 +9,7 @@ import type { AnimalId } from '../types/animal'
 import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
+import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 
 interface Props {
@@ -42,7 +43,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
+  const { items, progresses, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null
@@ -57,6 +58,9 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
                 key={colIdx}
                 cell={cell}
                 size={cellSize}
+                factory={cell.type === 'FA' ? factories.find(f => f.row === rowIdx && f.col === colIdx) : undefined}
+                producer={cell.type === 'PR' ? producers.find(p => p.row === rowIdx && p.col === colIdx) : undefined}
+                progress={progresses[`${rowIdx}-${colIdx}`]}
                 placing={!!placingAnimalId && cell.type === 'FA'}
                 onClick={placingAnimalId && cell.type === 'FA' ? () => onPlaceAnimal(rowIdx, colIdx) : undefined}
               />
@@ -73,10 +77,14 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
       <button
         onClick={onAddBundle}
         className={styles.addButton}
-        style={{ width: cellSize * 7, height: cellSize * 2 }}
+        style={{ width: cellSize * 7 }}
         disabled={!canAddBundle}
       >
-        공장 라인 확장 🪙{formatGold(bundleCost)}
+        <div className={styles.addButtonLeft}>
+          <span className={styles.addButtonPlus}>+</span>
+          <span className={styles.addButtonText}>라인 추가</span>
+        </div>
+        <span className={styles.addButtonCost}><img src={coinIcon} className={styles.addButtonCostIcon} alt="gold" />{formatGold(bundleCost)}</span>
       </button>
     </div>
   )

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { Clicker } from '../types/clicker'
 import styles from './TabBar.module.css'
 
@@ -6,11 +5,18 @@ interface Props {
   clicker: Clicker
   onClickerClick: () => void
   onTabChange: (tab: number | null) => void
-  sheetOpen: boolean
+  activeTab: number | null
 }
 
-export default function TabBar({ clicker, onClickerClick, onTabChange, sheetOpen }: Props) {
-  const [activeTab, setActiveTab] = useState<number | null>(null)
+const TABS = [
+  { label: '생산', icon: '🌱' },
+  { label: '공장', icon: '⚙️' },
+  { label: '재료', icon: '📦' },
+  { label: '환생', icon: '⭐' },
+  { label: '설정', icon: '🔧' },
+]
+
+export default function TabBar({ clicker, onClickerClick, onTabChange, activeTab }: Props) {
   const radius = 24
   const circumference = 2 * Math.PI * radius
   const progress = clicker.clickCount / clicker.threshold
@@ -18,20 +24,25 @@ export default function TabBar({ clicker, onClickerClick, onTabChange, sheetOpen
 
   const handleTab = (tab: number) => {
     const next = activeTab === tab ? null : tab
-    setActiveTab(next)
     onTabChange(next)
   }
 
   return (
     <div className={styles.tabBar}>
-      {['생산', '공장', '재료', '환생', '설정'].map((label, i) => (
-        <div key={i} className={styles.tab} onClick={() => handleTab(i)}>
-          {label}
+      {TABS.map(({ label, icon }, i) => (
+        <div
+          key={i}
+          className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''}`}
+          onClick={() => handleTab(i)}
+        >
+          <span className={styles.tabIcon}>{icon}</span>
+          <span className={styles.tabLabel}>{label}</span>
+          {activeTab === i && <span className={styles.tabIndicator} />}
         </div>
       ))}
       <button
         className={styles.clickerButton}
-        style={{ bottom: sheetOpen ? 'calc(40vh + 68px)' : 68 }}
+        style={{ bottom: activeTab !== null ? 'calc(40vh + 76px)' : 76 }}
         onClick={onClickerClick}
       >
         <svg className={styles.clickerRing} viewBox="0 0 56 56">

@@ -4,22 +4,51 @@
   z-index: 10;
   width: 100%;
   height: 56px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 248, 240, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(184, 134, 11, 0.25);
   display: flex;
   align-items: center;
   padding: 0 16px;
   gap: 16px;
 }
 
-.gold {
+.goldCard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
+  border-radius: 14px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.4);
+}
+
+.coinIcon {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+  flex-shrink: 0;
+}
+
+.goldInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.goldAmount {
   font-size: 16px;
-  font-weight: 700;
-  color: #111827;
+  font-weight: 800;
+  color: #3b1f00;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .perSec {
-  font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(59, 31, 0, 0.7);
+  line-height: 1;
 }

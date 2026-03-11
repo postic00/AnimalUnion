@@ -25,6 +25,7 @@ import {
   getItemValueResetRefund,
   getAnimalResetRefund,
   getMaterialQuantityLevelCost,
+  getBufferUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
 
@@ -182,6 +183,8 @@ export default function App() {
       materialQuantityLevels: initialGameState.materialQuantityLevels,
       prestigeCount: prev.prestigeCount + 1,
       prestigePoints: prev.prestigePoints + getPrestigePoints(prev.totalEarned),
+      rsBufferLevel: prev.rsBufferLevel,
+      faBufferLevel: prev.faBufferLevel,
     }))
   }, [])
 
@@ -273,6 +276,22 @@ export default function App() {
     })
   }, [])
 
+  const handleUpgradeRsBuffer = useCallback(() => {
+    setGameState(prev => {
+      const cost = getBufferUpgradeCost(prev.rsBufferLevel)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, rsBufferLevel: prev.rsBufferLevel + 1 }
+    })
+  }, [])
+
+  const handleUpgradeFaBuffer = useCallback(() => {
+    setGameState(prev => {
+      const cost = getBufferUpgradeCost(prev.faBufferLevel)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, faBufferLevel: prev.faBufferLevel + 1 }
+    })
+  }, [])
+
   const bundleCost = getBundleCost(gameState.bundleCount)
 
   return (
@@ -288,6 +307,9 @@ export default function App() {
         factories={gameState.factories}
         animals={gameState.animals}
         materialQuantityLevels={gameState.materialQuantityLevels}
+        itemValueLevels={gameState.itemValueLevels}
+        faBufferLevel={gameState.faBufferLevel}
+        rsBufferLevel={gameState.rsBufferLevel}
         placingAnimalId={placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={() => setPlacingAnimalId(null)}
@@ -340,6 +362,8 @@ export default function App() {
             onUpgradeAnimal={handleUpgradeAnimal}
             onStartPlacing={handleStartPlacing}
             onRecallAnimal={handleRecallAnimal}
+            onUpgradeRsBuffer={handleUpgradeRsBuffer}
+            onUpgradeFaBuffer={handleUpgradeFaBuffer}
           />
         )}
       </BottomSheet>

@@ -11,18 +11,21 @@ interface Props {
   onUpgrade: (index: number) => void
 }
 
+const GRADE_NAMES: Record<number, string> = { 1: '고추', 2: '양파', 3: '마늘' }
+
 export default function ProductionTab({ producers, gold, materialQuantityLevels, onBuild, onUpgrade }: Props) {
   const buildCost = getProducerBuildCost()
-  const quantity = getMaterialQuantity(materialQuantityLevels[0] ?? 1)
   return (
     <div className={styles.container}>
       <h2 className={styles.title}>생산</h2>
       {producers.map((producer, index) => {
+        const gradeName = GRADE_NAMES[producer.grade] ?? `등급${producer.grade}`
+        const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
         if (!producer.built) {
           return (
             <div key={index} className={styles.row}>
               <div className={styles.info}>
-                <span className={styles.name}>생산기 {index + 1}</span>
+                <span className={styles.name}>생산기 {index + 1} ({gradeName})</span>
                 <span className={styles.level}>미건설</span>
               </div>
               <button
@@ -39,7 +42,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
         return (
           <div key={index} className={styles.row}>
             <div className={styles.info}>
-              <span className={styles.name}>생산기 {index + 1}</span>
+              <span className={styles.name}>생산기 {index + 1} ({gradeName})</span>
               <span className={styles.level}>
                 {producer.level === 0 ? '비활성' : `가동중 x${formatQuantity(quantity)}`}
               </span>

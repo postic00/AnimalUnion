@@ -9,6 +9,7 @@ import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
 import LeaderboardTab from './components/LeaderboardTab'
+import Tutorial from './components/Tutorial'
 import AdModal from './components/AdModal'
 import PrestigeAdModal from './components/PrestigeAdModal'
 import ConfirmModal from './components/ConfirmModal'
@@ -95,6 +96,7 @@ export default function App() {
   const spawnUnlockTimeRef = useRef<number>(0)
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
+  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('tutorialDone'))
 
   useEffect(() => { initAdMob() }, [])
 
@@ -510,6 +512,7 @@ export default function App() {
         ))}
       </div>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      {!showSplash && showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
       <Navigation gameState={gameState} />
       <Board
         key={resetKey}
@@ -655,6 +658,7 @@ export default function App() {
             muted={muted}
             onToggleMute={handleToggleMute}
             onHardReset={() => setShowResetConfirm(true)}
+            onShowTutorial={() => { setActiveTab(null); setShowTutorial(true) }}
           />
         )}
       </BottomSheet>

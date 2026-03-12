@@ -57,14 +57,22 @@ function ComboBox({ label, options, selected, onSelect, color }: {
 }) {
   const [open, setOpen] = useState(false)
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({})
+  const popupRef = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node
+      const inTrigger = ref.current?.contains(target)
+      const inPopup = popupRef.current?.contains(target)
+      if (!inTrigger && !inPopup) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   }, [])
 
   const handleToggle = () => {
@@ -78,7 +86,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
   return (
     <div className={styles.combo} ref={ref}>
       {open && createPortal(
-        <div className={styles.comboPopup} style={popupStyle}>
+        <div className={styles.comboPopup} style={popupStyle} ref={popupRef}>
           {options.map(o => {
             const isSelected = o.value === selected
             return (
@@ -86,7 +94,8 @@ function ComboBox({ label, options, selected, onSelect, color }: {
                 key={o.value}
                 className={`${styles.comboOption} ${isSelected ? styles.comboOptionSelected : ''}`}
                 style={isSelected ? { color } : {}}
-                onClick={() => { onSelect(o.value); setOpen(false) }}
+                onMouseDown={e => { e.preventDefault(); onSelect(o.value); setOpen(false) }}
+                onTouchEnd={e => { e.preventDefault(); onSelect(o.value); setOpen(false) }}
               >
                 {o.label}
                 {isSelected && <span className={styles.comboCheck}>✓</span>}

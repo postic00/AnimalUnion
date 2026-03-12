@@ -6,6 +6,7 @@ interface Props {
   muted: boolean
   onToggleMute: () => void
   onHardReset: () => void
+  onShowTutorial: () => void
 }
 
 function formatDate(ts: number): string {
@@ -14,7 +15,7 @@ function formatDate(ts: number): string {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset }: Props) {
+export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset, onShowTutorial }: Props) {
   const [confirmReset, setConfirmReset] = useState(false)
 
   const handleReset = () => {
@@ -78,6 +79,24 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset 
           취소
         </button>
       )}
+
+      {/* 튜토리얼 */}
+      <div className={styles.card} style={{ background: '#fefce8', borderColor: '#fde68a' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>📖</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#78350f' }}>튜토리얼</span>
+            <span className={styles.cardSub} style={{ color: '#d97706' }}>게임 방법을 다시 볼게요</span>
+          </div>
+        </div>
+        <button
+          className={styles.resetBtn}
+          style={{ background: '#f59e0b' }}
+          onClick={onShowTutorial}
+        >
+          보기
+        </button>
+      </div>
 
       {/* 정보 */}
       <div className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>

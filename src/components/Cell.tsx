@@ -2,7 +2,73 @@ import type { CSSProperties } from 'react'
 import type { Cell as CellType } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Producer } from '../types/producer'
+import type { AnimalId } from '../types/animal'
 import styles from './Cell.module.css'
+
+export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
+
+export function getSpecies(animalId: AnimalId | null): AnimalSpecies {
+  if (!animalId) return 'robot'
+  if (animalId.startsWith('hamster')) return 'hamster'
+  if (animalId.startsWith('cat')) return 'cat'
+  return 'dog'
+}
+
+const ANIMAL_EMOJI: Record<AnimalSpecies, string> = {
+  hamster: '🐹', cat: '🐱', dog: '🐶', robot: '🤖',
+}
+
+export function HandSvg({ species, w, h }: { species: AnimalSpecies; w: number; h: number }) {
+  if (species === 'hamster') return (
+    <svg width={w} height={h} viewBox="0 0 42 48" preserveAspectRatio="xMidYMid meet">
+      <rect x="16" y="14" width="10" height="32" rx="5" fill="#f9a8b4"/>
+      <ellipse cx="21" cy="14" rx="18" ry="9" fill="#f9a8b4"/>
+      <ellipse cx="7"  cy="7" rx="6" ry="5.5" fill="#fbc4cd"/>
+      <ellipse cx="21" cy="4" rx="6" ry="5.5" fill="#fbc4cd"/>
+      <ellipse cx="35" cy="7" rx="6" ry="5.5" fill="#fbc4cd"/>
+      <ellipse cx="21" cy="16" rx="7" ry="5" fill="#f472a0" opacity="0.5"/>
+    </svg>
+  )
+  if (species === 'cat') return (
+    <svg width={w} height={h} viewBox="0 0 46 52" preserveAspectRatio="xMidYMid meet">
+      <rect x="17" y="16" width="12" height="34" rx="6" fill="#d4a96a"/>
+      <ellipse cx="23" cy="16" rx="20" ry="10" fill="#d4a96a"/>
+      <path d="M6 10 Q4 1 8 0 Q12 1 10 10" fill="#fff" stroke="#bbb" strokeWidth="0.5"/>
+      <path d="M19 6 Q18 -2 23 -3 Q28 -2 27 6" fill="#fff" stroke="#bbb" strokeWidth="0.5"/>
+      <path d="M36 10 Q34 1 38 0 Q42 1 40 10" fill="#fff" stroke="#bbb" strokeWidth="0.5"/>
+      <ellipse cx="23" cy="18" rx="7" ry="5" fill="#c084a0" opacity="0.6"/>
+      <ellipse cx="12" cy="14" rx="3" ry="2.5" fill="#c084a0" opacity="0.5"/>
+      <ellipse cx="34" cy="14" rx="3" ry="2.5" fill="#c084a0" opacity="0.5"/>
+    </svg>
+  )
+  if (species === 'dog') return (
+    <svg width={w} height={h} viewBox="0 0 50 52" preserveAspectRatio="xMidYMid meet">
+      <rect x="18" y="18" width="14" height="34" rx="7" fill="#c8a882"/>
+      <ellipse cx="25" cy="18" rx="22" ry="11" fill="#c8a882"/>
+      <ellipse cx="5"  cy="10" rx="5.5" ry="6.5" fill="#b8956e"/>
+      <ellipse cx="16" cy="5"  rx="5.5" ry="6.5" fill="#b8956e"/>
+      <ellipse cx="34" cy="5"  rx="5.5" ry="6.5" fill="#b8956e"/>
+      <ellipse cx="45" cy="10" rx="5.5" ry="6.5" fill="#b8956e"/>
+      <ellipse cx="25" cy="20" rx="9"   ry="7"   fill="#a0785a" opacity="0.7"/>
+      <ellipse cx="11" cy="15" rx="3.5" ry="3"   fill="#a0785a" opacity="0.6"/>
+      <ellipse cx="39" cy="15" rx="3.5" ry="3"   fill="#a0785a" opacity="0.6"/>
+    </svg>
+  )
+  return (
+    <svg width={w} height={h} viewBox="0 0 44 52" preserveAspectRatio="xMidYMid meet">
+      <rect x="17" y="16" width="10" height="34" rx="3" fill="#94a3b8"/>
+      <rect x="14" y="20" width="16" height="6" rx="2" fill="#64748b"/>
+      <rect x="14" y="30" width="16" height="6" rx="2" fill="#64748b"/>
+      <rect x="10" y="10" width="24" height="10" rx="3" fill="#94a3b8"/>
+      <path d="M8 10 Q2 6 4 0 Q8 -1 10 4 L10 10Z" fill="#475569"/>
+      <path d="M36 10 Q42 6 40 0 Q36 -1 34 4 L34 10Z" fill="#475569"/>
+      <circle cx="22" cy="14" r="3" fill="#334155"/>
+      <circle cx="22" cy="14" r="1.2" fill="#94a3b8"/>
+      <rect x="17" y="22" width="10" height="3" rx="1" fill="#fbbf24" opacity="0.8"/>
+      <rect x="17" y="29" width="10" height="3" rx="1" fill="#fbbf24" opacity="0.8"/>
+    </svg>
+  )
+}
 
 interface Props {
   cell: CellType
@@ -88,8 +154,7 @@ function CellEmoji({ cell, factory, producer, progress }: Pick<Props, 'cell' | '
       return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[(producer.grade ?? 1) - 1]}</span>
     case 'FA':
       if (!factory?.built) return <span style={{ fontSize: '28px', opacity: 0.45, position: 'relative', zIndex: 1 }}>🏗️</span>
-      const icon = factory.type === 'WA' ? '💧' : factory.type === 'PA' ? '⚙️' : '📦'
-      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{icon}</span>
+      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[(factory.grade ?? 1) - 1]}</span>
     default:
       return <span style={{ fontSize: '10px' }}>{cell.type}</span>
   }
@@ -142,10 +207,13 @@ export default function Cell({ cell, size, factory, producer, progress, placing,
   const { ring, bg } = getProgressColors(cell, factory, producer)
   const label = getLevelLabel(cell, factory, producer)
 
+  const isActiveFA = cell.type === 'FA' && factory?.built && factory.level > 0
+  const species = isActiveFA ? getSpecies(factory!.animalId) : null
+
   return (
     <div
       className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''}`}
-      style={{ width: size, height: size, cursor: placing ? 'pointer' : undefined, position: 'relative', ...dynamicStyle }}
+      style={{ width: size, height: size, cursor: placing ? 'pointer' : undefined, position: 'relative', zIndex: isActiveFA ? 7 : undefined, ...dynamicStyle }}
       onClick={onClick}
     >
       {showProgress && (
@@ -153,6 +221,26 @@ export default function Cell({ cell, size, factory, producer, progress, placing,
       )}
       <CellEmoji cell={cell} factory={factory} producer={producer} progress={progress} />
       {label && <span style={LABEL_STYLE}>{label}</span>}
+      {isActiveFA && species && (
+        <>
+          {/* 좌측 하단: 동물 (로봇 제외) */}
+          {species !== 'robot' && (
+            <span style={{
+              position: 'absolute', bottom: 1, left: 2,
+              fontSize: size * 0.35, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
+            }}>
+              {ANIMAL_EMOJI[species]}
+            </span>
+          )}
+          {/* 우측 하단: 공장 종류 */}
+          <span style={{
+            position: 'absolute', bottom: 2, right: 2,
+            fontSize: size * 0.28, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
+          }}>
+            {factory!.type === 'WA' ? '💧' : factory!.type === 'PA' ? '⚙️' : '📦'}
+          </span>
+        </>
+      )}
     </div>
   )
 }

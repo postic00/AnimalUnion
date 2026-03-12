@@ -93,6 +93,50 @@
   animation: pulse 0.8s infinite alternate !important;
 }
 
+/* ── 동물 손 ── */
+.handWrap {
+  position: absolute;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* UP_TO_DOWN: 위 레일(-130%) ↔ 셀 중앙(0%) */
+@keyframes handGrabLoop {
+  0%   { transform: translateY(-130%); }
+  40%  { transform: translateY(0%);    }
+  60%  { transform: translateY(0%);    }
+  100% { transform: translateY(-130%); }
+}
+
+/* UP_TO_DOWN: 셀 중앙(0%) ↔ 아래 레일(+130%) */
+@keyframes handPlaceLoop {
+  0%   { transform: translateY(0%)    rotate(180deg); }
+  40%  { transform: translateY(130%)  rotate(180deg); }
+  60%  { transform: translateY(130%)  rotate(180deg); }
+  100% { transform: translateY(0%)    rotate(180deg); }
+}
+
+/* DOWN_TO_UP: 아래 레일(+130%) ↔ 셀 중앙(0%) */
+@keyframes handGrabInvLoop {
+  0%   { transform: translateY(130%);  }
+  40%  { transform: translateY(0%);    }
+  60%  { transform: translateY(0%);    }
+  100% { transform: translateY(130%);  }
+}
+
+/* DOWN_TO_UP: 셀 중앙(0%) ↔ 위 레일(-130%) */
+@keyframes handPlaceInvLoop {
+  0%   { transform: translateY(0%)    rotate(180deg); }
+  40%  { transform: translateY(-130%) rotate(180deg); }
+  60%  { transform: translateY(-130%) rotate(180deg); }
+  100% { transform: translateY(0%)    rotate(180deg); }
+}
+
+.handGrab     { animation: handGrabLoop     3s ease-in-out infinite; }
+.handPlace    { animation: handPlaceLoop    3s ease-in-out infinite; animation-delay: -1.5s; }
+.handGrabInv  { animation: handGrabInvLoop  3s ease-in-out infinite; }
+.handPlaceInv { animation: handPlaceInvLoop 3s ease-in-out infinite; animation-delay: -1.5s; }
+
 /* 애니메이션 */
 @keyframes beltH {
   from { background-position: 0 0; }

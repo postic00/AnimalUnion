@@ -8,6 +8,7 @@ import type { Animal } from '../types/animal'
 import type { AnimalId } from '../types/animal'
 import Cell from './Cell'
 import ItemLayer from './ItemLayer'
+import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
@@ -72,6 +73,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
             배치 취소
           </button>
         )}
+        <HandLayer factories={factories} cellSize={cellSize} />
         <ItemLayer items={items} cellSize={cellSize} />
       </div>
       <button

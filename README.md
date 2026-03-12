@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# 동물노동조합
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+귀여운 햄스터, 고양이, 강아지들이 마라탕후루 공장을 운영하는 방치형 아이들 게임!
 
-Currently, two official plugins are available:
+## 앱 설명
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 짧은 설명 (80자 이내)
+햄스터·고양이·강아지가 운영하는 마라탕후루 공장! 자동으로 생산하고 골드를 모아 환생하세요.
 
-## React Compiler
+### 전체 설명
+동물노동조합에 오신 것을 환영합니다!
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+귀여운 동물 직원들이 마라탕후루 공장을 운영합니다. 재료를 생산하고, 세척·가공·포장 공장을 거쳐 완성된 제품을 판매하세요.
 
-## Expanding the ESLint configuration
+**주요 기능**
+- 🐹 햄스터, 🐱 고양이, 🐶 강아지 60마리 해금 및 업그레이드
+- ⚙️ 세척(WA), 가공(PA), 포장(PK) 공장 시스템
+- ⭐ 환생 시스템으로 더 강력한 보너스 획득
+- 🏆 글로벌 리더보드 (환생 포인트 & 골드 순위)
+- ⚡ 광고 시청으로 배속 2배 & 골드 3배 부스트
+- 🎵 동물 효과음 (찍찍, 야옹, 왈왈)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+**게임 방법**
+1. 생산자를 건설해 재료를 생산하세요
+2. 공장을 세워 재료를 가공하세요
+3. 골드를 모아 업그레이드하세요
+4. 환생으로 더 강력해지세요!
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Google Play 등록 정보
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **패키지명**: com.postic.animalunion
+- **카테고리**: 게임 > 캐주얼
+- **연령 등급**: 전체 이용가
+- **개인정보처리방침**: https://animal-union.vercel.app/privacy
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 개발
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev           # 개발 서버
+npm run build         # 빌드
+npx cap sync android  # Android 동기화
+npx cap open android  # Android Studio 열기
 ```

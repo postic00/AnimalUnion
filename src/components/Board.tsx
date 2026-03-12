@@ -10,7 +10,6 @@ import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
-import type { FAPhases } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 

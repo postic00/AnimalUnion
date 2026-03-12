@@ -28,56 +28,68 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset 
 
   return (
     <div className={styles.container}>
-      <div className={styles.section}>
-        <p className={styles.sectionTitle}>소리</p>
-        <div className={styles.card}>
-          <div className={styles.row}>
-            <span className={styles.label}>음소거</span>
-            <button
-              className={muted ? styles.toggleOn : styles.toggleOff}
-              onClick={onToggleMute}
-            >
-              {muted ? 'ON' : 'OFF'}
-            </button>
+
+      {/* 소리 */}
+      <div className={styles.card} style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>🔊</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#14532d' }}>음소거</span>
+            <span className={styles.cardSub} style={{ color: '#16a34a' }}>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
+          </div>
+        </div>
+        <button
+          className={`${styles.toggle} ${muted ? styles.toggleOn : styles.toggleOff}`}
+          onClick={onToggleMute}
+        >
+          <span className={styles.toggleThumb} />
+        </button>
+      </div>
+
+      {/* 데이터 */}
+      <div className={styles.card} style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>💾</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#1e40af' }}>마지막 저장</span>
+            <span className={styles.cardSub} style={{ color: '#2563eb' }}>{savedAt ? formatDate(savedAt) : '저장 없음'}</span>
           </div>
         </div>
       </div>
 
-      <div className={styles.section}>
-        <p className={styles.sectionTitle}>데이터</p>
-        <div className={styles.card}>
-          <div className={styles.row}>
-            <span className={styles.label}>마지막 저장</span>
-            <span className={styles.value}>{savedAt ? formatDate(savedAt) : '없음'}</span>
+      {/* 초기화 */}
+      <div className={styles.card} style={{ background: '#fff1f2', borderColor: '#fecdd3' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>🗑️</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#9f1239' }}>게임 초기화</span>
+            <span className={styles.cardSub} style={{ color: '#e11d48' }}>모든 진행 상황이 삭제돼요</span>
           </div>
         </div>
-        <div className={styles.card}>
-          {confirmReset && (
-            <p className={styles.warning}>모든 진행 상황이 삭제돼요. 한 번 더 누르면 초기화돼요.</p>
-          )}
-          <button
-            className={confirmReset ? styles.confirmButton : styles.resetButton}
-            onClick={handleReset}
-          >
-            {confirmReset ? '확인 — 초기화' : '게임 초기화'}
-          </button>
-          {confirmReset && (
-            <button className={styles.cancelButton} onClick={() => setConfirmReset(false)}>
-              취소
-            </button>
-          )}
+        <button
+          className={`${styles.resetBtn} ${confirmReset ? styles.resetBtnConfirm : ''}`}
+          onClick={handleReset}
+        >
+          {confirmReset ? '확인' : '초기화'}
+        </button>
+      </div>
+      {confirmReset && (
+        <button className={styles.cancelBtn} onClick={() => setConfirmReset(false)}>
+          취소
+        </button>
+      )}
+
+      {/* 정보 */}
+      <div className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>ℹ️</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#374151' }}>동물노동조합</span>
+            <span className={styles.cardSub} style={{ color: '#6b7280' }}>v0.9.0</span>
+          </div>
         </div>
       </div>
 
-      <div className={styles.section}>
-        <p className={styles.sectionTitle}>정보</p>
-        <div className={styles.card}>
-          <div className={styles.row}>
-            <span className={styles.label}>버전</span>
-            <span className={styles.value}>v0.9.0</span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

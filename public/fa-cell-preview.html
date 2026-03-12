@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FA Cell — 동물 손 샘플</title>
+<style>
+  body { background: #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 32px 16px; gap: 40px; font-family: sans-serif; }
+  .section { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .section-title { font-size: 14px; font-weight: 800; color: #374151; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .btn { padding: 6px 14px; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; background: #e2e8f0; color: #374151; }
+  .btn.active { background: #3b82f6; color: #fff; }
+
+  /* ── 레일 + 셀 컨테이너 ── */
+  .factory-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;   /* hand-wrap의 절대위치 기준 */
+    width: 72px;
+  }
+
+  /* 레일: z-index 3 — 손(5)보다 아래, 손이 레일 위로 보임 */
+  .rail {
+    width: 72px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-linear-gradient(90deg, #cbd5e1 0px, #cbd5e1 10px, #94a3b8 10px, #94a3b8 18px);
+    background-size: 18px 100%;
+    animation: beltH 0.5s linear infinite;
+    font-size: 24px;
+    position: relative;
+    z-index: 3;
+  }
+  .rail-top { border-radius: 8px 8px 0 0; }
+  .rail-bot { border-radius: 0 0 8px 8px; }
+  @keyframes beltH { from { background-position: 0 0; } to { background-position: 18px 0; } }
+
+  /* 셀: z-index 7 — 손(5)보다 위, 팔 부분을 셀 배경이 가림 */
+  .cell {
+    width: 72px;
+    height: 72px;
+    position: relative;
+    z-index: 7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 2px solid #93c5fd;
+    border-right: 2px solid #93c5fd;
+    background: linear-gradient(145deg, #dbeafe, #bfdbfe);
+    overflow: visible;
+  }
+  .cell-pa { border-left-color: #c4b5fd; border-right-color: #c4b5fd; background: linear-gradient(145deg, #ede9fe, #ddd6fe); }
+  .cell-pk { border-left-color: #fdba74; border-right-color: #fdba74; background: linear-gradient(145deg, #fff7ed, #fed7aa); }
+
+  .main-emoji { font-size: 34px; position: relative; top: -4px; z-index: 1; }
+  .type-badge { position: absolute; bottom: 2px; right: 2px; font-size: 22px; z-index: 2; }
+  .level-badge {
+    position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.5); color: #fff; font-size: 9px; font-weight: 800;
+    padding: 2px 6px; border-radius: 6px; white-space: nowrap; z-index: 3;
+  }
+  .animal-body {
+    position: absolute;
+    bottom: 2px; left: 2px;
+    font-size: 32px;
+    z-index: 5;
+    line-height: 1;
+  }
+
+  /* ── 손 래퍼 ──
+     factory-col 기준 절대위치.
+     top: 48px → 레일(36px) + 셀 상단에서 12px 아래
+     z-index: 5 → 레일(3)보다 위, 셀(7)보다 아래
+     따라서: 레일 영역의 발은 보이고, 셀 안의 팔은 셀 배경에 가려짐 */
+  .hand-wrap {
+    position: absolute;
+    top: 48px;
+    left: 15px;
+    z-index: 5;
+    transform-origin: top center;
+  }
+  .hand-wrap svg { display: block; }
+
+  /* 잡힌 아이템 — hand-wrap 자식이라 손과 함께 이동 */
+  .grabbed-item {
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    margin-left: -11px;
+    font-size: 22px;
+    opacity: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  }
+  /* grabbing·processing: 아이템은 손 아래 숨겨진 것처럼 보이지 않음 */
+
+  /* PLACING: SVG 180도 회전 — 발끝이 아래를 향함 */
+  .hand-placing svg { transform: rotate(180deg); }
+
+  /* 아래 레일 아이템 — 평소 숨겨져 있다가 손이 닿을 때 나타남 */
+  .rail-bot-item {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    font-size: 24px;
+  }
+  .rail-bot-item.visible { opacity: 1; }
+
+  /* ── IDLE: 숨어있음 ── */
+  .hand-idle {
+    transform: translateY(-20px) scaleY(0);
+    opacity: 0;
+    transition: transform 0.3s ease-in, opacity 0.25s ease-in;
+  }
+
+  /* ── GRABBING: 위 레일에서 빠르게 낚아채 → 천천히 셀 안으로 ── */
+  @keyframes grab {
+    0%   { transform: translateY(-20px) scaleY(0);           opacity: 0; }
+    10%  { transform: translateY(-44px) scaleY(1) scale(1.1); opacity: 1; }
+    100% { transform: translateY(5px)   scaleY(1) scale(1.0); opacity: 1; }
+  }
+  .hand-grabbing { animation: grab 2.0s ease-out forwards; }
+
+  /* ── PROCESSING: 셀 안에 고정 ── */
+  .hand-processing {
+    transform: translateY(5px) scaleY(1);
+    opacity: 1;
+    transition: transform 0.15s ease-out;
+  }
+
+  /* ── PLACING: 아래 레일로 빠르게 내밀고 → 천천히 올라와 사라짐 ── */
+  @keyframes place {
+    0%   { transform: translateY(5px)   scaleY(1) scale(1.0); opacity: 1; }
+    10%  { transform: translateY(58px)  scaleY(1) scale(1.1); opacity: 1; }
+    100% { transform: translateY(-20px) scaleY(0);            opacity: 0; }
+  }
+  .hand-placing { animation: place 2.0s ease-out forwards; }
+
+</style>
+</head>
+<body>
+
+<div class="section">
+  <div class="section-title">🐹 햄스터 손</div>
+  <div class="factory-col">
+    <!-- 손: 레일·셀보다 먼저 DOM에 배치 (z-index:5) -->
+    <div class="hand-wrap hand-idle" id="hand-h">
+      <span class="grabbed-item" id="item-h">🌶️</span>
+      <svg width="42" height="48" viewBox="0 0 42 48">
+        <!-- 팔 -->
+        <rect x="16" y="14" width="10" height="32" rx="5" fill="#f9a8b4"/>
+        <!-- 손바닥 -->
+        <ellipse cx="21" cy="14" rx="18" ry="9" fill="#f9a8b4"/>
+        <!-- 발가락 3개 -->
+        <ellipse cx="7"  cy="7" rx="6" ry="5.5" fill="#fbc4cd"/>
+        <ellipse cx="21" cy="4" rx="6" ry="5.5" fill="#fbc4cd"/>
+        <ellipse cx="35" cy="7" rx="6" ry="5.5" fill="#fbc4cd"/>
+        <!-- 발바닥 패드 -->
+        <ellipse cx="21" cy="16" rx="7" ry="5" fill="#f472a0" opacity="0.5"/>
+      </svg>
+    </div>
+    <!-- 레일·셀: 손보다 나중에 배치 → 셀(z-index:7)이 팔을 가림 -->
+    <div class="rail rail-top" id="rail-top-h">🌶️</div>
+    <div class="cell" id="cell-h">
+      <span class="level-badge">Lv.3</span>
+      <span class="main-emoji">🌶️</span>
+      <span class="type-badge">💧</span>
+      <span class="animal-body">🐹</span>
+    </div>
+    <div class="rail rail-bot" id="rail-bot-h"><span class="rail-bot-item" id="rail-bot-item-h">🌶️</span></div>
+  </div>
+  <div class="btns">
+    <button class="btn active" onclick="setHand('h','idle')">IDLE</button>
+    <button class="btn" onclick="setHand('h','grabbing')">GRABBING</button>
+    <button class="btn" onclick="setHand('h','processing')">PROCESSING</button>
+    <button class="btn" onclick="setHand('h','placing')">PLACING</button>
+    <button class="btn" onclick="autoPlay('h')">▶ 자동</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🐱 고양이 손</div>
+  <div class="factory-col">
+    <div class="hand-wrap hand-idle" id="hand-c">
+      <span class="grabbed-item" id="item-c">🫙</span>
+      <svg width="46" height="52" viewBox="0 0 46 52">
+        <!-- 팔 -->
+        <rect x="17" y="16" width="12" height="34" rx="6" fill="#d4a96a"/>
+        <!-- 손바닥 -->
+        <ellipse cx="23" cy="16" rx="20" ry="10" fill="#d4a96a"/>
+        <!-- 발톱 3개 -->
+        <path d="M6 10 Q4 1 8 0 Q12 1 10 10" fill="#fff" stroke="#bbb" stroke-width="0.5"/>
+        <path d="M19 6 Q18 -2 23 -3 Q28 -2 27 6" fill="#fff" stroke="#bbb" stroke-width="0.5"/>
+        <path d="M36 10 Q34 1 38 0 Q42 1 40 10" fill="#fff" stroke="#bbb" stroke-width="0.5"/>
+        <!-- 발바닥 패드 -->
+        <ellipse cx="23" cy="18" rx="7" ry="5" fill="#c084a0" opacity="0.6"/>
+        <ellipse cx="12" cy="14" rx="3" ry="2.5" fill="#c084a0" opacity="0.5"/>
+        <ellipse cx="34" cy="14" rx="3" ry="2.5" fill="#c084a0" opacity="0.5"/>
+      </svg>
+    </div>
+    <div class="rail rail-top" id="rail-top-c">🫙</div>
+    <div class="cell cell-pa" id="cell-c">
+      <span class="level-badge">Lv.5</span>
+      <span class="main-emoji">🫙</span>
+      <span class="type-badge">⚙️</span>
+      <span class="animal-body">🐱</span>
+    </div>
+    <div class="rail rail-bot" id="rail-bot-c"><span class="rail-bot-item" id="rail-bot-item-c">🫙</span></div>
+  </div>
+  <div class="btns">
+    <button class="btn active" onclick="setHand('c','idle')">IDLE</button>
+    <button class="btn" onclick="setHand('c','grabbing')">GRABBING</button>
+    <button class="btn" onclick="setHand('c','processing')">PROCESSING</button>
+    <button class="btn" onclick="setHand('c','placing')">PLACING</button>
+    <button class="btn" onclick="autoPlay('c')">▶ 자동</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">🐶 강아지 손</div>
+  <div class="factory-col">
+    <div class="hand-wrap hand-idle" id="hand-d">
+      <span class="grabbed-item" id="item-d">🍇</span>
+      <svg width="50" height="52" viewBox="0 0 50 52">
+        <!-- 팔 -->
+        <rect x="18" y="18" width="14" height="34" rx="7" fill="#c8a882"/>
+        <!-- 손바닥 -->
+        <ellipse cx="25" cy="18" rx="22" ry="11" fill="#c8a882"/>
+        <!-- 발가락 4개 -->
+        <ellipse cx="5"  cy="10" rx="5.5" ry="6.5" fill="#b8956e"/>
+        <ellipse cx="16" cy="5"  rx="5.5" ry="6.5" fill="#b8956e"/>
+        <ellipse cx="34" cy="5"  rx="5.5" ry="6.5" fill="#b8956e"/>
+        <ellipse cx="45" cy="10" rx="5.5" ry="6.5" fill="#b8956e"/>
+        <!-- 발바닥 큰 패드 -->
+        <ellipse cx="25" cy="20" rx="9"   ry="7"   fill="#a0785a" opacity="0.7"/>
+        <!-- 작은 패드 -->
+        <ellipse cx="11" cy="15" rx="3.5" ry="3"   fill="#a0785a" opacity="0.6"/>
+        <ellipse cx="39" cy="15" rx="3.5" ry="3"   fill="#a0785a" opacity="0.6"/>
+      </svg>
+    </div>
+    <div class="rail rail-top" id="rail-top-d">🍇</div>
+    <div class="cell cell-pk" id="cell-d">
+      <span class="level-badge">Lv.4</span>
+      <span class="main-emoji">🍇</span>
+      <span class="type-badge">📦</span>
+      <span class="animal-body">🐶</span>
+    </div>
+    <div class="rail rail-bot" id="rail-bot-d"><span class="rail-bot-item" id="rail-bot-item-d">🍇</span></div>
+  </div>
+  <div class="btns">
+    <button class="btn active" onclick="setHand('d','idle')">IDLE</button>
+    <button class="btn" onclick="setHand('d','grabbing')">GRABBING</button>
+    <button class="btn" onclick="setHand('d','processing')">PROCESSING</button>
+    <button class="btn" onclick="setHand('d','placing')">PLACING</button>
+    <button class="btn" onclick="autoPlay('d')">▶ 자동</button>
+  </div>
+</div>
+
+<script>
+  const states = ['idle','grabbing','processing','placing']
+  const timers = {}
+  const idxs = { h:0, c:0, d:0 }
+
+  function setHand(who, state) {
+    const hand = document.getElementById(`hand-${who}`)
+    hand.className = 'hand-wrap'
+    void hand.offsetWidth
+    hand.className = `hand-wrap hand-${state}`
+
+    const item = document.getElementById(`item-${who}`)
+    if (item) {
+      item.className = 'grabbed-item'
+      void item.offsetWidth
+      item.className = `grabbed-item item-${state}`
+    }
+
+    // 위 레일 아이템: idle일 때만 보임 (grabbing 시 손 아래 숨겨진 것처럼)
+    const railTop = document.getElementById(`rail-top-${who}`)
+    if (railTop) {
+      railTop.style.transition = state === 'idle' ? 'opacity 0.3s ease' : 'none'
+      railTop.style.opacity = state === 'idle' ? '1' : '0'
+    }
+
+    // 아래 레일 아이템: placing 시 손이 닿는 타이밍(200ms)에 나타남, idle 복귀 시 숨김
+    const railBotItem = document.getElementById(`rail-bot-item-${who}`)
+    if (railBotItem) {
+      if (state === 'placing') {
+        setTimeout(() => railBotItem.classList.add('visible'), 200)
+      } else {
+        railBotItem.classList.remove('visible')
+      }
+    }
+
+    // 버튼 active 표시
+    document.querySelectorAll(`[onclick*="'${who}'"]`).forEach(b => {
+      b.classList.toggle('active', b.getAttribute('onclick').includes(`'${state}'`))
+    })
+  }
+
+  function autoPlay(who) {
+    if (timers[who]) { clearInterval(timers[who]); timers[who] = null; return }
+    timers[who] = setInterval(() => {
+      idxs[who] = (idxs[who] + 1) % states.length
+      setHand(who, states[idxs[who]])
+    }, 900)
+  }
+</script>
+</body>
+</html>

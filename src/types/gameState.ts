@@ -4,6 +4,7 @@ import type { Factory } from './factory'
 import { type Animal, initialAnimals } from './animal'
 
 export interface GameState {
+  playerName: string
   gold: number
   goldPerSec: number
   bundleCount: number
@@ -23,6 +24,7 @@ export interface GameState {
 }
 
 export const initialGameState: GameState = {
+  playerName: '',
   gold: 1_000_000_000_000_000,
   goldPerSec: 0,
   bundleCount: 0,

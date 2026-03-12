@@ -8,6 +8,7 @@ import FactoryTab from './components/FactoryTab'
 import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
+import LeaderboardTab from './components/LeaderboardTab'
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
@@ -479,7 +480,7 @@ export default function App() {
             </div>
           ) : (
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
-              {['생산 관리', '공장 관리', '재료 관리', '', '설정'][activeTab ?? 0]}
+              {['생산 관리', '공장 관리', '재료 관리', '', '순위', '설정'][activeTab ?? 0]}
             </h2>
           )
         }
@@ -532,6 +533,14 @@ export default function App() {
           />
         )}
         {activeTab === 4 && (
+          <LeaderboardTab
+            playerName={gameState.playerName}
+            prestigePoints={gameState.prestigePoints}
+            prestigeCount={gameState.prestigeCount}
+            onNameChange={name => setGameState(prev => ({ ...prev, playerName: name }))}
+          />
+        )}
+        {activeTab === 5 && (
           <SettingsTab
             savedAt={savedAt}
             muted={muted}

@@ -1,0 +1,153 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.myScore {
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.myScoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.myName {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.nameEditBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.nameEdit {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.nameInput {
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 120px;
+  outline: none;
+}
+
+.nameInput:focus {
+  border-color: #6366f1;
+}
+
+.nameSaveBtn {
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.myPoints {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.submitBtn {
+  width: 100%;
+  padding: 10px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.submitBtn:disabled {
+  background: #c7d2fe;
+  cursor: default;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loading {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1.5px solid #f3f4f6;
+}
+
+.myRow {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.rank {
+  font-size: 14px;
+  font-weight: 900;
+  min-width: 28px;
+  color: #374151;
+}
+
+.name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.prestige {
+  font-size: 11px;
+  color: #9ca3af;
+  white-space: nowrap;
+}

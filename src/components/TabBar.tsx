@@ -14,6 +14,7 @@ const TABS = [
   { label: '공장', icon: '⚙️' },
   { label: '재료', icon: '📦' },
   { label: '환생', icon: '⭐' },
+  { label: '순위', icon: '🏆' },
   { label: '설정', icon: '🔧' },
 ]
 

@@ -88,6 +88,8 @@ export function useGameLoop(
   itemValueLevels: number[],
   faBufferLevel: number,
   rsBufferLevel: number,
+  onFactoryProcess?: (animalId: string | null) => void,
+  speedMultiplier?: number,
 ) {
   const [items, setItems] = useState<Item[]>([])
   const [progresses, setProgresses] = useState<Progresses>({})
@@ -98,6 +100,10 @@ export function useGameLoop(
   const rsQueuesRef = useRef<Record<string, Item[]>>({})  // RS 버퍼 큐
   const onGoldEarnedRef = useRef(onGoldEarned)
   onGoldEarnedRef.current = onGoldEarned
+  const onFactoryProcessRef = useRef(onFactoryProcess)
+  onFactoryProcessRef.current = onFactoryProcess
+  const speedMultiplierRef = useRef(speedMultiplier ?? 1)
+  speedMultiplierRef.current = speedMultiplier ?? 1
   const producersRef = useRef(producers)
   producersRef.current = producers
   const factoriesRef = useRef(factories)
@@ -135,7 +141,8 @@ export function useGameLoop(
 
     const tick = (time: number) => {
       if (lastTimeRef.current === 0) lastTimeRef.current = time
-      const delta = Math.min(time - lastTimeRef.current, 50)
+      const rawDelta = Math.min(time - lastTimeRef.current, 50)
+      const delta = rawDelta * (speedMultiplierRef.current ?? 1)
       lastTimeRef.current = time
 
       let items = itemsRef.current
@@ -295,6 +302,7 @@ export function useGameLoop(
             const newTimer = fas.timer + delta
             const processTime = getFactoryProcessTime(factory.level, fas.grabbed!.quantity)
             if (newTimer >= processTime) {
+              onFactoryProcessRef.current?.(factory.animalId ?? null)
               faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, outputItem: fas.grabbed, grabbed: null }
             } else {
               faStatesRef.current[key] = { ...fas, timer: newTimer }
@@ -343,6 +351,7 @@ export function useGameLoop(
             const newTimer = fas.timer + delta
             const processTime = getFactoryProcessTime(factory.level, fas.grabbed!.quantity)
             if (newTimer >= processTime) {
+              onFactoryProcessRef.current?.(factory.animalId ?? null)
               faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, outputItem: fas.grabbed, grabbed: null }
             } else {
               faStatesRef.current[key] = { ...fas, timer: newTimer }
@@ -434,6 +443,7 @@ export function useGameLoop(
                 materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
               )
               const outputItem = { ...base, id: `item-${nextId++}` }
+              onFactoryProcessRef.current?.(factory.animalId ?? null)
               faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, buffer: [], outputItem }
             } else {
               faStatesRef.current[key] = { ...fas, timer: newTimer }

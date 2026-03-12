@@ -9,11 +9,15 @@ import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
 import LeaderboardTab from './components/LeaderboardTab'
+import AdModal from './components/AdModal'
+import PrestigeAdModal from './components/PrestigeAdModal'
+import ConfirmModal from './components/ConfirmModal'
 import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supabase'
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
+import { soundHamster, soundCat, soundCoin, soundBuild } from './utils/sound'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
@@ -91,6 +95,15 @@ export default function App() {
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
 
+  // 부스트
+  const BOOST_MS = 10 * 60 * 1000
+  const [speedBoostUntil, setSpeedBoostUntil] = useState(0)
+  const [goldBoostUntil, setGoldBoostUntil] = useState(0)
+  const [now, setNow] = useState(Date.now())
+  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | null>(null)
+  const [showPrestigeModal, setShowPrestigeModal] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+
   useEffect(() => {
     const interval = setInterval(() => {
       saveGame(board, gameState)
@@ -98,6 +111,11 @@ export default function App() {
     }, 30_000)
     return () => clearInterval(interval)
   }, [board, gameState])
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -123,12 +141,22 @@ export default function App() {
     return () => clearInterval(interval)
   }, [])
 
+  const mutedRef = useRef(muted)
+  mutedRef.current = muted
+
+  const goldBoostUntilRef = useRef(0)
+  goldBoostUntilRef.current = goldBoostUntil
+
   const handleGoldEarned = useCallback((amount: number) => {
-    earnedInSecRef.current += amount
-    setGameState(prev => ({ ...prev, gold: prev.gold + amount, totalEarned: prev.totalEarned + amount }))
+    const multiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
+    const earned = amount * multiplier
+    earnedInSecRef.current += earned
+    setGameState(prev => ({ ...prev, gold: prev.gold + earned, totalEarned: prev.totalEarned + earned }))
+    if (!mutedRef.current) soundCoin()
   }, [])
 
   const handleClickerClick = useCallback(() => {
+    if (!mutedRef.current) soundHamster()
     const now = performance.now()
     setGameState(prev => {
       const { clickCount, threshold, level } = prev.clicker
@@ -178,6 +206,7 @@ export default function App() {
     setGameState(prev => {
       const cost = getProducerBuildCost()
       if (prev.gold < cost) return prev
+      if (!mutedRef.current) soundBuild()
       const producers = [...prev.producers]
       producers[index] = { ...producers[index], built: true, level: 1 }
       return { ...prev, gold: prev.gold - cost, producers }
@@ -189,6 +218,7 @@ export default function App() {
       const producer = prev.producers[index]
       const cost = getProducerUpgradeCost(producer.level)
       if (prev.gold < cost) return prev
+      if (!mutedRef.current) soundBuild()
       const producers = [...prev.producers]
       producers[index] = { ...producer, level: producer.level + 1 }
       return { ...prev, gold: prev.gold - cost, producers }
@@ -206,6 +236,7 @@ export default function App() {
     setGameState(prev => {
       const cost = getFactoryBuildCost()
       if (prev.gold < cost) return prev
+      if (!mutedRef.current) soundBuild()
       const newFactory: Factory = {
         row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN', animalId: null,
       }
@@ -273,11 +304,12 @@ export default function App() {
     })
   }, [])
 
-  const handlePrestige = useCallback(() => {
+  const doPrestige = useCallback((multiplier: number = 1) => {
+    if (!mutedRef.current) soundCat()
     setResetKey(k => k + 1)
     setBoard(initialBoard)
     setGameState(prev => {
-      const newPrestigePoints = prev.prestigePoints + getPrestigePoints(prev.totalEarned)
+      const newPrestigePoints = prev.prestigePoints + getPrestigePoints(prev.totalEarned) * multiplier
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
         submitPrestigeScore(prev.playerName, newPrestigePoints, newPrestigeCount)
@@ -299,6 +331,10 @@ export default function App() {
     })
   }, [])
 
+  const handlePrestige = useCallback(() => {
+    setShowPrestigeModal(true)
+  }, [])
+
   const handlePrestigeReset = useCallback(() => {
     setGameState(prev => {
       const refund = getItemValueResetRefund(prev.itemValueLevels) + getAnimalResetRefund(prev.animals)
@@ -310,6 +346,19 @@ export default function App() {
       }
     })
   }, [])
+
+  const handleAdComplete = useCallback(() => {
+    const target = adTarget
+    setAdTarget(null)
+    if (target === 'speed') {
+      setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+    } else if (target === 'gold') {
+      setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+    } else if (target === 'prestige') {
+      setShowPrestigeModal(false)
+      doPrestige(2)
+    }
+  }, [adTarget, doPrestige])
 
   const handlePrestigeKeepPoints = useCallback(() => {
     setResetKey(k => k + 1)
@@ -477,6 +526,8 @@ export default function App() {
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={() => setPlacingAnimalId(null)}
         spawnClickerItemRef={spawnClickerItemRef}
+        muted={muted}
+        speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
       />
       <TabBar
         clicker={gameState.clicker}
@@ -488,6 +539,11 @@ export default function App() {
           setSavedAt(Date.now())
         }}
         activeTab={activeTab}
+        speedBoostUntil={speedBoostUntil}
+        goldBoostUntil={goldBoostUntil}
+        now={now}
+        onSpeedBoost={() => { setAdTarget('speed'); }}
+        onGoldBoost={() => { setAdTarget('gold'); }}
       />
       <BottomSheet
         open={activeTab !== null}
@@ -595,10 +651,39 @@ export default function App() {
             savedAt={savedAt}
             muted={muted}
             onToggleMute={handleToggleMute}
-            onHardReset={handleHardReset}
+            onHardReset={() => setShowResetConfirm(true)}
           />
         )}
       </BottomSheet>
+
+      {/* 광고 모달 */}
+      {adTarget !== null && (
+        <AdModal
+          onComplete={handleAdComplete}
+          onClose={() => setAdTarget(null)}
+        />
+      )}
+
+      {/* 환생 모달 */}
+      {showPrestigeModal && (
+        <PrestigeAdModal
+          prestigePoints={getPrestigePoints(gameState.totalEarned)}
+          onPrestige={() => { setShowPrestigeModal(false); doPrestige(1) }}
+          onWatchAd={() => { setAdTarget('prestige') }}
+          onClose={() => setShowPrestigeModal(false)}
+        />
+      )}
+
+      {/* 초기화 확인 */}
+      {showResetConfirm && (
+        <ConfirmModal
+          title="게임 초기화"
+          message={'모든 데이터가 삭제됩니다.\n정말 초기화하시겠습니까?'}
+          confirmLabel="초기화"
+          onConfirm={() => { setShowResetConfirm(false); handleHardReset() }}
+          onClose={() => setShowResetConfirm(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { formatGold } from '../utils/formatGold'
+import { soundByAnimalId } from '../utils/sound'
 import type { MutableRefObject } from 'react'
 import type { Board as BoardType } from '../types/board'
 import type { Producer } from '../types/producer'
@@ -30,9 +31,11 @@ interface Props {
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
   spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
+  muted: boolean
+  speedMultiplier: number
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, muted, speedMultiplier }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -44,7 +47,11 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items, progresses, faPhases, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
+  const handleFactoryProcess = useCallback((animalId: string | null) => {
+    if (!muted) soundByAnimalId(animalId)
+  }, [muted])
+
+  const { items, progresses, faPhases, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier)
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null

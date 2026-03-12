@@ -20,6 +20,7 @@ import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
 import { soundHamster, soundCat, soundCoin, soundBuild } from './utils/sound'
 import { initAdMob } from './utils/admob'
+import { initTossBackEvent, initTossVisibility } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
@@ -99,6 +100,19 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('tutorialDone'))
 
   useEffect(() => { initAdMob() }, [])
+
+  // 앱인토스: 뒤로가기 이벤트 처리
+  useEffect(() => {
+    return initTossBackEvent(() => setActiveTab(null))
+  }, [])
+
+  // 앱인토스: 백그라운드 전환 시 사운드 중단
+  useEffect(() => {
+    return initTossVisibility(
+      () => { mutedRef.current = true },
+      () => { mutedRef.current = muted }
+    )
+  }, [muted])
 
   // 부스트
   const BOOST_MS = 10 * 60 * 1000

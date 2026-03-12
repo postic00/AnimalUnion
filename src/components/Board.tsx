@@ -10,6 +10,7 @@ import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
+import type { FAPhases } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 
@@ -44,7 +45,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items, progresses, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
+  const { items, progresses, faPhases, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel)
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null
@@ -73,7 +74,7 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
             배치 취소
           </button>
         )}
-        <HandLayer factories={factories} cellSize={cellSize} />
+        <HandLayer factories={factories} cellSize={cellSize} faPhases={faPhases} />
         <ItemLayer items={items} cellSize={cellSize} />
       </div>
       <button

@@ -92,6 +92,16 @@ export function applyWaBonus(item: Item, factory: Factory, animals: Animal[]): I
   return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
 }
 
+export function applyPkBonus(item: Item, factory: Factory, animals: Animal[]): Item {
+  const { grade } = factory
+  if (grade === 0) return item
+  if (item.pkGrades.includes(grade)) return item
+  const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
+  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const bonus = getFactoryBonus('PK', grade) + animalBonus
+  return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
+}
+
 // PA/PK 출력 아이템 생성 (레시피 조합 결과)
 export function createRecipeOutput(
   outputGrade: number,

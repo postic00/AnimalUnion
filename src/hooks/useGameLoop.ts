@@ -13,6 +13,7 @@ import {
   getFactoryProcessTime,
   getMaterialQuantity,
   applyWaBonus,
+  applyPkBonus,
   createRecipeOutput,
   getRsBufferCapacity,
   getFaBufferCapacity,
@@ -29,7 +30,9 @@ import {
 
 let nextId = 0
 
-type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
+export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
+export type FAPhases = Record<string, FAPhase>
+
 interface FAState {
   state: FAPhase
   timer: number
@@ -88,6 +91,7 @@ export function useGameLoop(
 ) {
   const [items, setItems] = useState<Item[]>([])
   const [progresses, setProgresses] = useState<Progresses>({})
+  const [faPhases, setFaPhases] = useState<FAPhases>({})
   const itemsRef = useRef<Item[]>([])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
@@ -268,6 +272,9 @@ export function useGameLoop(
           // WA: 아이템 통과 + 가치 증가
           if (fas.state === 'IDLE') {
             const idx = items.findIndex(it => {
+              if (it.grade !== factory.grade) return false
+              if (it.waGrades.includes(factory.grade)) return false
+              if (it.pkGrades.length > 0) return false
               const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
               return dist <= cellSize * 0.3
             })
@@ -310,8 +317,56 @@ export function useGameLoop(
               faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
             }
           }
+        } else if (factory.type === 'PK') {
+          // PK: 등급+포장이력 기준 단일 아이템 grab → 포장 보너스 → 출력
+          if (fas.state === 'IDLE') {
+            const idx = items.findIndex(it => {
+              if (it.grade !== factory.grade) return false
+              if (it.pkGrades.includes(factory.grade)) return false
+              const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
+              return dist <= cellSize * 0.3
+            })
+            if (idx !== -1) {
+              const grabbed = items[idx]
+              items = items.filter((_, i) => i !== idx)
+              faStatesRef.current[key] = { ...fas, state: 'GRABBING', timer: 0, grabbed }
+            }
+          } else if (fas.state === 'GRABBING') {
+            const newTimer = fas.timer + delta
+            if (newTimer >= pickTime) {
+              const processed = applyPkBonus(fas.grabbed!, factory, animalsRef.current)
+              faStatesRef.current[key] = { ...fas, state: 'PROCESSING', timer: 0, grabbed: processed, outputItem: null }
+            } else {
+              faStatesRef.current[key] = { ...fas, timer: newTimer }
+            }
+          } else if (fas.state === 'PROCESSING') {
+            const newTimer = fas.timer + delta
+            const processTime = getFactoryProcessTime(factory.level, fas.grabbed!.quantity)
+            if (newTimer >= processTime) {
+              faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, outputItem: fas.grabbed, grabbed: null }
+            } else {
+              faStatesRef.current[key] = { ...fas, timer: newTimer }
+            }
+          } else if (fas.state === 'PLACING') {
+            const newTimer = fas.timer + delta
+            if (newTimer >= pickTime) {
+              if (!isOutputOccupied()) {
+                items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
+                faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
+              } else {
+                faStatesRef.current[key] = { ...fas, state: 'WAITING', timer: 0 }
+              }
+            } else {
+              faStatesRef.current[key] = { ...fas, timer: newTimer }
+            }
+          } else if (fas.state === 'WAITING') {
+            if (!isOutputOccupied()) {
+              items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
+              faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
+            }
+          }
         } else {
-          // PA / PK: 레시피 기반 조합
+          // PA: 레시피 기반 조합
           const recipe = RECIPES[factory.grade]
           if (!recipe) return
 
@@ -346,6 +401,7 @@ export function useGameLoop(
 
             const idx = items.findIndex(it => {
               if (it.grade !== neededGrade) return false
+              if (it.pkGrades.length > 0) return false
               const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
               return dist <= cellSize * 0.3
             })
@@ -357,7 +413,6 @@ export function useGameLoop(
           } else if (fas.state === 'GRABBING') {
             const newTimer = fas.timer + delta
             if (newTimer >= pickTime) {
-              // 버퍼에 추가
               const grade = fas.grabbed!.grade
               const newBuffer = [...fas.buffer]
               const existing = newBuffer.find(b => b.grade === grade)
@@ -459,6 +514,7 @@ export function useGameLoop(
 
     const progressInterval = setInterval(() => {
       const p: Progresses = {}
+      const fp: FAPhases = {}
       board.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           if (cell.type !== 'PR') return
@@ -476,17 +532,17 @@ export function useGameLoop(
         const fas = faStatesRef.current[key]
         if (!fas) return
         const cellKey = `${factory.row}-${factory.col}`
+        fp[cellKey] = fas.state
         if (fas.state === 'PROCESSING') {
           const qty = fas.grabbed?.quantity ?? getMaterialQuantity(1)
           const processTime = getFactoryProcessTime(factory.level, qty)
           p[cellKey] = Math.min(fas.timer / processTime, 1)
-        } else if (fas.state === 'GRABBING' || fas.state === 'PLACING') {
-          p[cellKey] = fas.timer / pickTime
         } else if (fas.state === 'WAITING') {
           p[cellKey] = 1
         }
       })
       setProgresses(p)
+      setFaPhases(fp)
     }, 100)
 
     return () => {
@@ -500,5 +556,5 @@ export function useGameLoop(
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items, progresses, spawnClickerItem }
+  return { items, progresses, faPhases, spawnClickerItem }
 }

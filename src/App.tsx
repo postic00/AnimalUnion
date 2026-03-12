@@ -463,9 +463,6 @@ export default function App() {
           setActiveTab(tab)
           saveGame(board, gameState)
           setSavedAt(Date.now())
-          if (tab !== null) {
-            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50)
-          }
         }}
         activeTab={activeTab}
       />

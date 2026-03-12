@@ -154,7 +154,7 @@ function CellEmoji({ cell, factory, producer, progress }: Pick<Props, 'cell' | '
       return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[(producer.grade ?? 1) - 1]}</span>
     case 'FA':
       if (!factory?.built) return <span style={{ fontSize: '28px', opacity: 0.45, position: 'relative', zIndex: 1 }}>🏗️</span>
-      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[(factory.grade ?? 1) - 1]}</span>
+      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 10 }}>{GRADE_EMOJIS[(factory.grade ?? 1) - 1]}</span>
     default:
       return <span style={{ fontSize: '10px' }}>{cell.type}</span>
   }
@@ -227,7 +227,7 @@ export default function Cell({ cell, size, factory, producer, progress, placing,
           {species !== 'robot' && (
             <span style={{
               position: 'absolute', bottom: 1, left: 2,
-              fontSize: size * 0.35, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
+              fontSize: size * 0.4, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
             }}>
               {ANIMAL_EMOJI[species]}
             </span>
@@ -235,7 +235,7 @@ export default function Cell({ cell, size, factory, producer, progress, placing,
           {/* 우측 하단: 공장 종류 */}
           <span style={{
             position: 'absolute', bottom: 2, right: 2,
-            fontSize: size * 0.28, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
+            fontSize: size * 0.4, lineHeight: 1, zIndex: 5, pointerEvents: 'none',
           }}>
             {factory!.type === 'WA' ? '💧' : factory!.type === 'PA' ? '⚙️' : '📦'}
           </span>

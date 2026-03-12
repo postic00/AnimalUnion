@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { Board } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Animal, AnimalId } from '../types/animal'
@@ -55,6 +56,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
   color: string
 }) {
   const [open, setOpen] = useState(false)
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({})
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -65,10 +67,18 @@ function ComboBox({ label, options, selected, onSelect, color }: {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const handleToggle = () => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      setPopupStyle({ position: 'fixed', bottom: window.innerHeight - rect.top + 6, left: rect.left })
+    }
+    setOpen(v => !v)
+  }
+
   return (
     <div className={styles.combo} ref={ref}>
-      {open && (
-        <div className={styles.comboPopup}>
+      {open && createPortal(
+        <div className={styles.comboPopup} style={popupStyle}>
           {options.map(o => {
             const isSelected = o.value === selected
             return (
@@ -83,12 +93,13 @@ function ComboBox({ label, options, selected, onSelect, color }: {
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body
       )}
       <button
         className={styles.comboTrigger}
         style={{ borderColor: color, color }}
-        onClick={() => setOpen(v => !v)}
+        onClick={handleToggle}
       >
         {label}
         <span className={styles.comboArrow}>{open ? '▼' : '▲'}</span>

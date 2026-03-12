@@ -305,9 +305,7 @@
 }
 
 .comboPopup {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
+  position: fixed;
   background: #fff;
   border: 1.5px solid #e5e7eb;
   border-radius: 14px;

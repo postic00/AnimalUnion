@@ -24,6 +24,15 @@
   display: block;
 }
 
+/* 우측 상단: 등급 이모지 (포장된 아이템) */
+.gradeBadge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: inherit;
+  line-height: 1;
+}
+
 /* 좌측 하단: 갯수 */
 .qtyBadge {
   position: absolute;

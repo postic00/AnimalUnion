@@ -37,7 +37,6 @@ import {
   getBufferUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
-import { formatGold } from './utils/formatGold'
 
 const GRADE_EMOJIS: Record<number, string> = {
   1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',

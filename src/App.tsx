@@ -537,6 +537,7 @@ export default function App() {
             playerName={gameState.playerName}
             prestigePoints={gameState.prestigePoints}
             prestigeCount={gameState.prestigeCount}
+            totalEarned={gameState.totalEarned}
             onNameChange={name => setGameState(prev => ({ ...prev, playerName: name }))}
           />
         )}

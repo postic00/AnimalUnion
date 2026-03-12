@@ -5,6 +5,29 @@
   padding: 12px;
 }
 
+.modeRow {
+  display: flex;
+  gap: 8px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.modeBtnActive {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: #eef2ff;
+}
+
 .myScore {
   background: #f9fafb;
   border: 1.5px solid #e5e7eb;

@@ -15,6 +15,7 @@ import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
+import { RECIPES } from './balance'
 import {
   getBundleCost,
   getProducerBuildCost,
@@ -28,9 +29,20 @@ import {
   getItemValueResetRefund,
   getAnimalResetRefund,
   getMaterialQuantityLevelCost,
+  getMaterialQuantity,
+  getClickerThreshold,
+  getClickerUpgradeCost,
   getBufferUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
+import { formatGold } from './utils/formatGold'
+
+const GRADE_EMOJIS: Record<number, string> = {
+  1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',
+  6: '🫒', 7: '🍢', 8: '🌰', 9: '🍇', 10: '🍯',
+  11: '🧁', 12: '🍤', 13: '⭐', 14: '✨', 15: '🍲',
+  16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
+}
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
@@ -57,13 +69,17 @@ function addBundle(board: BoardType): BoardType {
 export default function App() {
   const saved = loadGame()
   const [board, setBoard] = useState<BoardType>(saved?.board ?? initialBoard)
+  const [resetKey, setResetKey] = useState(0)
   const [gameState, setGameState] = useState<GameState>(saved?.gameState ?? initialGameState)
   const [savedAt, setSavedAt] = useState<number | null>(saved?.savedAt ?? getSavedAt())
   const earnedInSecRef = useRef(0)
   const bucketHistoryRef = useRef<number[]>([])
-  const spawnClickerItemRef = useRef<(() => void) | null>(null)
+  const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
+  const [clickerEmoji, setClickerEmoji] = useState('👆')
+  const clickerGradeRef = useRef<number>(1)
+  const spawnUnlockTimeRef = useRef<number>(0)
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
 
@@ -97,13 +113,48 @@ export default function App() {
   }, [])
 
   const handleClickerClick = useCallback(() => {
+    const now = performance.now()
     setGameState(prev => {
-      const next = prev.clicker.clickCount + 1
-      if (next >= prev.clicker.threshold) {
-        spawnClickerItemRef.current?.()
-        return { ...prev, clicker: { ...prev.clicker, clickCount: 0 } }
+      const { clickCount, threshold, level } = prev.clicker
+
+      // 링 100% 상태: 스폰 잠금 해제 후 한 번 더 클릭 시 스폰
+      if (clickCount >= threshold) {
+        if (now < spawnUnlockTimeRef.current) return prev  // 아직 잠금 중 → 무시
+        spawnClickerItemRef.current?.(clickerGradeRef.current)
+        setTimeout(() => setClickerEmoji('👆'), 0)
+        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: 2 } }
       }
+
+      const next = clickCount + 1
+
+      if (clickCount === 0) {
+        // 첫 클릭: 등급 결정 + threshold 계산
+        const builtGrades = prev.producers.filter(p => p.built).map(p => p.grade)
+        const grade = builtGrades.length > 0
+          ? builtGrades[Math.floor(Math.random() * builtGrades.length)]
+          : 1
+        clickerGradeRef.current = grade
+        const quantity = getMaterialQuantity(prev.materialQuantityLevels[grade - 1] ?? 1)
+        const newThreshold = getClickerThreshold(quantity, level)
+        setTimeout(() => setClickerEmoji(GRADE_EMOJIS[grade] ?? '🌶️'), 0)
+        if (next >= newThreshold) spawnUnlockTimeRef.current = now + 250
+        return { ...prev, clicker: { ...prev.clicker, clickCount: next, threshold: newThreshold } }
+      }
+
+      if (next >= threshold) spawnUnlockTimeRef.current = now + 250
       return { ...prev, clicker: { ...prev.clicker, clickCount: next } }
+    })
+  }, [])
+
+  const handleUpgradeClicker = useCallback(() => {
+    setGameState(prev => {
+      const cost = getClickerUpgradeCost(prev.clicker.level)
+      if (prev.gold < cost) return prev
+      return {
+        ...prev,
+        gold: prev.gold - cost,
+        clicker: { ...prev.clicker, level: prev.clicker.level + 1 },
+      }
     })
   }, [])
 
@@ -147,9 +198,14 @@ export default function App() {
   }, [])
 
   const handleSetFactoryType = useCallback((row: number, col: number, type: Factory['type']) => {
+    const paMinGrade = Math.min(...Object.keys(RECIPES).map(Number))
     setGameState(prev => ({
       ...prev,
-      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, type } : f),
+      factories: prev.factories.map(f => {
+        if (f.row !== row || f.col !== col) return f
+        const grade = type === 'PA' && f.grade < paMinGrade ? paMinGrade : f.grade
+        return { ...f, type, grade }
+      }),
     }))
   }, [])
 
@@ -189,6 +245,7 @@ export default function App() {
     deleteSave()
     setBoard(initialBoard)
     setGameState(initialGameState)
+    setResetKey(k => k + 1)
     setSavedAt(null)
     setActiveTab(null)
   }, [])
@@ -201,6 +258,7 @@ export default function App() {
   }, [])
 
   const handlePrestige = useCallback(() => {
+    setResetKey(k => k + 1)
     setBoard(initialBoard)
     setGameState(prev => ({
       ...prev,
@@ -228,6 +286,24 @@ export default function App() {
         animals: initialGameState.animals,
       }
     })
+  }, [])
+
+  const handlePrestigeKeepPoints = useCallback(() => {
+    setResetKey(k => k + 1)
+    setBoard(initialBoard)
+    setGameState(prev => ({
+      ...prev,
+      gold: initialGameState.gold,
+      goldPerSec: 0,
+      bundleCount: 0,
+      producers: initialGameState.producers,
+      factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
+      totalEarned: 0,
+      materialQuantityLevels: initialGameState.materialQuantityLevels,
+      prestigeCount: prev.prestigeCount + 1,
+      rsBufferLevel: prev.rsBufferLevel,
+      faBufferLevel: prev.faBufferLevel,
+    }))
   }, [])
 
   const handleUnlockAnimal = useCallback((id: AnimalId) => {
@@ -342,7 +418,7 @@ export default function App() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 56, position: 'relative' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: activeTab !== null ? 'calc(40vh + 56px)' : 56, position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {bgEmojis.map((item, i) => (
@@ -361,6 +437,7 @@ export default function App() {
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
       <Navigation gameState={gameState} />
       <Board
+        key={resetKey}
         board={board}
         onAddBundle={handleAddBundle}
         onGoldEarned={handleGoldEarned}
@@ -380,22 +457,45 @@ export default function App() {
       />
       <TabBar
         clicker={gameState.clicker}
+        clickerEmoji={clickerEmoji}
         onClickerClick={handleClickerClick}
         onTabChange={(tab) => {
           setActiveTab(tab)
           saveGame(board, gameState)
           setSavedAt(Date.now())
+          if (tab !== null) {
+            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50)
+          }
         }}
         activeTab={activeTab}
       />
-      <BottomSheet open={activeTab !== null} onClose={() => setActiveTab(null)}>
+      <BottomSheet
+        open={activeTab !== null}
+        onClose={() => setActiveTab(null)}
+        header={
+          activeTab === 3 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>
+                ⭐ {formatGold(gameState.prestigePoints)}
+              </span>
+            </div>
+          ) : (
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
+              {['생산 관리', '공장 관리', '재료 관리', '', '설정'][activeTab ?? 0]}
+            </h2>
+          )
+        }
+      >
         {activeTab === 0 && (
           <ProductionTab
             producers={gameState.producers}
             gold={gameState.gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
+            clicker={gameState.clicker}
             onBuild={handleBuildProducer}
             onUpgrade={handleUpgradeProducer}
+            onUpgradeClicker={handleUpgradeClicker}
           />
         )}
         {activeTab === 1 && (
@@ -424,6 +524,7 @@ export default function App() {
             gameState={gameState}
             onPrestige={handlePrestige}
             onPrestigeReset={handlePrestigeReset}
+            onPrestigeKeepPoints={handlePrestigeKeepPoints}
             onLevelUpItemValue={handleLevelUpItemValue}
             onUnlockAnimal={handleUnlockAnimal}
             onUpgradeAnimal={handleUpgradeAnimal}

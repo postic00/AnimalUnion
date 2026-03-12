@@ -40,10 +40,6 @@ export function getItemValueLevelCost(level: number): number {
   return Math.floor(CONFIG.ITEM_VALUE_LEVEL_COST_BASE * Math.pow(level, CONFIG.ITEM_VALUE_LEVEL_COST_EXPONENT))
 }
 
-// 클릭커 임계값
-export function getClickerThreshold(): number {
-  return CONFIG.CLICKER_THRESHOLD
-}
 
 // FA 건설 비용
 export function getFactoryBuildCost(): number {
@@ -135,6 +131,21 @@ export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[
 // 재료 수량: 2^(level-1)
 export function getMaterialQuantity(level: number): number {
   return Math.pow(2, level - 1)
+}
+
+// 클릭커 1클릭당 기여량: 2^(level-1)
+export function getClickerValue(level: number): number {
+  return Math.pow(2, level - 1)
+}
+
+// 클릭커 업그레이드 비용 (생산기와 동일 공식)
+export function getClickerUpgradeCost(level: number): number {
+  return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level + 1, CONFIG.PRODUCER_UPGRADE_EXPONENT))
+}
+
+// 클릭커 threshold 계산
+export function getClickerThreshold(quantity: number, clickerLevel: number): number {
+  return Math.max(1, Math.ceil(quantity / getClickerValue(clickerLevel)))
 }
 
 // 재료 수량 레벨업 비용

@@ -91,7 +91,6 @@ export function useGameLoop(
   const itemsRef = useRef<Item[]>([])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
-  const produceCountersRef = useRef<Record<string, number>>({})
   const rsQueuesRef = useRef<Record<string, Item[]>>({})  // RS 버퍼 큐
   const onGoldEarnedRef = useRef(onGoldEarned)
   onGoldEarnedRef.current = onGoldEarned
@@ -103,6 +102,7 @@ export function useGameLoop(
   animalsRef.current = animals
   const faStatesRef = useRef<Record<string, FAState>>({})
   const pendingClickerSpawnsRef = useRef(0)
+  const pendingClickerGradeRef = useRef<number>(1)
   const materialQuantityLevelsRef = useRef(materialQuantityLevels)
   materialQuantityLevelsRef.current = materialQuantityLevels
   const itemValueLevelsRef = useRef(itemValueLevels)
@@ -114,6 +114,14 @@ export function useGameLoop(
 
   useEffect(() => {
     if (cellSize === 0) return
+
+    // 보드 변경 시 전체 리셋
+    itemsRef.current = []
+    setItems([])
+    faStatesRef.current = {}
+    produceTimersRef.current = {}
+    rsQueuesRef.current = {}
+    pendingClickerSpawnsRef.current = 0
 
     const itemSize = cellSize * CONFIG.ITEM_SIZE_RATIO
     const pixelsPerMs = cellSize / CONFIG.MOVE_SPEED
@@ -142,14 +150,12 @@ export function useGameLoop(
             return
           }
 
-          if (produceTimersRef.current[key] >= getProducerInterval(producer.level)) {
-            produceTimersRef.current[key] = 0
+          const grade = producer.grade
+          const quantity = getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1)
+          const fullInterval = getProducerInterval(producer.level) * quantity
 
-            const grade = producer.grade
-            const quantity = getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1)
-            produceCountersRef.current[key] = (produceCountersRef.current[key] ?? 0) + 1
-            if (produceCountersRef.current[key] < quantity) return
-            produceCountersRef.current[key] = 0
+          if (produceTimersRef.current[key] >= fullInterval) {
+            produceTimersRef.current[key] = 0
 
             // RS 위치 탐색
             let rsRow = -1, rsCol = -1
@@ -417,14 +423,15 @@ export function useGameLoop(
         const dir = getCellDirection('RS')
         const next = getNextTarget(board, cellSize, center.x, center.y)
         if (!next) break
+        const grade = pendingClickerGradeRef.current
         items = [...items, {
           id: `item-${nextId++}`,
           x: center.x, y: center.y,
           dx: dir.dx, dy: dir.dy,
           targetX: next.targetX, targetY: next.targetY,
-          grade: 1,
-          value: getProducerValue(1, itemValueLevelsRef.current[0] ?? 1),
-          quantity: getMaterialQuantity(materialQuantityLevelsRef.current[0] ?? 1),
+          grade,
+          value: getProducerValue(grade, itemValueLevelsRef.current[grade - 1] ?? 1),
+          quantity: getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1),
           waBonus: 0, paBonus: 0, pkBonus: 0,
           waGrades: [], paGrades: [], pkGrades: [],
         }]
@@ -459,7 +466,8 @@ export function useGameLoop(
           if (!producer?.built || producer.level === 0) return
           const key = `${rowIdx}-${colIdx}`
           const timer = produceTimersRef.current[key] ?? 0
-          p[key] = Math.min(timer / getProducerInterval(producer.level), 1)
+          const qty = getMaterialQuantity(materialQuantityLevelsRef.current[producer.grade - 1] ?? 1)
+          p[key] = Math.min(timer / (getProducerInterval(producer.level) * qty), 1)
         })
       })
       factoriesRef.current.forEach(factory => {
@@ -487,7 +495,8 @@ export function useGameLoop(
     }
   }, [board, cellSize])
 
-  const spawnClickerItem = useCallback(() => {
+  const spawnClickerItem = useCallback((grade: number) => {
+    pendingClickerGradeRef.current = grade
     pendingClickerSpawnsRef.current += 1
   }, [])
 

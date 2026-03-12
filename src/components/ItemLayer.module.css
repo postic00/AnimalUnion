@@ -5,26 +5,66 @@
   pointer-events: none;
 }
 
-.item {
+.plate {
   position: absolute;
-  border: 2px solid;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* 접시 디자인 */
+  background: radial-gradient(circle at 38% 35%, #fffef8 60%, #f0ece4 100%);
+  border: 2.5px solid #d4cfc8;
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.22),
+    inset 0 0 0 3px rgba(255,255,255,0.65),
+    inset 0 2px 4px rgba(0,0,0,0.06);
+}
+
+.emoji {
+  line-height: 1;
+  display: block;
+}
+
+/* 좌측 하단: 갯수 */
+.qtyBadge {
+  position: absolute;
+  bottom: 3px;
+  left: 4px;
+  font-size: 6px;
+  font-weight: 900;
+  color: #44403c;
+  line-height: 1;
+}
+
+/* 우측 하단: 보너스 수치 */
+.bonusList {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 1px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
-.grade {
-  font-size: 9px;
-  font-weight: 800;
+.bonusBadge {
+  font-size: 5px;
+  font-weight: 900;
   line-height: 1;
+  border-radius: 3px;
+  padding: 0px 2px;
 }
 
-.quantity {
-  font-size: 8px;
-  font-weight: 700;
-  line-height: 1;
-  opacity: 0.85;
+.bonusWA {
+  background: #bfdbfe;
+  color: #1e40af;
+}
+
+.bonusPA {
+  background: #ddd6fe;
+  color: #5b21b6;
+}
+
+.bonusPK {
+  background: #fed7aa;
+  color: #9a3412;
 }

@@ -84,6 +84,15 @@
   transform: scale(0.93);
 }
 
+.clickerButtonFull {
+  animation: clickerPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes clickerPulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(49, 130, 246, 0.45); }
+  50% { box-shadow: 0 4px 28px rgba(49, 130, 246, 0.85), 0 0 0 6px rgba(49, 130, 246, 0.25); }
+}
+
 .clickerRing {
   position: absolute;
   width: 58px;

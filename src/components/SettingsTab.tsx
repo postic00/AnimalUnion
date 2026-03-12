@@ -28,8 +28,6 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset 
 
   return (
     <div className={styles.container}>
-      <p className={styles.title}>설정</p>
-
       <div className={styles.section}>
         <p className={styles.sectionTitle}>소리</p>
         <div className={styles.card}>

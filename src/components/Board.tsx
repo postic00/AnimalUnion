@@ -28,7 +28,7 @@ interface Props {
   placingAnimalId: AnimalId | null
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
-  spawnClickerItemRef: MutableRefObject<(() => void) | null>
+  spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
 }
 
 export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef }: Props) {

@@ -3,7 +3,7 @@ import type { Board } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Animal, AnimalId } from '../types/animal'
 import { ANIMAL_NAMES } from '../types/animal'
-import { getFactoryBuildCost, getFactoryLevelUpgradeCost } from '../balance'
+import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import coinIcon from '../assets/coin.svg'
 import styles from './FactoryTab.module.css'
@@ -20,6 +20,13 @@ interface Props {
   onUpgradeLevel: (row: number, col: number) => void
   onSetAnimal: (row: number, col: number, animalId: AnimalId | null) => void
   maxGrade: number
+}
+
+const GRADE_EMOJIS: Record<number, string> = {
+  1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',
+  6: '🫒', 7: '🍢', 8: '🌰', 9: '🍇', 10: '🍯',
+  11: '🧁', 12: '🍤', 13: '⭐', 14: '✨', 15: '🍲',
+  16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
 }
 
 const ANIMAL_EMOJI: Record<string, string> = {
@@ -39,8 +46,6 @@ const TYPE_META: Record<Factory['type'], { label: string; icon: string; color: s
   PA: { label: '가공', icon: '⚙️', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe', sub: '#8b5cf6' },
   PK: { label: '포장', icon: '📦', color: '#c2410c', bg: '#fff7ed', border: '#fed7aa', sub: '#f97316' },
 }
-
-type DropKey = 'type' | 'dir' | 'animal'
 
 function ComboBox({ label, options, selected, onSelect, color }: {
   label: string
@@ -92,7 +97,9 @@ function ComboBox({ label, options, selected, onSelect, color }: {
   )
 }
 
-export default function FactoryTab({ board, factories, gold, animals, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, onSetAnimal, maxGrade }: Props) {
+const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
+
+export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -109,11 +116,9 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
   const toggleFloor = (i: number) => setClosedFloors(prev => ({ ...prev, [i]: !prev[i] }))
 
   const buildCost = getFactoryBuildCost()
-  const unlockedAnimals = animals.filter(a => a.unlocked)
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>공장 관리</h2>
       {floors.map((cells, floorIdx) => (
         <div key={floorIdx} className={styles.floor}>
           <button className={styles.floorHeader} onClick={() => toggleFloor(floorIdx)}>
@@ -150,11 +155,6 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
               { value: 'UP_TO_DOWN', label: '↓ 하행' },
               { value: 'DOWN_TO_UP', label: '↑ 상행' },
             ]
-            const animalOptions = [
-              { value: '__none__', label: '없음' },
-              ...unlockedAnimals.map(a => ({ value: a.id, label: ANIMAL_NAMES[a.id] })),
-            ]
-
             return (
               <div key={i} className={styles.card} style={{ background: meta.bg, borderColor: meta.border }}>
                 <div className={styles.cardBody}>
@@ -180,8 +180,10 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
                   <div className={styles.cardRight}>
                     <div className={styles.controlRow}>
                       <div className={styles.gradeControl}>
-                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= 1}>‹</button>
-                        <span className={styles.gradeVal} style={{ color: meta.color }}>{factory.grade}</span>
+                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= (factory.type === 'PA' ? PA_MIN_GRADE : 1)}>‹</button>
+                        <span className={styles.gradeVal} style={{ color: meta.color }}>
+                          <span style={{ fontSize: 18 }}>{GRADE_EMOJIS[factory.grade] ?? '?'}</span>
+                        </span>
                         <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>›</button>
                       </div>
                       <button className={styles.upgradeBtn} style={{ background: meta.sub }} onClick={() => onUpgradeLevel(row, col)} disabled={gold < levelCost}>

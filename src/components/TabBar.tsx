@@ -3,6 +3,7 @@ import styles from './TabBar.module.css'
 
 interface Props {
   clicker: Clicker
+  clickerEmoji: string
   onClickerClick: () => void
   onTabChange: (tab: number | null) => void
   activeTab: number | null
@@ -16,11 +17,12 @@ const TABS = [
   { label: '설정', icon: '🔧' },
 ]
 
-export default function TabBar({ clicker, onClickerClick, onTabChange, activeTab }: Props) {
+export default function TabBar({ clicker, clickerEmoji, onClickerClick, onTabChange, activeTab }: Props) {
   const radius = 24
   const circumference = 2 * Math.PI * radius
   const progress = clicker.clickCount / clicker.threshold
-  const dashOffset = circumference * (1 - progress)
+  const dashOffset = circumference * (1 - Math.min(progress, 1))
+  const isFull = clicker.clickCount >= clicker.threshold && clicker.clickCount > 0
 
   const handleTab = (tab: number) => {
     const next = activeTab === tab ? null : tab
@@ -41,7 +43,7 @@ export default function TabBar({ clicker, onClickerClick, onTabChange, activeTab
         </div>
       ))}
       <button
-        className={styles.clickerButton}
+        className={`${styles.clickerButton}${isFull ? ` ${styles.clickerButtonFull}` : ''}`}
         style={{ bottom: activeTab !== null ? 'calc(40vh + 76px)' : 76 }}
         onClick={onClickerClick}
       >
@@ -54,7 +56,7 @@ export default function TabBar({ clicker, onClickerClick, onTabChange, activeTab
             strokeDashoffset={dashOffset}
           />
         </svg>
-        <span className={styles.clickerIcon}>👆</span>
+        <span className={styles.clickerIcon}>{clickerEmoji}</span>
       </button>
     </div>
   )

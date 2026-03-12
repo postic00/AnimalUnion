@@ -21,10 +21,10 @@ const MATERIALS: Record<number, { name: string; emoji: string; color: string; bg
   14: { name: '코팅액',      emoji: '✨', color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd', sub: '#2563eb' },
   15: { name: '마라육수',    emoji: '🍲', color: '#991b1b', bg: '#fff1f2', border: '#fca5a5', sub: '#dc2626' },
   16: { name: '탕후루꼬치',  emoji: '🍡', color: '#9d174d', bg: '#fdf2f8', border: '#f9a8d4', sub: '#db2777' },
-  17: { name: '마라소스',    emoji: '🌊', color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd', sub: '#0891b2' },
-  18: { name: '탕후루',      emoji: '🍡', color: '#be185d', bg: '#fdf2f8', border: '#f9a8d4', sub: '#db2777' },
-  19: { name: '마라탕',      emoji: '🍲', color: '#7c2d12', bg: '#fff7ed', border: '#fdba74', sub: '#b91c1c' },
-  20: { name: '마라탕후루',  emoji: '🌈', color: '#3b1f00', bg: '#fefce8', border: '#FFD700', sub: '#B8860B' },
+  17: { name: '마라소스',    emoji: '🫗', color: '#1e3a5f', bg: '#eff6ff', border: '#93c5fd', sub: '#0891b2' },
+  18: { name: '탕후루',      emoji: '🍭', color: '#be185d', bg: '#fdf2f8', border: '#f9a8d4', sub: '#db2777' },
+  19: { name: '마라탕',      emoji: '🥘', color: '#7c2d12', bg: '#fff7ed', border: '#fdba74', sub: '#b91c1c' },
+  20: { name: '마라탕후루',  emoji: '🏆', color: '#3b1f00', bg: '#fefce8', border: '#FFD700', sub: '#B8860B' },
 }
 
 interface Props {
@@ -37,7 +37,6 @@ export default function MaterialTab({ gameState, onUpgradeQuantity }: Props) {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>재료 관리</h2>
       <div className={styles.list}>
         {materialQuantityLevels.map((level, i) => {
           const grade = i + 1

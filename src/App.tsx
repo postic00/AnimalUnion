@@ -18,6 +18,7 @@ import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
 import { soundHamster, soundCat, soundCoin, soundBuild } from './utils/sound'
+import { initAdMob } from './utils/admob'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
@@ -94,6 +95,8 @@ export default function App() {
   const spawnUnlockTimeRef = useRef<number>(0)
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => { initAdMob() }, [])
 
   // 부스트
   const BOOST_MS = 10 * 60 * 1000

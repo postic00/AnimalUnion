@@ -295,11 +295,13 @@ export default function App() {
 
   const handleHardReset = useCallback(() => {
     deleteSave()
+    localStorage.removeItem('tutorialDone')
     setBoard(initialBoard)
     setGameState(initialGameState)
     setResetKey(k => k + 1)
     setSavedAt(null)
     setActiveTab(null)
+    setShowTutorial(true)
   }, [])
 
   const handleToggleMute = useCallback(() => {
@@ -512,7 +514,10 @@ export default function App() {
         ))}
       </div>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
-      {!showSplash && showTutorial && <Tutorial onClose={() => setShowTutorial(false)} />}
+      {!showSplash && showTutorial && <Tutorial onClose={() => {
+        localStorage.setItem('tutorialDone', '1')
+        setShowTutorial(false)
+      }} />}
       <Navigation gameState={gameState} />
       <Board
         key={resetKey}

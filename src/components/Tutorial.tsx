@@ -50,7 +50,6 @@ export default function Tutorial({ onClose }: Props) {
   const s = STEPS[step]
 
   const handleDone = () => {
-    localStorage.setItem('tutorialDone', '1')
     onClose()
   }
 

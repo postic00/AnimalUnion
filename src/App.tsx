@@ -9,6 +9,7 @@ import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
 import LeaderboardTab from './components/LeaderboardTab'
+import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supabase'
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
@@ -71,13 +72,20 @@ export default function App() {
   const saved = loadGame()
   const [board, setBoard] = useState<BoardType>(saved?.board ?? initialBoard)
   const [resetKey, setResetKey] = useState(0)
-  const [gameState, setGameState] = useState<GameState>(saved?.gameState ?? initialGameState)
+  const savedState = saved?.gameState ?? initialGameState
+  if (!savedState.playerName) {
+    savedState.playerName = `Player${Date.now().toString(36).toUpperCase()}`
+  }
+  const [gameState, setGameState] = useState<GameState>(savedState)
   const [savedAt, setSavedAt] = useState<number | null>(saved?.savedAt ?? getSavedAt())
+  const gameStateRef = useRef(gameState)
+  useEffect(() => { gameStateRef.current = gameState }, [gameState])
   const earnedInSecRef = useRef(0)
   const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
+  const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [clickerEmoji, setClickerEmoji] = useState('👆')
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
@@ -91,6 +99,14 @@ export default function App() {
     }, 30_000)
     return () => clearInterval(interval)
   }, [board, gameState])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const { playerName, totalEarned } = gameStateRef.current
+      if (playerName) submitGoldScore(playerName, totalEarned)
+    }, 60_000)
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     const WINDOW = 60
@@ -261,20 +277,27 @@ export default function App() {
   const handlePrestige = useCallback(() => {
     setResetKey(k => k + 1)
     setBoard(initialBoard)
-    setGameState(prev => ({
-      ...prev,
-      gold: initialGameState.gold,
-      goldPerSec: 0,
-      bundleCount: 0,
-      producers: initialGameState.producers,
-      factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
-      totalEarned: 0,
-      materialQuantityLevels: initialGameState.materialQuantityLevels,
-      prestigeCount: prev.prestigeCount + 1,
-      prestigePoints: prev.prestigePoints + getPrestigePoints(prev.totalEarned),
-      rsBufferLevel: prev.rsBufferLevel,
-      faBufferLevel: prev.faBufferLevel,
-    }))
+    setGameState(prev => {
+      const newPrestigePoints = prev.prestigePoints + getPrestigePoints(prev.totalEarned)
+      const newPrestigeCount = prev.prestigeCount + 1
+      if (prev.playerName) {
+        submitPrestigeScore(prev.playerName, newPrestigePoints, newPrestigeCount)
+      }
+      return {
+        ...prev,
+        gold: 0,
+        goldPerSec: 0,
+        bundleCount: 0,
+        producers: initialGameState.producers,
+        factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
+        totalEarned: 0,
+        materialQuantityLevels: initialGameState.materialQuantityLevels,
+        prestigeCount: newPrestigeCount,
+        prestigePoints: newPrestigePoints,
+        rsBufferLevel: prev.rsBufferLevel,
+        faBufferLevel: prev.faBufferLevel,
+      }
+    })
   }, [])
 
   const handlePrestigeReset = useCallback(() => {
@@ -472,11 +495,32 @@ export default function App() {
         onClose={() => setActiveTab(null)}
         header={
           activeTab === 3 ? (
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
+          ) : activeTab === 4 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>
-                ⭐ {formatGold(gameState.prestigePoints)}
-              </span>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => setLbMode('prestige')}
+                  style={{
+                    padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
+                    borderColor: lbMode === 'prestige' ? '#6366f1' : '#e5e7eb',
+                    background: lbMode === 'prestige' ? '#eef2ff' : '#fff',
+                    color: lbMode === 'prestige' ? '#6366f1' : '#9ca3af',
+                    fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                  }}
+                >⭐ 환생</button>
+                <button
+                  onClick={() => setLbMode('gold')}
+                  style={{
+                    padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
+                    borderColor: lbMode === 'gold' ? '#6366f1' : '#e5e7eb',
+                    background: lbMode === 'gold' ? '#eef2ff' : '#fff',
+                    color: lbMode === 'gold' ? '#6366f1' : '#9ca3af',
+                    fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                  }}
+                >💰 골드</button>
+              </div>
             </div>
           ) : (
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
@@ -535,10 +579,16 @@ export default function App() {
         {activeTab === 4 && (
           <LeaderboardTab
             playerName={gameState.playerName}
-            prestigePoints={gameState.prestigePoints}
-            prestigeCount={gameState.prestigeCount}
-            totalEarned={gameState.totalEarned}
-            onNameChange={name => setGameState(prev => ({ ...prev, playerName: name }))}
+            mode={lbMode}
+            onNameChange={name => {
+              const oldName = gameStateRef.current.playerName
+              setGameState(prev => ({ ...prev, playerName: name }))
+              deleteScores(oldName).then(() => {
+                const s = gameStateRef.current
+                submitPrestigeScore(name, s.prestigePoints, s.prestigeCount)
+                submitGoldScore(name, s.totalEarned)
+              })
+            }}
           />
         )}
         {activeTab === 5 && (

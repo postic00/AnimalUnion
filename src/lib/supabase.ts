@@ -13,17 +13,24 @@ export interface LeaderboardEntry {
   created_at: string
 }
 
+export async function deleteScores(playerName: string) {
+  await Promise.all([
+    supabase.from('leaderboard').delete().eq('player_name', playerName),
+    supabase.from('leaderboard_gold').delete().eq('player_name', playerName),
+  ])
+}
+
 export async function submitPrestigeScore(playerName: string, score: number, prestigeCount: number) {
   const { error } = await supabase
     .from('leaderboard')
-    .insert({ player_name: playerName, score, prestige_count: prestigeCount })
+    .upsert({ player_name: playerName, score, prestige_count: prestigeCount }, { onConflict: 'player_name' })
   return !error
 }
 
 export async function submitGoldScore(playerName: string, score: number) {
   const { error } = await supabase
     .from('leaderboard_gold')
-    .insert({ player_name: playerName, score })
+    .upsert({ player_name: playerName, score }, { onConflict: 'player_name' })
   return !error
 }
 

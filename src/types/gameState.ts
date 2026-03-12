@@ -25,7 +25,7 @@ export interface GameState {
 
 export const initialGameState: GameState = {
   playerName: '',
-  gold: 1_000_000_000_000_000,
+  gold: 0,
   goldPerSec: 0,
   bundleCount: 0,
   producers: [
@@ -35,9 +35,9 @@ export const initialGameState: GameState = {
   ],
   clicker: { clickCount: 0, threshold: 2, level: 1 },
   factories: [],
-  totalEarned: 1_000_000_000_000_000,
+  totalEarned: 0,
   prestigeCount: 0,
-  prestigePoints: 1_000_000_000_000_000,
+  prestigePoints: 0,
   itemValueLevels: Array(20).fill(1),
   materialQuantityLevels: Array(20).fill(1),
   animals: initialAnimals,

@@ -1,10 +1,11 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 4px 0;
 }
 
+/* 모드 전환 */
 .modeRow {
   display: flex;
   gap: 8px;
@@ -12,12 +13,12 @@
 
 .modeBtn {
   flex: 1;
-  padding: 8px;
-  border: 2px solid #e5e7eb;
+  padding: 7px;
+  border: 1.5px solid #e5e7eb;
   border-radius: 12px;
   background: #fff;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   color: #9ca3af;
   cursor: pointer;
 }
@@ -28,20 +29,38 @@
   background: #eef2ff;
 }
 
+/* 내 점수 카드 */
 .myScore {
-  background: #f9fafb;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.myScoreRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  gap: 8px;
+}
+
+.myLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.myIcon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.myInfo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .nameRow {
@@ -53,6 +72,7 @@
 .myName {
   font-size: 15px;
   font-weight: 800;
+  letter-spacing: -0.3px;
   color: #111827;
 }
 
@@ -68,16 +88,21 @@
   display: flex;
   gap: 6px;
   align-items: center;
+  width: 100%;
 }
 
 .nameInput {
   border: 1.5px solid #d1d5db;
   border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 14px;
+  padding: 6px 10px;
+  font-size: 15px;
   font-weight: 700;
-  width: 120px;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
   outline: none;
+  resize: none;
+  font-family: inherit;
 }
 
 .nameInput:focus {
@@ -89,39 +114,24 @@
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 4px 10px;
+  padding: 6px 14px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .myPoints {
-  font-size: 15px;
-  font-weight: 800;
-  color: #f59e0b;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
 }
 
-.submitBtn {
-  width: 100%;
-  padding: 10px;
-  background: #6366f1;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.submitBtn:disabled {
-  background: #c7d2fe;
-  cursor: default;
-}
-
+/* 리더보드 목록 */
 .list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .loading {
@@ -134,11 +144,11 @@
 .row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: #fff;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
   border: 1.5px solid #f3f4f6;
+  background: #fff;
 }
 
 .myRow {
@@ -147,7 +157,7 @@
 }
 
 .rank {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
   min-width: 28px;
   color: #374151;

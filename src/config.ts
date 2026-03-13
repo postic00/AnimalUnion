@@ -1,7 +1,15 @@
 export const CONFIG = {
+  // 현재 주차
+  CURRENT_WEEK: 0,
+  WEEK: 0,
+  NEXT_WEEK_RATE: 0.7,
+  WEEK_START_DATE: '2026-03-10',
+  WEEK_END_DATE: '2026-03-20',
+
   // 기술적 고정값
   MOVE_SPEED: 1200,              // 레일 한 칸 이동 시간 (ms)
   ITEM_SIZE_RATIO: 0.7,          // 아이템 크기 (cellSize 대비)
+  ITEM_GAP_RATIO: 0.2,           // 아이템 간 최소 간격 (cellSize 대비)
 
   // 밸런스 상수
   ITEM_BASE_VALUE: 1,            // 아이템 기본 가격
@@ -80,4 +88,14 @@ export const CONFIG = {
   ANIMAL_UPGRADE_COST_EXPONENT: 2,
   ANIMAL_STAT_BASE: 0.1,
   ANIMAL_STAT_PER_LEVEL: 0.05,
-} as const
+}
+
+export type ConfigKey = keyof typeof CONFIG
+
+export function applyWeekConfig(weekConfig: Partial<Record<string, unknown>>): void {
+  for (const key of Object.keys(weekConfig)) {
+    if (key in CONFIG) {
+      (CONFIG as Record<string, unknown>)[key] = weekConfig[key]
+    }
+  }
+}

@@ -141,6 +141,22 @@
   padding: 20px 0;
 }
 
+.noPrestige {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 2;
+  padding: 48px 0;
+}
+
+.newSeason {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
 .row {
   display: flex;
   align-items: center;

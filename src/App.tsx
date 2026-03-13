@@ -5,6 +5,7 @@ import TabBar from './components/TabBar'
 import BottomSheet from './components/BottomSheet'
 import ProductionTab from './components/ProductionTab'
 import FactoryTab from './components/FactoryTab'
+import AnimalTab from './components/AnimalTab'
 import PrestigeTab from './components/PrestigeTab'
 import MaterialTab from './components/MaterialTab'
 import SettingsTab from './components/SettingsTab'
@@ -14,13 +15,19 @@ import AdModal from './components/AdModal'
 import PrestigeAdModal from './components/PrestigeAdModal'
 import ConfirmModal from './components/ConfirmModal'
 import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supabase'
+import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userProfile'
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted } from './utils/saveLoad'
+import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, getDeviceId, saveItems, saveFaStates } from './utils/saveLoad'
+import { CONFIG, applyWeekConfig } from './config'
+
+// 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
+const cachedWeekConfig = loadWeekConfig()
+if (cachedWeekConfig) applyWeekConfig(cachedWeekConfig)
 import { soundHamster, soundCat, soundCoin, soundBuild } from './utils/sound'
 import { initAdMob } from './utils/admob'
-import { initTossBackEvent, initTossVisibility } from './utils/toss'
+import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
@@ -82,6 +89,9 @@ export default function App() {
   if (!savedState.playerName) {
     savedState.playerName = `Player${Date.now().toString(36).toUpperCase()}`
   }
+  if (savedState.totalPrestigePoints == null) {
+    savedState.totalPrestigePoints = savedState.prestigePoints
+  }
   const [gameState, setGameState] = useState<GameState>(savedState)
   const [savedAt, setSavedAt] = useState<number | null>(saved?.savedAt ?? getSavedAt())
   const gameStateRef = useRef(gameState)
@@ -91,19 +101,31 @@ export default function App() {
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
+  const activeTabRef = useRef(activeTab)
+  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
+  const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
+  const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
+  const [prestigeSection, setPrestigeSection] = useState<'item' | 'buffer'>('item')
   const [clickerEmoji, setClickerEmoji] = useState('👆')
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
+  const handleSplashDone = useCallback(() => setShowSplash(false), [])
   const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('tutorialDone'))
 
   useEffect(() => { initAdMob() }, [])
 
   // 앱인토스: 뒤로가기 이벤트 처리
   useEffect(() => {
-    return initTossBackEvent(() => setActiveTab(null))
+    return initTossBackEvent(() => {
+      if (activeTabRef.current !== null) {
+        setActiveTab(null)
+      } else {
+        closeView()
+      }
+    })
   }, [])
 
   // 앱인토스: 백그라운드 전환 시 사운드 중단
@@ -123,13 +145,24 @@ export default function App() {
   const [showPrestigeModal, setShowPrestigeModal] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
+  const boardRef2 = useRef(board)
+  const gameStateRef2 = useRef(gameState)
+  useEffect(() => { boardRef2.current = board }, [board])
+  useEffect(() => { gameStateRef2.current = gameState }, [gameState])
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      saveGame(board, gameState)
+    const save = () => {
+      saveGame(boardRef2.current, gameStateRef2.current)
       setSavedAt(Date.now())
-    }, 30_000)
-    return () => clearInterval(interval)
-  }, [board, gameState])
+    }
+    const interval = setInterval(save, 10_000)
+    window.addEventListener('beforeunload', save)
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save() })
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('beforeunload', save)
+    }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 500)
@@ -318,6 +351,23 @@ export default function App() {
     setShowTutorial(true)
   }, [])
 
+  const boardRef = useRef(board)
+  useEffect(() => { boardRef.current = board }, [board])
+
+  const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
+
+  const handleCloudSave = useCallback(async () => {
+    await saveToCloud(gameStateRef.current.playerName, gameStateRef.current, boardRef.current, platform)
+  }, [platform])
+
+  const handleCloudLoad = useCallback(async () => {
+    const data = await loadFromCloud(gameStateRef.current.playerName)
+    if (!data) return
+    setBoard(data.board)
+    setGameState(data.gameState)
+    setResetKey(k => k + 1)
+  }, [])
+
   const handleToggleMute = useCallback(() => {
     setMuted(prev => {
       saveMuted(!prev)
@@ -325,15 +375,26 @@ export default function App() {
     })
   }, [])
 
-  const doPrestige = useCallback((multiplier: number = 1) => {
+  const doPrestige = useCallback(async (multiplier: number = 1) => {
+    await fetchAndSaveWeekConfig()
+    const weekConfig = loadWeekConfig()
+    if (weekConfig) applyWeekConfig(weekConfig)
+
     if (!mutedRef.current) soundCat()
+    saveItems([])
+    saveFaStates({})
     setResetKey(k => k + 1)
     setBoard(initialBoard)
+
+    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? 1 : CONFIG.NEXT_WEEK_RATE
+
     setGameState(prev => {
-      const newPrestigePoints = prev.prestigePoints + getPrestigePoints(prev.totalEarned) * multiplier
+      const earned = getPrestigePoints(prev.totalEarned) * multiplier
+      const newPrestigePoints = prev.prestigePoints + earned
+      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
-        submitPrestigeScore(prev.playerName, newPrestigePoints, newPrestigeCount)
+        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
       }
       return {
         ...prev,
@@ -346,13 +407,22 @@ export default function App() {
         materialQuantityLevels: initialGameState.materialQuantityLevels,
         prestigeCount: newPrestigeCount,
         prestigePoints: newPrestigePoints,
+        totalPrestigePoints: newTotalPrestigePoints,
         rsBufferLevel: prev.rsBufferLevel,
         faBufferLevel: prev.faBufferLevel,
       }
     })
+
+    // 환생 후 CURRENT_WEEK = WEEK 저장 (이번 시즌 참여 표시)
+    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
+    saveWeekConfig(updatedConfig)
+    applyWeekConfig(updatedConfig)
   }, [])
 
-  const handlePrestige = useCallback(() => {
+  const handlePrestige = useCallback(async () => {
+    await fetchAndSaveWeekConfig()
+    const weekConfig = loadWeekConfig()
+    if (weekConfig) applyWeekConfig(weekConfig)
     setShowPrestigeModal(true)
   }, [])
 
@@ -381,22 +451,45 @@ export default function App() {
     }
   }, [adTarget, doPrestige])
 
-  const handlePrestigeKeepPoints = useCallback(() => {
+  const handlePrestigeKeepPoints = useCallback(async () => {
+    await fetchAndSaveWeekConfig()
+    const weekConfig = loadWeekConfig()
+    if (weekConfig) applyWeekConfig(weekConfig)
+
+    saveItems([])
+    saveFaStates({})
     setResetKey(k => k + 1)
     setBoard(initialBoard)
-    setGameState(prev => ({
-      ...prev,
-      gold: initialGameState.gold,
-      goldPerSec: 0,
-      bundleCount: 0,
-      producers: initialGameState.producers,
-      factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
-      totalEarned: 0,
-      materialQuantityLevels: initialGameState.materialQuantityLevels,
-      prestigeCount: prev.prestigeCount + 1,
-      rsBufferLevel: prev.rsBufferLevel,
-      faBufferLevel: prev.faBufferLevel,
-    }))
+
+    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? 1 : CONFIG.NEXT_WEEK_RATE
+
+    setGameState(prev => {
+      const earned = getPrestigePoints(prev.totalEarned)
+      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
+      const newPrestigeCount = prev.prestigeCount + 1
+      if (prev.playerName) {
+        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+      }
+      return {
+        ...prev,
+        gold: initialGameState.gold,
+        goldPerSec: 0,
+        bundleCount: 0,
+        producers: initialGameState.producers,
+        factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
+        totalEarned: 0,
+        materialQuantityLevels: initialGameState.materialQuantityLevels,
+        prestigeCount: newPrestigeCount,
+        totalPrestigePoints: newTotalPrestigePoints,
+        rsBufferLevel: prev.rsBufferLevel,
+        faBufferLevel: prev.faBufferLevel,
+      }
+    })
+
+    // 환생 후 CURRENT_WEEK = WEEK 저장
+    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
+    saveWeekConfig(updatedConfig)
+    applyWeekConfig(updatedConfig)
   }, [])
 
   const handleUnlockAnimal = useCallback((id: AnimalId) => {
@@ -511,7 +604,7 @@ export default function App() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: activeTab !== null ? 'calc(40vh + 56px)' : 56, position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: activeTab !== null ? 'calc(40vh + 68px + env(safe-area-inset-bottom))' : 'calc(68px + env(safe-area-inset-bottom))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {bgEmojis.map((item, i) => (
@@ -527,13 +620,13 @@ export default function App() {
           }}>{item.emoji}</span>
         ))}
       </div>
-      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      {showSplash && <SplashScreen onDone={handleSplashDone} />}
       {!showSplash && showTutorial && <Tutorial onClose={() => {
         localStorage.setItem('tutorialDone', '1')
         setShowTutorial(false)
       }} />}
-      <Navigation gameState={gameState} />
-      <Board
+      {!showSplash && <Navigation gameState={gameState} />}
+      {!showSplash && <Board
         key={resetKey}
         board={board}
         onAddBundle={handleAddBundle}
@@ -553,8 +646,8 @@ export default function App() {
         spawnClickerItemRef={spawnClickerItemRef}
         muted={muted}
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
-      />
-      <TabBar
+      />}
+      {!showSplash && <TabBar
         clicker={gameState.clicker}
         clickerEmoji={clickerEmoji}
         onClickerClick={handleClickerClick}
@@ -569,16 +662,75 @@ export default function App() {
         now={now}
         onSpeedBoost={() => { setAdTarget('speed'); }}
         onGoldBoost={() => { setAdTarget('gold'); }}
-      />
-      <BottomSheet
+      />}
+      {!showSplash && <BottomSheet
         open={activeTab !== null}
         onClose={() => setActiveTab(null)}
         header={
-          activeTab === 3 ? (
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
+          activeTab === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>공장</h2>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
+                  <button
+                    key={sec}
+                    onClick={() => setProdSection(sec)}
+                    style={{
+                      padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
+                      borderColor: prodSection === sec ? '#16a34a' : '#e5e7eb',
+                      background: prodSection === sec ? '#f0fdf4' : '#fff',
+                      color: prodSection === sec ? '#16a34a' : '#9ca3af',
+                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+          ) : activeTab === 2 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {([['hamster', '🐹 햄스터'], ['cat', '🐱 고양이'], ['dog', '🐶 강아지']] as const).map(([type, label]) => (
+                  <button
+                    key={type}
+                    onClick={() => setAnimalType(type)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
+                      borderColor: animalType === type ? '#6366f1' : '#e5e7eb',
+                      background: animalType === type ? '#eef2ff' : '#fff',
+                      color: animalType === type ? '#6366f1' : '#9ca3af',
+                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+          ) : activeTab === 3 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {([['item', '📦 아이템'], ['buffer', '🏭 저장소']] as const).map(([sec, label]) => (
+                  <button
+                    key={sec}
+                    onClick={() => setPrestigeSection(sec)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
+                      borderColor: prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
+                      background: prestigeSection === sec ? '#fffbeb' : '#fff',
+                      color: prestigeSection === sec ? '#d97706' : '#9ca3af',
+                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
           ) : activeTab === 4 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>{CONFIG.CURRENT_WEEK}시즌</span>
+              </div>
+
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   onClick={() => setLbMode('prestige')}
@@ -604,12 +756,12 @@ export default function App() {
             </div>
           ) : (
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
-              {['생산 관리', '공장 관리', '재료 관리', '', '순위', '설정'][activeTab ?? 0]}
+              {['공장', '재료 관리', '동물', '환생', '', '설정'][activeTab ?? 0]}
             </h2>
           )
         }
       >
-        {activeTab === 0 && (
+        {activeTab === 0 && prodSection === 'production' && (
           <ProductionTab
             producers={gameState.producers}
             gold={gameState.gold}
@@ -620,7 +772,7 @@ export default function App() {
             onUpgradeClicker={handleUpgradeClicker}
           />
         )}
-        {activeTab === 1 && (
+        {activeTab === 0 && prodSection === 'factory' && (
           <FactoryTab
             board={board}
             factories={gameState.factories}
@@ -635,23 +787,30 @@ export default function App() {
             maxGrade={20}
           />
         )}
-        {activeTab === 2 && (
+        {activeTab === 1 && (
           <MaterialTab
             gameState={gameState}
             onUpgradeQuantity={handleUpgradeMaterialQuantity}
           />
         )}
-        {activeTab === 3 && (
-          <PrestigeTab
+        {activeTab === 2 && (
+          <AnimalTab
             gameState={gameState}
-            onPrestige={handlePrestige}
-            onPrestigeReset={handlePrestigeReset}
-            onPrestigeKeepPoints={handlePrestigeKeepPoints}
-            onLevelUpItemValue={handleLevelUpItemValue}
+            animalType={animalType}
             onUnlockAnimal={handleUnlockAnimal}
             onUpgradeAnimal={handleUpgradeAnimal}
             onStartPlacing={handleStartPlacing}
             onRecallAnimal={handleRecallAnimal}
+          />
+        )}
+        {activeTab === 3 && (
+          <PrestigeTab
+            gameState={gameState}
+            section={prestigeSection}
+            onPrestige={handlePrestige}
+            onPrestigeReset={handlePrestigeReset}
+            onPrestigeKeepPoints={handlePrestigeKeepPoints}
+            onLevelUpItemValue={handleLevelUpItemValue}
             onUpgradeRsBuffer={handleUpgradeRsBuffer}
             onUpgradeFaBuffer={handleUpgradeFaBuffer}
           />
@@ -676,11 +835,13 @@ export default function App() {
             savedAt={savedAt}
             muted={muted}
             onToggleMute={handleToggleMute}
+            onCloudSave={handleCloudSave}
+            onCloudLoad={handleCloudLoad}
             onHardReset={() => setShowResetConfirm(true)}
             onShowTutorial={() => { setActiveTab(null); setShowTutorial(true) }}
           />
         )}
-      </BottomSheet>
+      </BottomSheet>}
 
       {/* 광고 모달 */}
       {adTarget !== null && (
@@ -693,7 +854,8 @@ export default function App() {
       {/* 환생 모달 */}
       {showPrestigeModal && (
         <PrestigeAdModal
-          prestigePoints={getPrestigePoints(gameState.totalEarned)}
+          earned={getPrestigePoints(gameState.totalEarned)}
+          currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
           onPrestige={() => { setShowPrestigeModal(false); doPrestige(1) }}
           onWatchAd={() => { setAdTarget('prestige') }}
           onClose={() => setShowPrestigeModal(false)}

@@ -1,6 +1,17 @@
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
 
+const DEVICE_ID_KEY = 'animal-union-device-id'
+
+export function getDeviceId(): string {
+  let id = localStorage.getItem(DEVICE_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(DEVICE_ID_KEY, id)
+  }
+  return id
+}
+
 const SAVE_KEY = 'animal-union-save'
 const SAVE_VERSION = '1.0.0'
 
@@ -40,6 +51,53 @@ export function loadGame(): { board: Board; gameState: GameState; savedAt: numbe
 
 export function deleteSave(): void {
   localStorage.removeItem(SAVE_KEY)
+  localStorage.removeItem(ITEMS_KEY)
+  localStorage.removeItem(FA_STATES_KEY)
+}
+
+const ITEMS_KEY = 'animal-union-items'
+const FA_STATES_KEY = 'animal-union-fa-states'
+
+export function saveItems(items: unknown): void {
+  try { localStorage.setItem(ITEMS_KEY, JSON.stringify(items)) } catch { /* ignore */ }
+}
+
+export function loadItems(): unknown[] | null {
+  try {
+    const raw = localStorage.getItem(ITEMS_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function saveFaStates(faStates: unknown): void {
+  try { localStorage.setItem(FA_STATES_KEY, JSON.stringify(faStates)) } catch { /* ignore */ }
+}
+
+export function loadFaStates(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem(FA_STATES_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+const WEEK_CONFIG_KEY = 'animal-union-week-config'
+
+export function saveWeekConfig(config: Record<string, unknown>): void {
+  try {
+    localStorage.setItem(WEEK_CONFIG_KEY, JSON.stringify(config))
+  } catch (e) {
+    console.warn('week config 저장 실패:', e)
+  }
+}
+
+export function loadWeekConfig(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem(WEEK_CONFIG_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
 }
 
 const MUTED_KEY = 'animal-union-muted'

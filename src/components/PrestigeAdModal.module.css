@@ -38,11 +38,47 @@
   color: #111827;
 }
 
-.sub {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+.pointsTable {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.pointsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pointsLabel {
+  font-size: 13px;
+  font-weight: 600;
   color: #6b7280;
+}
+
+.pointsRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pointsValue {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.penalty {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 6px;
+  padding: 2px 6px;
 }
 
 .adBtn {

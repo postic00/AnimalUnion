@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { fetchAndSaveWeekConfig } from '../lib/userProfile'
+import { loadWeekConfig } from '../utils/saveLoad'
+import { applyWeekConfig } from '../config'
 import styles from './SplashScreen.module.css'
 
 interface Props {
@@ -26,9 +29,36 @@ const BG_EMOJIS = [
 
 export default function SplashScreen({ onDone }: Props) {
   const [fading, setFading] = useState(false)
+  const configDoneRef = useRef(false)
+  const timerDoneRef = useRef(false)
+
+  const tryDone = () => {
+    if (configDoneRef.current && timerDoneRef.current) setFading(true)
+  }
 
   useEffect(() => {
-    const timer = setTimeout(() => setFading(true), MIN_DISPLAY_MS)
+    console.log('[SplashScreen] fetchAndSaveWeekConfig 시작')
+    fetchAndSaveWeekConfig().then(() => {
+      console.log('[SplashScreen] fetchAndSaveWeekConfig 완료')
+      const fresh = loadWeekConfig()
+      console.log('[SplashScreen] loadWeekConfig:', fresh)
+      if (fresh) applyWeekConfig(fresh)
+      console.log('[SplashScreen] CONFIG.WEEK:', (window as any).CONFIG_WEEK_DEBUG = fresh)
+      configDoneRef.current = true
+      console.log('[SplashScreen] configDone=true, timerDone:', timerDoneRef.current)
+      tryDone()
+    }).catch((e) => {
+      console.warn('[SplashScreen] fetch 실패:', e)
+      configDoneRef.current = true
+      tryDone()
+    })
+
+    const timer = setTimeout(() => {
+      timerDoneRef.current = true
+      console.log('[SplashScreen] timerDone=true, configDone:', configDoneRef.current)
+      tryDone()
+    }, MIN_DISPLAY_MS)
+
     return () => clearTimeout(timer)
   }, [])
 

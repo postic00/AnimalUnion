@@ -24,9 +24,9 @@ function formatRemain(ms: number): string {
 }
 
 const TABS = [
-  { label: '생산', icon: '🌱' },
-  { label: '공장', icon: '⚙️' },
+  { label: '공장', icon: '🌱' },
   { label: '재료', icon: '📦' },
+  { label: '동물', icon: '🐾' },
   { label: '환생', icon: '⭐' },
   { label: '순위', icon: '🏆' },
   { label: '설정', icon: '🔧' },
@@ -39,7 +39,9 @@ export default function TabBar({ clicker, clickerEmoji, onClickerClick, onTabCha
   const dashOffset = circumference * (1 - Math.min(progress, 1))
   const isFull = clicker.clickCount >= clicker.threshold && clicker.clickCount > 0
 
-  const floatBottom = activeTab !== null ? 'calc(40vh + 76px)' : 76
+  const floatBottom = activeTab !== null
+    ? 'calc(40vh + 76px + env(safe-area-inset-bottom))'
+    : 'calc(76px + env(safe-area-inset-bottom))'
 
   const speedRemain = Math.max(0, speedBoostUntil - now)
   const goldRemain = Math.max(0, goldBoostUntil - now)
@@ -99,7 +101,7 @@ export default function TabBar({ clicker, clickerEmoji, onClickerClick, onTabCha
       {/* 골드배수 버튼 (좌측 상단) */}
       <button
         className={`${styles.boostButton} ${goldRemain > 0 ? styles.boostActive : ''}`}
-        style={{ bottom: `calc(${typeof floatBottom === 'number' ? floatBottom + 'px' : floatBottom} + 68px)` }}
+        style={{ bottom: `calc(${floatBottom} + 68px)` }}
         onClick={onGoldBoost}
       >
         <svg className={styles.clickerRing} viewBox="0 0 56 56">

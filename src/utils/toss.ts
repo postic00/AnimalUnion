@@ -1,4 +1,6 @@
-import { graniteEvent } from '@apps-in-toss/web-framework'
+import { graniteEvent, closeView } from '@apps-in-toss/web-framework'
+
+export { closeView }
 
 export function isTossEnvironment(): boolean {
   try {

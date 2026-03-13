@@ -1,10 +1,11 @@
-import { useState } from 'react'
 import styles from './SettingsTab.module.css'
 
 interface Props {
   savedAt: number | null
   muted: boolean
   onToggleMute: () => void
+  onCloudSave: () => void
+  onCloudLoad: () => void
   onHardReset: () => void
   onShowTutorial: () => void
 }
@@ -15,36 +16,20 @@ function formatDate(ts: number): string {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset, onShowTutorial }: Props) {
-  const [confirmReset, setConfirmReset] = useState(false)
-
-  const handleReset = () => {
-    if (!confirmReset) {
-      setConfirmReset(true)
-      return
-    }
-    onHardReset()
-    setConfirmReset(false)
-  }
+export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onHardReset, onShowTutorial }: Props) {
 
   return (
     <div className={styles.container}>
 
-      {/* 소리 */}
-      <div className={styles.card} style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
+      {/* 정보 */}
+      <div className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
         <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>🔊</span>
+          <span className={styles.cardIcon}>ℹ️</span>
           <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#14532d' }}>음소거</span>
-            <span className={styles.cardSub} style={{ color: '#16a34a' }}>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
+            <span className={styles.cardName} style={{ color: '#374151' }}>동물노동조합</span>
+            <span className={styles.cardSub} style={{ color: '#6b7280' }}>v0.9.0</span>
           </div>
         </div>
-        <button
-          className={`${styles.toggle} ${muted ? styles.toggleOn : styles.toggleOff}`}
-          onClick={onToggleMute}
-        >
-          <span className={styles.toggleThumb} />
-        </button>
       </div>
 
       {/* 데이터 */}
@@ -57,28 +42,6 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset,
           </div>
         </div>
       </div>
-
-      {/* 초기화 */}
-      <div className={styles.card} style={{ background: '#fff1f2', borderColor: '#fecdd3' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>🗑️</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#9f1239' }}>게임 초기화</span>
-            <span className={styles.cardSub} style={{ color: '#e11d48' }}>모든 진행 상황이 삭제돼요</span>
-          </div>
-        </div>
-        <button
-          className={`${styles.resetBtn} ${confirmReset ? styles.resetBtnConfirm : ''}`}
-          onClick={handleReset}
-        >
-          {confirmReset ? '확인' : '초기화'}
-        </button>
-      </div>
-      {confirmReset && (
-        <button className={styles.cancelBtn} onClick={() => setConfirmReset(false)}>
-          취소
-        </button>
-      )}
 
       {/* 튜토리얼 */}
       <div className={styles.card} style={{ background: '#fefce8', borderColor: '#fde68a' }}>
@@ -98,15 +61,60 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onHardReset,
         </button>
       </div>
 
-      {/* 정보 */}
-      <div className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
+      {/* 소리 */}
+      <div className={styles.card} style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
         <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>ℹ️</span>
+          <span className={styles.cardIcon}>🔊</span>
           <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#374151' }}>동물노동조합</span>
-            <span className={styles.cardSub} style={{ color: '#6b7280' }}>v0.9.0</span>
+            <span className={styles.cardName} style={{ color: '#14532d' }}>음소거</span>
+            <span className={styles.cardSub} style={{ color: '#16a34a' }}>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
           </div>
         </div>
+        <button
+          className={`${styles.toggle} ${muted ? styles.toggleOn : styles.toggleOff}`}
+          onClick={onToggleMute}
+        >
+          <span className={styles.toggleThumb} />
+        </button>
+      </div>
+
+      {/* 클라우드 저장 */}
+      <div className={styles.card} style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>☁️</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#0c4a6e' }}>클라우드 저장</span>
+            <span className={styles.cardSub} style={{ color: '#0284c7' }}>서버에 현재 상태를 저장해요</span>
+          </div>
+        </div>
+        <button
+          className={styles.resetBtn}
+          style={{ background: '#0ea5e9' }}
+          onClick={onCloudSave}
+        >
+          저장
+        </button>
+        <button
+          className={styles.resetBtn}
+          style={{ background: '#6366f1', marginLeft: 8 }}
+          onClick={onCloudLoad}
+        >
+          불러오기
+        </button>
+      </div>
+
+      {/* 초기화 */}
+      <div className={styles.card} style={{ background: '#fff1f2', borderColor: '#fecdd3' }}>
+        <div className={styles.cardLeft}>
+          <span className={styles.cardIcon}>🗑️</span>
+          <div className={styles.cardInfo}>
+            <span className={styles.cardName} style={{ color: '#9f1239' }}>게임 초기화</span>
+            <span className={styles.cardSub} style={{ color: '#e11d48' }}>모든 진행 상황이 삭제돼요</span>
+          </div>
+        </div>
+        <button className={styles.resetBtn} onClick={onHardReset}>
+          초기화
+        </button>
       </div>
 
     </div>

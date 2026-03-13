@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { formatGold } from '../utils/formatGold'
 import { soundByAnimalId } from '../utils/sound'
 import type { MutableRefObject } from 'react'
@@ -11,6 +11,8 @@ import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
+import { saveItems, loadItems, saveFaStates, loadFaStates } from '../utils/saveLoad'
+import type { FAState } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 
@@ -47,11 +49,28 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
+  const savedItemsRef = useRef(loadItems())
+  const savedFaStatesRef = useRef(loadFaStates())
+
   const handleFactoryProcess = useCallback((animalId: string | null) => {
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, spawnClickerItem } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier)
+  const { items, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined)
+
+  useEffect(() => {
+    const save = () => {
+      saveItems(itemsRef.current)
+      saveFaStates(faStatesRef.current)
+    }
+    const interval = setInterval(save, 10_000)
+    window.addEventListener('beforeunload', save)
+    document.addEventListener('visibilitychange', () => { if (document.hidden) save() })
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('beforeunload', save)
+    }
+  }, [])
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null

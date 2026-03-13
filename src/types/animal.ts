@@ -36,8 +36,10 @@ export const ANIMAL_NAMES: Record<AnimalId, string> = Object.fromEntries(
   })
 ) as Record<AnimalId, string>
 
+const DEFAULT_UNLOCKED = new Set<AnimalId>(['hamster1', 'cat1', 'dog1'])
+
 export const initialAnimals: Animal[] = ANIMAL_IDS.map(id => ({
   id,
   level: 1,
-  unlocked: false,
+  unlocked: DEFAULT_UNLOCKED.has(id),
 }))

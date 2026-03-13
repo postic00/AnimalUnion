@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import type { GameState } from '../types/gameState'
-import type { AnimalId } from '../types/animal'
-import { ANIMAL_IDS } from '../types/animal'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
-import { formatGold, formatNumber } from '../utils/formatGold'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
+import { formatGold } from '../utils/formatGold'
 import { CONFIG } from '../config'
 import coinIcon from '../assets/coin.svg'
 import styles from './PrestigeTab.module.css'
@@ -22,66 +20,21 @@ const PRODUCT_EMOJIS: Record<number, string> = {
   16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
 }
 
-const ANIMAL_EMOJI: Record<string, string> = { hamster: '🐹', cat: '🐱', dog: '🐶' }
-const ANIMAL_TYPE_NAME: Record<string, string> = { hamster: '햄스터', cat: '고양이', dog: '강아지' }
-
-const HAT_COLORS = [
-  '#ef4444','#f97316','#eab308','#22c55e','#06b6d4',
-  '#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f43f5e',
-  '#84cc16','#0ea5e9','#a855f7','#fb923c','#34d399',
-  '#60a5fa','#f472b6','#facc15','#4ade80','#c084fc',
-]
-
-function AnimalIcon({ id }: { id: string }) {
-  const type = id.match(/^([a-z]+)/)?.[1] ?? ''
-  const num = parseInt(id.match(/(\d+)$/)?.[1] ?? '1')
-  const emoji = ANIMAL_EMOJI[type] ?? '🐾'
-  const hatColor = HAT_COLORS[(num - 1) % HAT_COLORS.length]
-  return (
-    <div style={{ position: 'relative', width: 36, height: 42, flexShrink: 0 }}>
-      <div style={{
-        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-        background: hatColor,
-        borderRadius: '8px 8px 4px 4px',
-        width: 28, height: 18,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 2px 6px ${hatColor}66`,
-        zIndex: 1,
-      }}>
-        <span style={{ fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{num}</span>
-      </div>
-      <span style={{ fontSize: 28, lineHeight: 1, position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>{emoji}</span>
-    </div>
-  )
-}
-
-function getAnimalTypeName(id: string) {
-  const type = id.match(/^([a-z]+)/)?.[1] ?? ''
-  return ANIMAL_TYPE_NAME[type] ?? '동물'
-}
-
 interface Props {
   gameState: GameState
+  section: 'item' | 'buffer'
   onPrestige: () => void
   onPrestigeReset: () => void
   onPrestigeKeepPoints: () => void
   onLevelUpItemValue: (gradeIndex: number) => void
-  onUnlockAnimal: (id: AnimalId) => void
-  onUpgradeAnimal: (id: AnimalId) => void
-  onStartPlacing: (id: AnimalId) => void
-  onRecallAnimal: (id: AnimalId) => void
   onUpgradeRsBuffer: () => void
   onUpgradeFaBuffer: () => void
 }
 
-export default function PrestigeTab({ gameState, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
-  const { totalEarned, prestigePoints, itemValueLevels, animals, rsBufferLevel, faBufferLevel } = gameState
+export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
+  const { totalEarned, prestigePoints, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
-  const [itemOpen, setItemOpen] = useState(true)
-  const [animalOpen, setAnimalOpen] = useState(true)
-  const [bufferOpen, setBufferOpen] = useState(true)
-  const unlockCost = getAnimalUnlockCost()
 
   return (
     <div className={styles.container}>
@@ -96,7 +49,7 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeKeepPoint
           </div>
           <span className={styles.prestigeBtnPoints}>+{formatGold(earnPoints)}</span>
         </button>
-        <button className={styles.prestigeBtnKeep} onClick={onPrestigeKeepPoints} disabled={!possible}>
+        <button className={styles.prestigeBtnKeep} onClick={onPrestigeKeepPoints} disabled={!possible || CONFIG.WEEK > CONFIG.CURRENT_WEEK}>
           <span className={styles.prestigeBtnIcon}>⭐</span>
           <div className={styles.prestigeBtnTexts}>
             <span className={styles.prestigeBtnTitle}>환생</span>
@@ -107,12 +60,7 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeKeepPoint
       </div>
 
       {/* 아이템 가치 */}
-      <button className={styles.sectionHeader} onClick={() => setItemOpen(v => !v)}>
-        <span className={styles.sectionTitle}>아이템 가치</span>
-        <div className={styles.sectionLine} />
-        <span className={styles.sectionArrow}>{itemOpen ? '▲' : '▼'}</span>
-      </button>
-      {itemOpen && (
+      {section === 'item' && (
         <div className={styles.list}>
           {Array.from({ length: CONFIG.PRODUCT_GRADE_MAX }, (_, i) => {
             const grade = i + 1
@@ -142,64 +90,8 @@ export default function PrestigeTab({ gameState, onPrestige, onPrestigeKeepPoint
         </div>
       )}
 
-      {/* 동물 */}
-      <button className={styles.sectionHeader} onClick={() => setAnimalOpen(v => !v)}>
-        <span className={styles.sectionTitle}>동물</span>
-        <div className={styles.sectionLine} />
-        <span className={styles.sectionArrow}>{animalOpen ? '▲' : '▼'}</span>
-      </button>
-      {animalOpen && (
-        <div className={styles.list}>
-          {ANIMAL_IDS.map(id => {
-            const animal = animals.find(a => a.id === id)!
-            const upgradeCost = getAnimalUpgradeCost(animal.level)
-            const isPlaced = gameState.factories.some(f => f.animalId === id)
-            return (
-              <div key={id} className={`${styles.card} ${!animal.unlocked ? styles.cardLocked : ''}`}>
-                <div className={styles.cardLeft}>
-                  <AnimalIcon id={id} />
-                  <div className={styles.cardInfo}>
-                    <div className={styles.cardNameRow}>
-                      <span className={styles.cardName}>{getAnimalTypeName(id)}</span>
-                      {animal.unlocked && <span className={styles.levelBadge}>Lv.{formatNumber(animal.level)}</span>}
-                    </div>
-                    {animal.unlocked && (
-                      <span className={styles.cardSub}>+{formatNumber(getAnimalStat(animal.level) * 100)}% 속도</span>
-                    )}
-                  </div>
-                </div>
-                <div className={styles.cardBtns}>
-                  {animal.unlocked ? (
-                    <>
-                      <button
-                        className={`${styles.placeBtn} ${isPlaced ? styles.placeBtnRecall : ''}`}
-                        onClick={() => isPlaced ? onRecallAnimal(id) : onStartPlacing(id)}
-                      >
-                        {isPlaced ? '회수' : '배치'}
-                      </button>
-                      <button className={styles.starBtn} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
-                        ⭐ {formatGold(upgradeCost)}
-                      </button>
-                    </>
-                  ) : (
-                    <button className={styles.unlockBtn} onClick={() => onUnlockAnimal(id)} disabled={prestigePoints < unlockCost}>
-                      🔓 {formatGold(unlockCost)}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* 저장소 */}
-      <button className={styles.sectionHeader} onClick={() => setBufferOpen(v => !v)}>
-        <span className={styles.sectionTitle}>저장소</span>
-        <div className={styles.sectionLine} />
-        <span className={styles.sectionArrow}>{bufferOpen ? '▲' : '▼'}</span>
-      </button>
-      {bufferOpen && (
+      {section === 'buffer' && (
         <div className={styles.list}>
           <div className={styles.card}>
             <div className={styles.cardLeft}>

@@ -90,11 +90,13 @@ export function useGameLoop(
   rsBufferLevel: number,
   onFactoryProcess?: (animalId: string | null) => void,
   speedMultiplier?: number,
+  initialItems?: Item[],
+  initialFaStates?: Record<string, FAState>,
 ) {
-  const [items, setItems] = useState<Item[]>([])
+  const [items, setItems] = useState<Item[]>(initialItems ?? [])
   const [progresses, setProgresses] = useState<Progresses>({})
   const [faPhases, setFaPhases] = useState<FAPhases>({})
-  const itemsRef = useRef<Item[]>([])
+  const itemsRef = useRef<Item[]>(initialItems ?? [])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
   const rsQueuesRef = useRef<Record<string, Item[]>>({})  // RS 버퍼 큐
@@ -126,14 +128,14 @@ export function useGameLoop(
     if (cellSize === 0) return
 
     // 보드 변경 시 전체 리셋
-    itemsRef.current = []
-    setItems([])
-    faStatesRef.current = {}
+    itemsRef.current = initialItems ?? []
+    setItems(initialItems ?? [])
+    faStatesRef.current = (initialFaStates as Record<string, FAState>) ?? {}
     produceTimersRef.current = {}
     rsQueuesRef.current = {}
     pendingClickerSpawnsRef.current = 0
 
-    const itemSize = cellSize * CONFIG.ITEM_SIZE_RATIO
+    const itemSize = cellSize * CONFIG.ITEM_GAP_RATIO
     const pixelsPerMs = cellSize / CONFIG.MOVE_SPEED
     const pickTime = getFactoryPickTime()
 
@@ -566,5 +568,5 @@ export function useGameLoop(
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items, progresses, faPhases, spawnClickerItem }
+  return { items, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef }
 }

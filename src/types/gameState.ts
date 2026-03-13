@@ -16,6 +16,7 @@ export interface GameState {
   // 환생 유지 필드
   prestigeCount: number
   prestigePoints: number
+  totalPrestigePoints: number
   itemValueLevels: number[]  // 인덱스 = 아이템 등급-1, 값 = 가치 레벨
   materialQuantityLevels: number[]  // 등급별 재료 수량 레벨 (환생 시 리셋)
   animals: Animal[]          // 환생 유지
@@ -25,19 +26,20 @@ export interface GameState {
 
 export const initialGameState: GameState = {
   playerName: '',
-  gold: 0,
+  gold: 100_000_000,
   goldPerSec: 0,
   bundleCount: 0,
   producers: [
-    { row: 0, col: 1, built: false, level: 0, grade: 1 },
-    { row: 0, col: 3, built: false, level: 0, grade: 2 },
-    { row: 0, col: 5, built: false, level: 0, grade: 3 },
+    { row: 0, col: 1, built: true, level: 1, grade: 1 },
+    { row: 0, col: 3, built: true, level: 1, grade: 2 },
+    { row: 0, col: 5, built: true, level: 1, grade: 3 },
   ],
   clicker: { clickCount: 0, threshold: 2, level: 1 },
   factories: [],
-  totalEarned: 0,
+  totalEarned: 100_000_000,
   prestigeCount: 0,
-  prestigePoints: 0,
+  prestigePoints: 100,
+  totalPrestigePoints: 100,
   itemValueLevels: Array(20).fill(1),
   materialQuantityLevels: Array(20).fill(1),
   animals: initialAnimals,

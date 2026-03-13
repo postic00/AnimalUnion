@@ -17,6 +17,13 @@ export default function Navigation({ gameState }: Props) {
           <span className={styles.perSec}>+{formatGold(gameState.goldPerSec)}/s</span>
         </div>
       </div>
+      <div className={styles.prestigeCard}>
+        <span className={styles.prestigeIcon}>⭐</span>
+        <div className={styles.prestigeInfo}>
+          <span className={styles.prestigeAmount}>{formatGold(gameState.totalPrestigePoints)}</span>
+          <span className={styles.prestigeLabel}>미사용 {formatGold(gameState.prestigePoints)}</span>
+        </div>
+      </div>
     </nav>
   )
 }

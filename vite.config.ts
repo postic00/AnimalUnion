@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
 	resolve: {
 		alias: {
-			'apps-in-toss/web-framework': path.resolve(__dirname, 'src/stubs/apps-in-toss-web-framework.ts'),
+			'@apps-in-toss/web-framework': path.resolve(__dirname, 'src/stubs/apps-in-toss-web-framework.ts'),
 		},
 	},
 })

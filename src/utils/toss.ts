@@ -1,7 +1,3 @@
-import { graniteEvent, closeView } from '@apps-in-toss/web-framework'
-
-export { closeView }
-
 export function isTossEnvironment(): boolean {
   try {
     return typeof window !== 'undefined' &&
@@ -11,9 +7,18 @@ export function isTossEnvironment(): boolean {
   }
 }
 
-export function initTossBackEvent(onBack: () => void): () => void {
+export async function closeView(): Promise<void> {
+  if (!isTossEnvironment()) return
+  try {
+    const { closeView: _closeView } = await import('@apps-in-toss/web-framework')
+    _closeView()
+  } catch {}
+}
+
+export async function initTossBackEvent(onBack: () => void): Promise<() => void> {
   if (!isTossEnvironment()) return () => {}
   try {
+    const { graniteEvent } = await import('@apps-in-toss/web-framework')
     return graniteEvent.addEventListener('backEvent', {
       onEvent: onBack,
       onError: () => {},

@@ -119,13 +119,15 @@ export default function App() {
 
   // 앱인토스: 뒤로가기 이벤트 처리
   useEffect(() => {
-    return initTossBackEvent(() => {
+    let cleanup = () => {}
+    initTossBackEvent(() => {
       if (activeTabRef.current !== null) {
         setActiveTab(null)
       } else {
         closeView()
       }
-    })
+    }).then(fn => { cleanup = fn })
+    return () => cleanup()
   }, [])
 
   // 앱인토스: 백그라운드 전환 시 사운드 중단

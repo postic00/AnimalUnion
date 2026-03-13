@@ -19,7 +19,7 @@ import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userPr
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, getDeviceId, saveItems, saveFaStates } from './utils/saveLoad'
+import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
 import { CONFIG, applyWeekConfig } from './config'
 
 // 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
@@ -361,10 +361,10 @@ export default function App() {
   }, [platform])
 
   const handleCloudLoad = useCallback(async () => {
-    const data = await loadFromCloud(gameStateRef.current.playerName)
+    const data = await loadFromCloud()
     if (!data) return
     setBoard(data.board)
-    setGameState(data.gameState)
+    setGameState(data.game_state)
     setResetKey(k => k + 1)
   }, [])
 

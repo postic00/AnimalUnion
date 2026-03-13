@@ -48,7 +48,7 @@ export async function saveToCloud(
       {
         device_id: deviceId,
         player_name: playerName,
-        game_state: { gameState, board },
+        game_state: { game_state: gameState, board },
         platform,
         app_version: CONFIG.WEEK_END_DATE ? '1.2' : '1.0',
         last_online_at: new Date().toISOString(),
@@ -68,6 +68,6 @@ export async function loadFromCloud(): Promise<CloudSaveData | null> {
 
   if (error || !data) return null
 
-  const { gameState, board } = data.game_state as { gameState: GameState; board: Board }
-  return { gameState, board }
+  const { game_state, board } = data.game_state as { game_state: GameState; board: Board }
+  return { game_state, board }
 }

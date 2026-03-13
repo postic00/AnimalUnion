@@ -33,7 +33,7 @@ let nextId = 0
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
 export type FAPhases = Record<string, FAPhase>
 
-interface FAState {
+export interface FAState {
   state: FAPhase
   timer: number
   grabbed: Item | null                        // WA: 처리 중인 아이템

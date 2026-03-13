@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { GameState } from '../types/gameState'
 import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
 import { formatGold } from '../utils/formatGold'

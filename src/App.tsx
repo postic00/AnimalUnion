@@ -246,7 +246,7 @@ export default function App() {
         if (now < spawnUnlockTimeRef.current) return prev  // 아직 잠금 중 → 무시
         spawnClickerItemRef.current?.(clickerGradeRef.current)
         setTimeout(() => setClickerEmoji('👆'), 0)
-        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: 2 } }
+        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD } }
       }
 
       const next = clickCount + 1

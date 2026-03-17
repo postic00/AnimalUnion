@@ -2,6 +2,7 @@ import type { Producer } from './producer'
 import type { Clicker } from './clicker'
 import type { Factory } from './factory'
 import { type Animal, initialAnimals } from './animal'
+import { CONFIG } from '../config'
 
 export interface GameState {
   playerName: string
@@ -34,7 +35,7 @@ export const initialGameState: GameState = {
     { row: 0, col: 3, built: false, level: 1, grade: 2 },
     { row: 0, col: 5, built: false, level: 1, grade: 3 },
   ],
-  clicker: { clickCount: 0, threshold: 2, level: 1 },
+  clicker: { clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD, level: 1 },
   factories: [],
   totalEarned: 0,
   prestigeCount: 0,

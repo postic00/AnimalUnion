@@ -74,9 +74,18 @@ function addBundle(board: BoardType): BoardType {
   return [...newBoard, rowA, rowB]
 }
 
+const RAIL_TYPE_MIGRATION: Record<string, string> = { RL: 'RLN', RR: 'RRN', RU: 'RUN', RD: 'RDN' }
+
+function migrateBoard(board: BoardType): BoardType {
+  return board.map(row => row.map(cell => {
+    const migrated = RAIL_TYPE_MIGRATION[cell.type]
+    return migrated ? { ...cell, type: migrated as Cell['type'] } : cell
+  }))
+}
+
 function getConsistentBoard(savedBoard: BoardType | undefined, bundleCount: number): BoardType {
   const expectedRows = 4 + bundleCount * 2
-  if (savedBoard && savedBoard.length === expectedRows) return savedBoard
+  if (savedBoard && savedBoard.length === expectedRows) return migrateBoard(savedBoard)
   let board = initialBoard
   for (let i = 0; i < bundleCount; i++) board = addBundle(board)
   return board

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Item } from '../types/item'
 import { CONFIG } from '../config'
 import { formatQuantity } from '../utils/formatGold'
@@ -15,7 +16,7 @@ interface Props {
   cellSize: number
 }
 
-export default function ItemLayer({ items, cellSize }: Props) {
+export default memo(function ItemLayer({ items, cellSize }: Props) {
   const size = cellSize * CONFIG.ITEM_SIZE_RATIO
   const emojiSize = Math.round(size * 0.55)
 
@@ -65,4 +66,4 @@ export default function ItemLayer({ items, cellSize }: Props) {
       })}
     </div>
   )
-}
+})

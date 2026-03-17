@@ -21,7 +21,7 @@ export function getProducerUpgradeCost(level: number): number {
 // PR 생산 주기
 export function getProducerInterval(level: number): number {
   if (level === 0) return Infinity
-  return CONFIG.PRODUCE_INTERVAL / (level * CONFIG.PRODUCE_INTERVAL_MULTIPLIER)
+  return CONFIG.PRODUCE_INTERVAL / Math.pow(CONFIG.PRODUCE_INTERVAL_MULTIPLIER, level - 1)
 }
 
 // 아이템 가치: 등급 기본값 × 가치레벨 배수

@@ -24,17 +24,25 @@ export async function showRewardedAd(): Promise<boolean> {
     return new Promise((resolve) => {
       let rewarded = false
 
-      AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+      const listeners: Promise<{ remove: () => void }>[] = []
+
+      const cleanup = () => {
+        listeners.forEach(p => p.then(h => h.remove()))
+      }
+
+      listeners.push(AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
         rewarded = true
-      })
+      }))
 
-      AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
+      listeners.push(AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
+        cleanup()
         resolve(rewarded)
-      })
+      }))
 
-      AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+      listeners.push(AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+        cleanup()
         resolve(false)
-      })
+      }))
 
       AdMob.showRewardVideoAd()
     })

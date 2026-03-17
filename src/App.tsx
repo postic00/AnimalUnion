@@ -19,7 +19,7 @@ import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userPr
 import SplashScreen from './components/SplashScreen'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, getSavedAt, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
+import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
 import { CONFIG, applyWeekConfig } from './config'
 
 // 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
@@ -81,10 +81,16 @@ function addBundle(board: BoardType): BoardType {
   return [...newBoard, rowA, rowB]
 }
 
-export default function App() {
+function getConsistentBoard(savedBoard: BoardType | undefined, bundleCount: number): BoardType {
+  const expectedRows = 4 + bundleCount * 2
+  if (savedBoard && savedBoard.length === expectedRows) return savedBoard
+  let board = initialBoard
+  for (let i = 0; i < bundleCount; i++) board = addBundle(board)
+  return board
+}
+
+function loadInitialState() {
   const saved = loadGame()
-  const [board, setBoard] = useState<BoardType>(saved?.board ?? initialBoard)
-  const [resetKey, setResetKey] = useState(0)
   const savedState = saved?.gameState ?? initialGameState
   if (!savedState.playerName) {
     savedState.playerName = `Player${Date.now().toString(36).toUpperCase()}`
@@ -92,8 +98,21 @@ export default function App() {
   if (savedState.totalPrestigePoints == null) {
     savedState.totalPrestigePoints = savedState.prestigePoints
   }
-  const [gameState, setGameState] = useState<GameState>(savedState)
-  const [savedAt, setSavedAt] = useState<number | null>(saved?.savedAt ?? getSavedAt())
+  return {
+    board: getConsistentBoard(saved?.board, savedState.bundleCount),
+    gameState: savedState,
+    savedAt: saved?.savedAt ?? null,
+    speedBoostUntil: saved?.boosts?.speedBoostUntil ?? 0,
+    goldBoostUntil: saved?.boosts?.goldBoostUntil ?? 0,
+  }
+}
+
+export default function App() {
+  const [initData] = useState(loadInitialState)
+  const [board, setBoard] = useState<BoardType>(initData.board)
+  const [resetKey, setResetKey] = useState(0)
+  const [gameState, setGameState] = useState<GameState>(initData.gameState)
+  const [savedAt, setSavedAt] = useState<number | null>(initData.savedAt)
   const gameStateRef = useRef(gameState)
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
   const earnedInSecRef = useRef(0)
@@ -140,8 +159,8 @@ export default function App() {
 
   // 부스트
   const BOOST_MS = 10 * 60 * 1000
-  const [speedBoostUntil, setSpeedBoostUntil] = useState(0)
-  const [goldBoostUntil, setGoldBoostUntil] = useState(0)
+  const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
+  const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
   const [now, setNow] = useState(Date.now())
   const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | null>(null)
   const [showPrestigeModal, setShowPrestigeModal] = useState(false)
@@ -154,15 +173,20 @@ export default function App() {
 
   useEffect(() => {
     const save = () => {
-      saveGame(boardRef2.current, gameStateRef2.current)
+      saveGame(boardRef2.current, gameStateRef2.current, {
+        speedBoostUntil: speedBoostUntilRef.current,
+        goldBoostUntil: goldBoostUntilRef.current,
+      })
       setSavedAt(Date.now())
     }
+    const onVisibility = () => { if (document.hidden) save() }
     const interval = setInterval(save, 10_000)
     window.addEventListener('beforeunload', save)
-    document.addEventListener('visibilitychange', () => { if (document.hidden) save() })
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
       clearInterval(interval)
       window.removeEventListener('beforeunload', save)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 
@@ -198,8 +222,10 @@ export default function App() {
   const mutedRef = useRef(muted)
   mutedRef.current = muted
 
-  const goldBoostUntilRef = useRef(0)
+  const goldBoostUntilRef = useRef(goldBoostUntil)
   goldBoostUntilRef.current = goldBoostUntil
+  const speedBoostUntilRef = useRef(speedBoostUntil)
+  speedBoostUntilRef.current = speedBoostUntil
 
   const handleGoldEarned = useCallback((amount: number) => {
     const multiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
@@ -226,21 +252,21 @@ export default function App() {
       const next = clickCount + 1
 
       if (clickCount === 0) {
-        // 첫 클릭: 등급 결정 + threshold 계산
+        // 첫 클릭: 등급 결정
         const builtGrades = prev.producers.filter(p => p.built).map(p => p.grade)
         const grade = builtGrades.length > 0
           ? builtGrades[Math.floor(Math.random() * builtGrades.length)]
           : 1
         clickerGradeRef.current = grade
-        const quantity = getMaterialQuantity(prev.materialQuantityLevels[grade - 1] ?? 1)
-        const newThreshold = getClickerThreshold(quantity, level)
         setTimeout(() => setClickerEmoji(GRADE_EMOJIS[grade] ?? '🌶️'), 0)
-        if (next >= newThreshold) spawnUnlockTimeRef.current = now + 250
-        return { ...prev, clicker: { ...prev.clicker, clickCount: next, threshold: newThreshold } }
       }
 
-      if (next >= threshold) spawnUnlockTimeRef.current = now + 250
-      return { ...prev, clicker: { ...prev.clicker, clickCount: next } }
+      // 매 클릭마다 현재 레벨로 threshold 재계산
+      const grade = clickerGradeRef.current
+      const quantity = getMaterialQuantity(prev.materialQuantityLevels[grade - 1] ?? 1)
+      const newThreshold = getClickerThreshold(quantity, level)
+      if (next >= newThreshold) spawnUnlockTimeRef.current = now + 250
+      return { ...prev, clicker: { ...prev.clicker, clickCount: next, threshold: newThreshold } }
     })
   }, [])
 
@@ -388,7 +414,7 @@ export default function App() {
     setResetKey(k => k + 1)
     setBoard(initialBoard)
 
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? 1 : CONFIG.NEXT_WEEK_RATE
+    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
 
     setGameState(prev => {
       const earned = getPrestigePoints(prev.totalEarned) * multiplier
@@ -406,6 +432,7 @@ export default function App() {
         producers: initialGameState.producers,
         factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
         totalEarned: 0,
+        clicker: initialGameState.clicker,
         materialQuantityLevels: initialGameState.materialQuantityLevels,
         prestigeCount: newPrestigeCount,
         prestigePoints: newPrestigePoints,
@@ -436,6 +463,7 @@ export default function App() {
         prestigePoints: prev.prestigePoints + refund,
         itemValueLevels: initialGameState.itemValueLevels,
         animals: initialGameState.animals,
+        clicker: initialGameState.clicker,
       }
     })
   }, [])
@@ -463,7 +491,7 @@ export default function App() {
     setResetKey(k => k + 1)
     setBoard(initialBoard)
 
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? 1 : CONFIG.NEXT_WEEK_RATE
+    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
 
     setGameState(prev => {
       const earned = getPrestigePoints(prev.totalEarned)
@@ -480,6 +508,7 @@ export default function App() {
         producers: initialGameState.producers,
         factories: prev.factories.map(f => ({ ...f, built: false, level: 1, grade: 1 })),
         totalEarned: 0,
+        clicker: initialGameState.clicker,
         materialQuantityLevels: initialGameState.materialQuantityLevels,
         prestigeCount: newPrestigeCount,
         totalPrestigePoints: newTotalPrestigePoints,
@@ -655,7 +684,7 @@ export default function App() {
         onClickerClick={handleClickerClick}
         onTabChange={(tab) => {
           setActiveTab(tab)
-          saveGame(board, gameState)
+          saveGame(board, gameState, { speedBoostUntil, goldBoostUntil })
           setSavedAt(Date.now())
         }}
         activeTab={activeTab}

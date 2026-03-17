@@ -20,15 +20,21 @@ interface SaveData {
   savedAt: number
   board: Board
   gameState: GameState
+  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
 }
 
-export function saveGame(board: Board, gameState: GameState): void {
+export function saveGame(
+  board: Board,
+  gameState: GameState,
+  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+): void {
   try {
     const data: SaveData = {
       version: SAVE_VERSION,
       savedAt: Date.now(),
       board,
       gameState,
+      boosts,
     }
     localStorage.setItem(SAVE_KEY, JSON.stringify(data))
   } catch (e) {
@@ -36,13 +42,13 @@ export function saveGame(board: Board, gameState: GameState): void {
   }
 }
 
-export function loadGame(): { board: Board; gameState: GameState; savedAt: number } | null {
+export function loadGame(): { board: Board; gameState: GameState; savedAt: number; boosts?: { speedBoostUntil: number; goldBoostUntil: number } } | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null
     const data: SaveData = JSON.parse(raw)
     if (data.version !== SAVE_VERSION) return null
-    return { board: data.board, gameState: data.gameState, savedAt: data.savedAt }
+    return { board: data.board, gameState: data.gameState, savedAt: data.savedAt, boosts: data.boosts }
   } catch (e) {
     console.warn('로드 실패:', e)
     return null

@@ -33,11 +33,23 @@ export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
 export type FAPhases = Record<string, FAPhase>
 
 export interface FAState {
-  state: FAPhase
-  timer: number
-  grabbed: Item | null                        // WA: 처리 중인 아이템
-  buffer: { grade: number; count: number }[]  // PA/PK: 수집된 재료
-  outputItem: Item | null                     // 출력 대기 아이템
+  grabState: 'IDLE' | 'GRABBING'
+  grabTimer: number
+  grabbed: Item | null            // grab 채널: 집는 중인 아이템
+
+  processState: 'IDLE' | 'PROCESSING' | 'PLACING' | 'WAITING'
+  processTimer: number
+  pendingProcess: Item | null     // grab 완료 → process 픽업 대기 (WA/PK)
+  processing: Item | null         // process 채널: 처리 중인 아이템 (WA/PK)
+  outputItem: Item | null         // 출력 대기 아이템
+
+  buffer: { grade: number; count: number }[]  // PA: 수집된 재료
+}
+
+const DEFAULT_FA_STATE: FAState = {
+  grabState: 'IDLE', grabTimer: 0, grabbed: null,
+  processState: 'IDLE', processTimer: 0, pendingProcess: null, processing: null, outputItem: null,
+  buffer: [],
 }
 
 function getNextTarget(
@@ -133,6 +145,7 @@ export function useGameLoop(
     produceTimersRef.current = {}
     rsQueuesRef.current = {}
     pendingClickerSpawnsRef.current = 0
+    lastTimeRef.current = 0
 
     const itemSize = cellSize * CONFIG.ITEM_GAP_RATIO
     const pixelsPerMs = cellSize / CONFIG.MOVE_SPEED
@@ -259,10 +272,9 @@ export function useGameLoop(
         if (!factory.built || factory.level < 1) return
 
         const key = `fa-${factory.row}-${factory.col}`
-        if (!faStatesRef.current[key]) {
-          faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
+        if (!faStatesRef.current[key] || !('grabState' in faStatesRef.current[key])) {
+          faStatesRef.current[key] = { ...DEFAULT_FA_STATE }
         }
-        const fas = faStatesRef.current[key]
 
         const inputRow = factory.dir === 'UP_TO_DOWN' ? factory.row - 1 : factory.row + 1
         const inputCol = factory.col
@@ -277,105 +289,76 @@ export function useGameLoop(
         const isOutputOccupied = () =>
           items.some(it => Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2) <= cellSize * 0.3)
 
-        if (factory.type === 'WA') {
-          // WA: 아이템 통과 + 가치 증가
-          if (fas.state === 'IDLE') {
-            const idx = items.findIndex(it => {
-              if (it.grade !== factory.grade) return false
+        const placeOutput = () => {
+          items = [...items, placeOnBelt(faStatesRef.current[key].outputItem!, outputCenter, board, cellSize)]
+          faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'IDLE', processTimer: 0, outputItem: null }
+        }
+
+        if (factory.type === 'WA' || factory.type === 'PK') {
+          const isTargetItem = (it: Item): boolean => {
+            if (it.grade !== factory.grade) return false
+            if (factory.type === 'WA') {
               if (it.waGrades.includes(factory.grade)) return false
               if (it.pkGrades.length > 0) return false
-              const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
-              return dist <= cellSize * 0.3
-            })
-            if (idx !== -1) {
-              const grabbed = items[idx]
-              items = items.filter((_, i) => i !== idx)
-              faStatesRef.current[key] = { ...fas, state: 'GRABBING', timer: 0, grabbed }
-            }
-          } else if (fas.state === 'GRABBING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              const processed = applyWaBonus(fas.grabbed!, factory, animalsRef.current)
-              faStatesRef.current[key] = { ...fas, state: 'PROCESSING', timer: 0, grabbed: processed, outputItem: null }
             } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PROCESSING') {
-            const newTimer = fas.timer + delta
-            const processTime = getFactoryProcessTime(factory.level, fas.grabbed!.quantity)
-            if (newTimer >= processTime) {
-              onFactoryProcessRef.current?.(factory.animalId ?? null)
-              faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, outputItem: fas.grabbed, grabbed: null }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PLACING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              if (!isOutputOccupied()) {
-                items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-                faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
-              } else {
-                faStatesRef.current[key] = { ...fas, state: 'WAITING', timer: 0 }
-              }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'WAITING') {
-            if (!isOutputOccupied()) {
-              items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-              faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
-            }
-          }
-        } else if (factory.type === 'PK') {
-          // PK: 등급+포장이력 기준 단일 아이템 grab → 포장 보너스 → 출력
-          if (fas.state === 'IDLE') {
-            const idx = items.findIndex(it => {
-              if (it.grade !== factory.grade) return false
               if (it.pkGrades.includes(factory.grade)) return false
-              const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
-              return dist <= cellSize * 0.3
-            })
-            if (idx !== -1) {
-              const grabbed = items[idx]
-              items = items.filter((_, i) => i !== idx)
-              faStatesRef.current[key] = { ...fas, state: 'GRABBING', timer: 0, grabbed }
             }
-          } else if (fas.state === 'GRABBING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              const processed = applyPkBonus(fas.grabbed!, factory, animalsRef.current)
-              faStatesRef.current[key] = { ...fas, state: 'PROCESSING', timer: 0, grabbed: processed, outputItem: null }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PROCESSING') {
-            const newTimer = fas.timer + delta
-            const processTime = getFactoryProcessTime(factory.level, fas.grabbed!.quantity)
-            if (newTimer >= processTime) {
-              onFactoryProcessRef.current?.(factory.animalId ?? null)
-              faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, outputItem: fas.grabbed, grabbed: null }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PLACING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              if (!isOutputOccupied()) {
-                items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-                faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
-              } else {
-                faStatesRef.current[key] = { ...fas, state: 'WAITING', timer: 0 }
+            return Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2) <= cellSize * 0.3
+          }
+          const applyBonus = (item: Item) => factory.type === 'WA'
+            ? applyWaBonus(item, factory, animalsRef.current)
+            : applyPkBonus(item, factory, animalsRef.current)
+
+          // GRAB 채널
+          {
+            const fas = faStatesRef.current[key]
+            if (fas.grabState === 'IDLE' && fas.pendingProcess === null) {
+              const idx = items.findIndex(isTargetItem)
+              if (idx !== -1) {
+                const grabbed = items[idx]
+                items = items.filter((_, i) => i !== idx)
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'GRABBING', grabTimer: 0, grabbed }
               }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'WAITING') {
-            if (!isOutputOccupied()) {
-              items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-              faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
+            } else if (fas.grabState === 'GRABBING') {
+              const newTimer = fas.grabTimer + delta
+              if (newTimer >= pickTime) {
+                const pending = applyBonus(fas.grabbed!)
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'IDLE', grabTimer: 0, grabbed: null, pendingProcess: pending }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabTimer: newTimer }
+              }
             }
           }
+
+          // PROCESS 채널
+          {
+            const fas = faStatesRef.current[key]
+            if (fas.processState === 'IDLE') {
+              if (fas.pendingProcess !== null) {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PROCESSING', processTimer: 0, processing: fas.pendingProcess, pendingProcess: null }
+              }
+            } else if (fas.processState === 'PROCESSING') {
+              const processTime = getFactoryProcessTime(factory.level, fas.processing!.quantity)
+              const newTimer = fas.processTimer + delta
+              if (newTimer >= processTime) {
+                onFactoryProcessRef.current?.(factory.animalId ?? null)
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PLACING', processTimer: 0, outputItem: fas.processing, processing: null }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processTimer: newTimer }
+              }
+            } else if (fas.processState === 'PLACING') {
+              const newTimer = fas.processTimer + delta
+              if (newTimer >= pickTime) {
+                if (!isOutputOccupied()) placeOutput()
+                else faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'WAITING', processTimer: 0 }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processTimer: newTimer }
+              }
+            } else if (fas.processState === 'WAITING') {
+              if (!isOutputOccupied()) placeOutput()
+            }
+          }
+
         } else {
           // PA: 레시피 기반 조합
           const recipe = RECIPES[factory.grade]
@@ -384,88 +367,87 @@ export function useGameLoop(
           const outputQuantity = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
           const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
 
-          const isRecipeComplete = () =>
-            recipe.every(req => {
-              const have = fas.buffer.find(b => b.grade === req.grade)?.count ?? 0
-              return have >= req.count * outputQuantity
-            })
-
-          const getNeededGrade = (): number | null => {
+          const getNeededGrade = (buf: { grade: number; count: number }[]): number | null => {
             for (const req of recipe) {
-              const have = fas.buffer.find(b => b.grade === req.grade)?.count ?? 0
+              const have = buf.find(b => b.grade === req.grade)?.count ?? 0
               if (have < req.count * outputQuantity) return req.grade
             }
             return null
           }
+          const isRecipeComplete = (buf: { grade: number; count: number }[]): boolean =>
+            recipe.every(req => (buf.find(b => b.grade === req.grade)?.count ?? 0) >= req.count * outputQuantity)
 
-          const totalInBuffer = fas.buffer.reduce((s, b) => s + b.count, 0)
-
-          if (fas.state === 'IDLE') {
-            if (isRecipeComplete()) {
-              faStatesRef.current[key] = { ...fas, state: 'PROCESSING', timer: 0 }
-              return
-            }
-            if (totalInBuffer >= bufferCapacity) return
-
-            const neededGrade = getNeededGrade()
-            if (neededGrade === null) return
-
-            const idx = items.findIndex(it => {
-              if (it.grade !== neededGrade) return false
-              if (it.pkGrades.length > 0) return false
-              const dist = Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2)
-              return dist <= cellSize * 0.3
-            })
-            if (idx !== -1) {
-              const grabbed = items[idx]
-              items = items.filter((_, i) => i !== idx)
-              faStatesRef.current[key] = { ...fas, state: 'GRABBING', timer: 0, grabbed }
-            }
-          } else if (fas.state === 'GRABBING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              const grade = fas.grabbed!.grade
-              const newBuffer = [...fas.buffer]
-              const existing = newBuffer.find(b => b.grade === grade)
-              if (existing) existing.count += fas.grabbed!.quantity
-              else newBuffer.push({ grade, count: fas.grabbed!.quantity })
-              faStatesRef.current[key] = { ...fas, state: 'IDLE', timer: 0, grabbed: null, buffer: newBuffer }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PROCESSING') {
-            const processTime = getFactoryProcessTime(factory.level, outputQuantity)
-            const newTimer = fas.timer + delta
-            if (newTimer >= processTime) {
-              const base = createRecipeOutput(
-                factory.grade,
-                factory,
-                animalsRef.current,
-                itemValueLevelsRef.current[factory.grade - 1] ?? 1,
-                materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
-              )
-              const outputItem = { ...base, id: crypto.randomUUID() }
-              onFactoryProcessRef.current?.(factory.animalId ?? null)
-              faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, buffer: [], outputItem }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
-            }
-          } else if (fas.state === 'PLACING') {
-            const newTimer = fas.timer + delta
-            if (newTimer >= pickTime) {
-              if (!isOutputOccupied()) {
-                items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-                faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
-              } else {
-                faStatesRef.current[key] = { ...fas, state: 'WAITING', timer: 0 }
+          // GRAB 채널
+          {
+            const fas = faStatesRef.current[key]
+            const totalInBuffer = fas.buffer.reduce((s, b) => s + b.count, 0)
+            if (fas.grabState === 'IDLE' && totalInBuffer < bufferCapacity) {
+              const neededGrade = getNeededGrade(fas.buffer)
+              if (neededGrade !== null) {
+                const idx = items.findIndex(it => {
+                  if (it.grade !== neededGrade) return false
+                  if (it.pkGrades.length > 0) return false
+                  return Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2) <= cellSize * 0.3
+                })
+                if (idx !== -1) {
+                  const grabbed = items[idx]
+                  items = items.filter((_, i) => i !== idx)
+                  faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'GRABBING', grabTimer: 0, grabbed }
+                }
               }
-            } else {
-              faStatesRef.current[key] = { ...fas, timer: newTimer }
+            } else if (fas.grabState === 'GRABBING') {
+              const newTimer = fas.grabTimer + delta
+              if (newTimer >= pickTime) {
+                const grade = fas.grabbed!.grade
+                const qty = fas.grabbed!.quantity
+                const found = fas.buffer.some(b => b.grade === grade)
+                const newBuffer = found
+                  ? fas.buffer.map(b => b.grade === grade ? { ...b, count: b.count + qty } : b)
+                  : [...fas.buffer, { grade, count: qty }]
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'IDLE', grabTimer: 0, grabbed: null, buffer: newBuffer }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabTimer: newTimer }
+              }
             }
-          } else if (fas.state === 'WAITING') {
-            if (!isOutputOccupied()) {
-              items = [...items, placeOnBelt(fas.outputItem!, outputCenter, board, cellSize)]
-              faStatesRef.current[key] = { state: 'IDLE', timer: 0, grabbed: null, buffer: [], outputItem: null }
+          }
+
+          // PROCESS 채널
+          {
+            const fas = faStatesRef.current[key]
+            if (fas.processState === 'IDLE') {
+              if (isRecipeComplete(fas.buffer)) {
+                // 레시피 소모 후 다음 배치 grab 병렬 진행 가능
+                const newBuffer = fas.buffer.map(b => {
+                  const req = recipe.find(r => r.grade === b.grade)
+                  return req ? { ...b, count: b.count - req.count * outputQuantity } : b
+                }).filter(b => b.count > 0)
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PROCESSING', processTimer: 0, buffer: newBuffer }
+              }
+            } else if (fas.processState === 'PROCESSING') {
+              const processTime = getFactoryProcessTime(factory.level, outputQuantity)
+              const newTimer = fas.processTimer + delta
+              if (newTimer >= processTime) {
+                const base = createRecipeOutput(
+                  factory.grade, factory, animalsRef.current,
+                  itemValueLevelsRef.current[factory.grade - 1] ?? 1,
+                  materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
+                )
+                const outputItem = { ...base, id: crypto.randomUUID() }
+                onFactoryProcessRef.current?.(factory.animalId ?? null)
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PLACING', processTimer: 0, outputItem }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processTimer: newTimer }
+              }
+            } else if (fas.processState === 'PLACING') {
+              const newTimer = fas.processTimer + delta
+              if (newTimer >= pickTime) {
+                if (!isOutputOccupied()) placeOutput()
+                else faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'WAITING', processTimer: 0 }
+              } else {
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processTimer: newTimer }
+              }
+            } else if (fas.processState === 'WAITING') {
+              if (!isOutputOccupied()) placeOutput()
             }
           }
         }
@@ -547,12 +529,14 @@ export function useGameLoop(
         const fas = faStatesRef.current[key]
         if (!fas) return
         const cellKey = `${factory.row}-${factory.col}`
-        fp[cellKey] = fas.state
-        if (fas.state === 'PROCESSING') {
-          const qty = fas.grabbed?.quantity ?? getMaterialQuantity(1)
+        fp[cellKey] = fas.processState !== 'IDLE' ? fas.processState : fas.grabState
+        if (fas.processState === 'PROCESSING') {
+          const qty = factory.type === 'PA'
+            ? getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
+            : fas.processing?.quantity ?? getMaterialQuantity(1)
           const processTime = getFactoryProcessTime(factory.level, qty)
-          p[cellKey] = Math.min(fas.timer / processTime, 1)
-        } else if (fas.state === 'WAITING') {
+          p[cellKey] = Math.min(fas.processTimer / processTime, 1)
+        } else if (fas.processState === 'WAITING') {
           p[cellKey] = 1
         }
       })

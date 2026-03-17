@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { Factory } from '../types/factory'
 import type { FAPhases } from '../hooks/useGameLoop'
 import { getSpecies, HandSvg } from './Cell'
@@ -83,10 +83,9 @@ export default function HandLayer({ factories, cellSize, faPhases }: Props) {
           overflow: 'visible' as const,
         }
         return (
-          <>
+          <Fragment key={key}>
             {grabVisible.has(key) && (
               <div
-                key={`grab-${key}`}
                 style={{ ...overlayBase, clipPath: isUpToDown ? 'inset(-300% 0 100% 0)' : 'inset(100% 0 -300% 0)' }}
               >
                 <div
@@ -99,7 +98,6 @@ export default function HandLayer({ factories, cellSize, faPhases }: Props) {
             )}
             {placeVisible.has(key) && (
               <div
-                key={`place-${key}`}
                 style={{ ...overlayBase, clipPath: isUpToDown ? 'inset(100% 0 -300% 0)' : 'inset(-300% 0 100% 0)' }}
               >
                 <div
@@ -110,7 +108,7 @@ export default function HandLayer({ factories, cellSize, faPhases }: Props) {
                 </div>
               </div>
             )}
-          </>
+          </Fragment>
         )
       })}
     </>

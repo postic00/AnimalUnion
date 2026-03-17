@@ -8,7 +8,22 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // edge-to-edge 비활성화 (시스템 바가 레이아웃을 침범하지 않도록)
+        applyFitsSystemWindows();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        applyFitsSystemWindows();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        applyFitsSystemWindows();
+    }
+
+    private void applyFitsSystemWindows() {
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
     }
 }

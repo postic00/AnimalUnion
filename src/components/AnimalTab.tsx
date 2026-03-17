@@ -74,7 +74,7 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
                     {animal.unlocked && <span className={styles.levelBadge}>Lv.{formatNumber(animal.level)}</span>}
                   </div>
                   {animal.unlocked && (
-                    <span className={styles.cardSub}>+{formatNumber(getAnimalStat(animal.level) * 100)}% 속도</span>
+                    <span className={styles.cardSub}>+{formatNumber(getAnimalStat(animal.level) * 100)}% 가치</span>
                   )}
                 </div>
               </div>

@@ -28,8 +28,6 @@ import {
   isBlocked,
 } from '../utils/boardUtils'
 
-let nextId = Date.now()
-
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
 export type FAPhases = Record<string, FAPhase>
 

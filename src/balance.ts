@@ -48,7 +48,7 @@ export function getFactoryBuildCost(): number {
 
 // FA 등급 업그레이드 비용
 export function getFactoryGradeUpgradeCost(grade: number): number {
-  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
+  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(grade, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
 }
 
 // FA 레벨 업그레이드 비용

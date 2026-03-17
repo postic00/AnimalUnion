@@ -384,16 +384,17 @@ export default function App() {
 
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
-  const handleCloudSave = useCallback(async () => {
-    await saveToCloud(gameStateRef.current.playerName, gameStateRef.current, boardRef.current, platform)
+  const handleCloudSave = useCallback(async (): Promise<boolean> => {
+    return await saveToCloud(gameStateRef.current.playerName, gameStateRef.current, boardRef.current, platform)
   }, [platform])
 
-  const handleCloudLoad = useCallback(async () => {
+  const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await loadFromCloud()
-    if (!data) return
+    if (!data) return false
     setBoard(data.board)
     setGameState(data.game_state)
     setResetKey(k => k + 1)
+    return true
   }, [])
 
   const handleToggleMute = useCallback(() => {

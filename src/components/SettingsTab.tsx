@@ -1,11 +1,12 @@
+import { useState, useCallback } from 'react'
 import styles from './SettingsTab.module.css'
 
 interface Props {
   savedAt: number | null
   muted: boolean
   onToggleMute: () => void
-  onCloudSave: () => void
-  onCloudLoad: () => void
+  onCloudSave: () => Promise<boolean>
+  onCloudLoad: () => Promise<boolean>
   onHardReset: () => void
   onShowTutorial: () => void
 }
@@ -17,6 +18,27 @@ function formatDate(ts: number): string {
 }
 
 export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onHardReset, onShowTutorial }: Props) {
+  const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
+  const [loading, setLoading] = useState<'save' | 'load' | null>(null)
+
+  const showMsg = useCallback((text: string, ok: boolean) => {
+    setCloudMsg({ text, ok })
+    setTimeout(() => setCloudMsg(null), 3000)
+  }, [])
+
+  const handleSave = useCallback(async () => {
+    setLoading('save')
+    const ok = await onCloudSave()
+    setLoading(null)
+    showMsg(ok ? '클라우드에 저장했어요' : '저장에 실패했어요', ok)
+  }, [onCloudSave, showMsg])
+
+  const handleLoad = useCallback(async () => {
+    setLoading('load')
+    const ok = await onCloudLoad()
+    setLoading(null)
+    showMsg(ok ? '불러오기 완료!' : '불러올 데이터가 없어요', ok)
+  }, [onCloudLoad, showMsg])
 
   return (
     <div className={styles.container}>
@@ -84,22 +106,26 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
           <span className={styles.cardIcon}>☁️</span>
           <div className={styles.cardInfo}>
             <span className={styles.cardName} style={{ color: '#0c4a6e' }}>클라우드 저장</span>
-            <span className={styles.cardSub} style={{ color: '#0284c7' }}>서버에 현재 상태를 저장해요</span>
+            <span className={styles.cardSub} style={{ color: cloudMsg ? (cloudMsg.ok ? '#16a34a' : '#e11d48') : '#0284c7' }}>
+              {cloudMsg ? cloudMsg.text : '서버에 현재 상태를 저장해요'}
+            </span>
           </div>
         </div>
         <button
           className={styles.resetBtn}
-          style={{ background: '#0ea5e9' }}
-          onClick={onCloudSave}
+          style={{ background: '#0ea5e9', opacity: loading ? 0.6 : 1 }}
+          onClick={handleSave}
+          disabled={!!loading}
         >
-          저장
+          {loading === 'save' ? '...' : '저장'}
         </button>
         <button
           className={styles.resetBtn}
-          style={{ background: '#6366f1', marginLeft: 8 }}
-          onClick={onCloudLoad}
+          style={{ background: '#6366f1', marginLeft: 8, opacity: loading ? 0.6 : 1 }}
+          onClick={handleLoad}
+          disabled={!!loading}
         >
-          불러오기
+          {loading === 'load' ? '...' : '불러오기'}
         </button>
       </div>
 

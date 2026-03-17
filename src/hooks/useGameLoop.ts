@@ -26,6 +26,7 @@ import {
   getCellDirection,
   getCell,
   isBlocked,
+  buildSpatialHash,
 } from '../utils/boardUtils'
 
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
@@ -225,8 +226,9 @@ export function useGameLoop(
       })
 
       // 아이템 이동
+      const spatialHash = buildSpatialHash(items, itemSize)
       items = items.map(item => {
-        if (isBlocked(item, items, itemSize)) return item
+        if (isBlocked(item, spatialHash, itemSize)) return item
 
         const distToTarget = Math.sqrt(
           (item.targetX - item.x) ** 2 + (item.targetY - item.y) ** 2
@@ -523,7 +525,7 @@ export function useGameLoop(
 
     const renderInterval = setInterval(() => {
       setRenderItems([...itemsRef.current])
-    }, 16)
+    }, 100)
 
     const progressInterval = setInterval(() => {
       const p: Progresses = {}

@@ -35,19 +35,42 @@ export function getCell(board: Board, row: number, col: number) {
   return board[row]?.[col] ?? null
 }
 
-// 아이템이 앞 아이템과 너무 가까운지 체크
-export function isBlocked(item: Item, allItems: Item[], itemSize: number): boolean {
+// 셀 기반 공간 해시 생성 (이동 루프 전 1회 호출)
+export function buildSpatialHash(items: Item[], cellSize: number): Map<string, Item[]> {
+  const map = new Map<string, Item[]>()
+  for (const item of items) {
+    const key = `${Math.floor(item.x / cellSize)}-${Math.floor(item.y / cellSize)}`
+    const bucket = map.get(key)
+    if (bucket) bucket.push(item)
+    else map.set(key, [item])
+  }
+  return map
+}
+
+// 아이템이 앞 아이템과 너무 가까운지 체크 (공간 해시로 O(1) 룩업)
+export function isBlocked(item: Item, spatialHash: Map<string, Item[]>, itemSize: number): boolean {
   const tdx = item.targetX - item.x
   const tdy = item.targetY - item.y
   const tlen = Math.sqrt(tdx * tdx + tdy * tdy)
   if (tlen === 0) return false
 
-  return allItems.some(other => {
-    if (other.id === item.id) return false
-    const dist = Math.sqrt((other.x - item.x) ** 2 + (other.y - item.y) ** 2)
-    if (dist >= itemSize) return false
-    // 현재→타겟 방향 기준으로 앞에 있는지 확인
-    const dot = (other.x - item.x) * (tdx / tlen) + (other.y - item.y) * (tdy / tlen)
-    return dot > 0
-  })
+  const cx = Math.floor(item.x / itemSize)
+  const cy = Math.floor(item.y / itemSize)
+
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const bucket = spatialHash.get(`${cx + dx}-${cy + dy}`)
+      if (!bucket) continue
+      for (const other of bucket) {
+        if (other.id === item.id) continue
+        const ox = other.x - item.x
+        const oy = other.y - item.y
+        const dist = Math.sqrt(ox * ox + oy * oy)
+        if (dist >= itemSize) continue
+        const dot = ox * (tdx / tlen) + oy * (tdy / tlen)
+        if (dot > 0) return true
+      }
+    }
+  }
+  return false
 }

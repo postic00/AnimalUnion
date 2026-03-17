@@ -53,20 +53,18 @@ export default function MaterialTab({ gameState, onUpgradeQuantity }: Props) {
                   <div className={styles.nameRow}>
                     <span className={styles.name} style={{ color: mat.color }}>{mat.name}</span>
                     <span className={styles.levelBadge} style={{ background: mat.sub }}>Lv.{level}</span>
-                  </div>
-                  <div className={styles.bottomRow}>
                     <span className={styles.quantity} style={{ color: mat.sub }}>×{formatQuantity(quantity)}</span>
-                    {RECIPES[grade] && (
-                      <div className={styles.recipe}>
-                        {RECIPES[grade].map((r, ri) => (
-                          <span key={ri} className={styles.ingredient}>
-                            <GradeIcon size={18} grade={r.grade}/>
-                            <span className={styles.ingredientCount}>×{r.count}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
+                  {RECIPES[grade] && (
+                    <div className={styles.recipe}>
+                      {RECIPES[grade].map((r, ri) => (
+                        <span key={ri} className={styles.ingredient} style={{ borderColor: mat.border }}>
+                          <GradeIcon size={28} grade={r.grade}/>
+                          <span className={styles.ingredientCount} style={{ color: mat.color }}>×{r.count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <button

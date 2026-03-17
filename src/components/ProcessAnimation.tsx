@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { JSX } from 'react'
 import type { Factory } from '../types/factory'
 import type { AnimalSpecies } from './AnimalSvg'
 

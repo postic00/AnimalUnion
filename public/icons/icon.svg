@@ -1,68 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#f97316"/>
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#fb923c"/>
     </linearGradient>
+    <linearGradient id="headGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef3c7"/>
+      <stop offset="100%" stop-color="#fde68a"/>
+    </linearGradient>
+    <radialGradient id="cheekL" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#fda4af" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0.5"/>
+    </radialGradient>
+    <radialGradient id="cheekR" cx="50%" cy="50%">
+      <stop offset="0%" stop-color="#fda4af" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fb7185" stop-opacity="0.5"/>
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="rgba(0,0,0,0.18)"/>
+    </filter>
   </defs>
 
   <!-- 배경 -->
-  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="240" fill="url(#bg)"/>
+
+  <!-- 탕후루 꼬치 (뒤쪽) -->
+  <rect x="580" y="50" width="28" height="680" rx="14" fill="#78350f" transform="rotate(12 720 500)"/>
+  <!-- 꼬치 알맹이 (위→아래) -->
+  <circle cx="856" cy="150" r="68" fill="#dc2626" filter="url(#shadow)"/>
+  <circle cx="856" cy="150" r="68" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="6"/>
+  <ellipse cx="836" cy="128" rx="22" ry="13" fill="rgba(255,255,255,0.55)"/>
+
+  <circle cx="826" cy="310" r="68" fill="#7c3aed" filter="url(#shadow)"/>
+  <circle cx="826" cy="310" r="68" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="6"/>
+  <ellipse cx="806" cy="288" rx="22" ry="13" fill="rgba(255,255,255,0.55)"/>
+
+  <circle cx="796" cy="470" r="68" fill="#dc2626" filter="url(#shadow)"/>
+  <circle cx="796" cy="470" r="68" fill="none" stroke="rgba(251,191,36,0.5)" stroke-width="6"/>
+  <ellipse cx="776" cy="448" rx="22" ry="13" fill="rgba(255,255,255,0.55)"/>
 
   <!-- 귀 (머리 뒤) -->
-  <circle cx="270" cy="270" r="130" fill="#1a1a1a"/>
-  <circle cx="754" cy="270" r="130" fill="#1a1a1a"/>
-  <circle cx="270" cy="270" r="105" fill="#f59e0b"/>
-  <circle cx="754" cy="270" r="105" fill="#f59e0b"/>
-  <circle cx="270" cy="270" r="68" fill="#fda4af"/>
-  <circle cx="754" cy="270" r="68" fill="#fda4af"/>
+  <circle cx="248" cy="308" r="148" fill="#f59e0b"/>
+  <circle cx="248" cy="308" r="148" fill="none" stroke="#92400e" stroke-width="14"/>
+  <circle cx="248" cy="308" r="96" fill="#fda4af"/>
+
+  <circle cx="620" cy="240" r="148" fill="#f59e0b"/>
+  <circle cx="620" cy="240" r="148" fill="none" stroke="#92400e" stroke-width="14"/>
+  <circle cx="620" cy="240" r="96" fill="#fda4af"/>
 
   <!-- 머리 -->
-  <circle cx="512" cy="560" r="370" fill="#1a1a1a"/>
-  <circle cx="512" cy="560" r="348" fill="#f59e0b"/>
+  <circle cx="390" cy="590" r="375" fill="url(#headGrad)" stroke="#92400e" stroke-width="14" filter="url(#shadow)"/>
 
-  <!-- 얼굴 (밝은 부분) -->
-  <ellipse cx="512" cy="610" rx="240" ry="210" fill="#fef3c7"/>
-  <ellipse cx="512" cy="610" rx="225" ry="196" stroke="#1a1a1a" stroke-width="8" fill="none"/>
+  <!-- 얼굴 밝은 부분 -->
+  <ellipse cx="390" cy="650" rx="225" ry="200" fill="white" opacity="0.6"/>
 
-  <!-- 볼살 -->
-  <ellipse cx="310" cy="640" rx="90" ry="68" fill="#fda4af" opacity="0.9"/>
-  <ellipse cx="714" cy="640" rx="90" ry="68" fill="#fda4af" opacity="0.9"/>
-  <ellipse cx="310" cy="640" rx="90" ry="68" stroke="#1a1a1a" stroke-width="6" fill="none"/>
-  <ellipse cx="714" cy="640" rx="90" ry="68" stroke="#1a1a1a" stroke-width="6" fill="none"/>
+  <!-- 볼 살 (햄스터 특유) -->
+  <ellipse cx="170" cy="670" rx="100" ry="78" fill="#fbbf24" opacity="0.7"/>
+  <ellipse cx="170" cy="670" rx="100" ry="78" fill="url(#cheekL)"/>
+  <ellipse cx="610" cy="670" rx="100" ry="78" fill="#fbbf24" opacity="0.7"/>
+  <ellipse cx="610" cy="670" rx="100" ry="78" fill="url(#cheekR)"/>
 
   <!-- 눈 흰자 -->
-  <ellipse cx="400" cy="520" rx="72" ry="80" fill="white"/>
-  <ellipse cx="624" cy="520" rx="72" ry="80" fill="white"/>
-  <ellipse cx="400" cy="520" rx="72" ry="80" stroke="#1a1a1a" stroke-width="10" fill="none"/>
-  <ellipse cx="624" cy="520" rx="72" ry="80" stroke="#1a1a1a" stroke-width="10" fill="none"/>
-
+  <ellipse cx="278" cy="548" rx="74" ry="82" fill="white" stroke="#92400e" stroke-width="10"/>
+  <ellipse cx="502" cy="548" rx="74" ry="82" fill="white" stroke="#92400e" stroke-width="10"/>
   <!-- 눈동자 -->
-  <circle cx="408" cy="528" r="44" fill="#1a1a1a"/>
-  <circle cx="632" cy="528" r="44" fill="#1a1a1a"/>
-  <!-- 눈 광택 -->
-  <circle cx="422" cy="510" r="16" fill="white"/>
-  <circle cx="646" cy="510" r="16" fill="white"/>
-  <circle cx="400" cy="540" r="8" fill="white"/>
-  <circle cx="624" cy="540" r="8" fill="white"/>
+  <circle cx="288" cy="558" r="48" fill="#1c1917"/>
+  <circle cx="512" cy="558" r="48" fill="#1c1917"/>
+  <!-- 눈 하이라이트 -->
+  <circle cx="304" cy="540" r="16" fill="white"/>
+  <circle cx="528" cy="540" r="16" fill="white"/>
+  <circle cx="278" cy="570" r="8" fill="rgba(255,255,255,0.6)"/>
+  <circle cx="502" cy="570" r="8" fill="rgba(255,255,255,0.6)"/>
 
   <!-- 코 -->
-  <ellipse cx="512" cy="610" rx="26" ry="18" fill="#1a1a1a"/>
-  <!-- 콧구멍 -->
-  <ellipse cx="503" cy="612" rx="7" ry="5" fill="#333"/>
-  <ellipse cx="521" cy="612" rx="7" ry="5" fill="#333"/>
+  <ellipse cx="390" cy="648" rx="26" ry="19" fill="#f43f5e"/>
+  <ellipse cx="382" cy="645" rx="7" ry="5" fill="rgba(255,255,255,0.4)"/>
 
   <!-- 입 -->
-  <path d="M 476 638 Q 512 672 548 638" fill="none" stroke="#1a1a1a" stroke-width="11" stroke-linecap="round"/>
+  <path d="M 356 676 Q 390 710 424 676" fill="none" stroke="#92400e" stroke-width="12" stroke-linecap="round"/>
 
-  <!-- 탕후루 꼬치 (오른쪽 상단) -->
-  <line x1="740" y1="980" x2="920" y2="120" stroke="#78350f" stroke-width="22" stroke-linecap="round"/>
-  <!-- 과일 3개 -->
-  <circle cx="895" cy="160" r="48" fill="#dc2626" stroke="#1a1a1a" stroke-width="10"/>
-  <circle cx="856" cy="310" r="48" fill="#7c3aed" stroke="#1a1a1a" stroke-width="10"/>
-  <circle cx="817" cy="460" r="48" fill="#dc2626" stroke="#1a1a1a" stroke-width="10"/>
-  <!-- 과일 광택 -->
-  <circle cx="880" cy="144" r="13" fill="rgba(255,255,255,0.7)"/>
-  <circle cx="841" cy="294" r="13" fill="rgba(255,255,255,0.7)"/>
-  <circle cx="802" cy="444" r="13" fill="rgba(255,255,255,0.7)"/>
+  <!-- 볼 블러시 -->
+  <ellipse cx="170" cy="666" rx="52" ry="38" fill="#fb7185" opacity="0.45"/>
+  <ellipse cx="610" cy="666" rx="52" ry="38" fill="#fb7185" opacity="0.45"/>
 </svg>

@@ -43,8 +43,6 @@ import {
   getItemValueLevelCost,
   getAnimalUnlockCost,
   getAnimalUpgradeCost,
-  getItemValueResetRefund,
-  getAnimalResetRefund,
   getMaterialQuantityLevelCost,
   getMaterialQuantity,
   getClickerThreshold,
@@ -245,7 +243,7 @@ export default function App() {
       if (clickCount >= threshold) {
         if (now < spawnUnlockTimeRef.current) return prev  // 아직 잠금 중 → 무시
         spawnClickerItemRef.current?.(clickerGradeRef.current)
-        setTimeout(() => setClickerEmoji('👆'), 0)
+
         return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD } }
       }
 
@@ -460,18 +458,6 @@ export default function App() {
     setShowPrestigeModal(true)
   }, [])
 
-  const handlePrestigeReset = useCallback(() => {
-    setGameState(prev => {
-      const refund = getItemValueResetRefund(prev.itemValueLevels) + getAnimalResetRefund(prev.animals)
-      return {
-        ...prev,
-        prestigePoints: prev.prestigePoints + refund,
-        itemValueLevels: initialGameState.itemValueLevels,
-        animals: initialGameState.animals,
-        clicker: initialGameState.clicker,
-      }
-    })
-  }, [])
 
   const handleAdComplete = useCallback(() => {
     const target = adTarget
@@ -866,7 +852,6 @@ export default function App() {
             gameState={gameState}
             section={prestigeSection}
             onPrestige={handlePrestige}
-            onPrestigeReset={handlePrestigeReset}
             onPrestigeKeepPoints={handlePrestigeKeepPoints}
             onLevelUpItemValue={handleLevelUpItemValue}
             onUpgradeRsBuffer={handleUpgradeRsBuffer}

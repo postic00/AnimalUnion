@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import type { Factory } from '../types/factory'
 
 function WaIcon({ s }: { s: number }) {

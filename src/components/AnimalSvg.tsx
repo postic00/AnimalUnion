@@ -1,3 +1,5 @@
+import type { JSX } from 'react'
+
 export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
 
 function Hamster({ s }: { s: number }) {

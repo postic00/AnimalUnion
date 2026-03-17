@@ -4,7 +4,7 @@ import type { Cell as CellType } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Producer } from '../types/producer'
 import type { AnimalId } from '../types/animal'
-import { AnimalSvg } from './AnimalSvg'
+
 import { ProcessAnimation } from './ProcessAnimation'
 import { FactoryTypeIcon } from './FactoryTypeIcon'
 import styles from './Cell.module.css'
@@ -109,21 +109,6 @@ function getDynamicStyle(cell: CellType, factory?: Factory, producer?: Producer)
   return {}
 }
 
-const PR_GRADE_COLORS: Record<number, { ring: string; bg: string }> = {
-  1: { ring: '#dc2626', bg: '#fff1f1' },
-  2: { ring: '#7c3aed', bg: '#f5f3ff' },
-  3: { ring: '#16a34a', bg: '#f0fdf4' },
-}
-
-function getProgressColors(cell: CellType, factory?: Factory, producer?: Producer): { ring: string; bg: string } {
-  if (cell.type === 'PR') return PR_GRADE_COLORS[producer?.grade ?? 1] ?? PR_GRADE_COLORS[1]
-  if (cell.type === 'FA') {
-    if (factory?.type === 'WA') return { ring: '#3b82f6', bg: '#dbeafe' }
-    if (factory?.type === 'PA') return { ring: '#8b5cf6', bg: '#ede9fe' }
-    if (factory?.type === 'PK') return { ring: '#f97316', bg: '#fff7ed' }
-  }
-  return { ring: '#6b7280', bg: '#f9fafb' }
-}
 
 function getLevelLabel(cell: CellType, factory?: Factory, producer?: Producer): string | null {
   if (cell.type === 'PR' && producer?.built) return `Lv.${producer.level}`
@@ -166,30 +151,6 @@ function CellEmoji({ cell, factory, producer, progress, size }: Pick<Props, 'cel
   }
 }
 
-function ProgressRing({ size, progress, color, bgColor }: { size: number; progress: number; color: string; bgColor: string }) {
-  const pad = 4
-  const r = size / 2 - pad
-  const cx = size / 2
-  const cy = size / 2
-  const circumference = 2 * Math.PI * r
-  const offset = circumference * (1 - progress)
-  return (
-    <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} width={size} height={size}>
-      <circle cx={cx} cy={cy} r={r - 1} fill={bgColor} />
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth={4} />
-      <circle
-        cx={cx} cy={cy} r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={4}
-        strokeLinecap="round"
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        style={{ transform: 'rotate(-90deg)', transformOrigin: `${cx}px ${cy}px`, transition: 'stroke-dashoffset 0.1s linear' }}
-      />
-    </svg>
-  )
-}
 
 const LABEL_STYLE: CSSProperties = {
   position: 'absolute',
@@ -209,7 +170,6 @@ const LABEL_STYLE: CSSProperties = {
 
 export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, onClick }: Props) {
   const dynamicStyle = getDynamicStyle(cell, factory, producer)
-  const { ring, bg } = getProgressColors(cell, factory, producer)
   const label = getLevelLabel(cell, factory, producer)
   const isActiveFA = cell.type === 'FA' && factory?.built && factory.level > 0
   const isActivePR = cell.type === 'PR' && producer?.built

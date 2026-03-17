@@ -1,3 +1,5 @@
+import type { JSX } from 'react'
+
 type Props = { size: number; grade: number; packed?: boolean }
 
 function Icon1({ s }: { s: number }) { // 고추

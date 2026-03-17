@@ -209,7 +209,8 @@ export default function App() {
         bucketHistoryRef.current.shift()
       }
       const total = bucketHistoryRef.current.reduce((a, b) => a + b, 0)
-      const perSec = Math.round(total / bucketHistoryRef.current.length)
+      const len = bucketHistoryRef.current.length
+      const perSec = len > 0 ? Math.round(total / len) : 0
       setGameState(prev => ({ ...prev, goldPerSec: perSec }))
     }, 1000)
     return () => clearInterval(interval)
@@ -224,6 +225,7 @@ export default function App() {
   speedBoostUntilRef.current = speedBoostUntil
 
   const handleGoldEarned = useCallback((amount: number) => {
+    if (!isFinite(amount) || amount <= 0) return
     const multiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
     const earned = amount * multiplier
     earnedInSecRef.current += earned
@@ -280,7 +282,8 @@ export default function App() {
 
   const handleBuildProducer = useCallback((index: number) => {
     setGameState(prev => {
-      const cost = getProducerBuildCost()
+      const builtCount = prev.producers.filter(p => p.built).length
+      const cost = getProducerBuildCost(builtCount)
       if (prev.gold < cost) return prev
       if (!mutedRef.current) soundBuild()
       const producers = [...prev.producers]
@@ -386,7 +389,7 @@ export default function App() {
 
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await loadFromCloud()
-    if (!data) return false
+    if (!data || !Array.isArray(data.board) || !data.game_state || typeof data.game_state !== 'object') return false
     setBoard(data.board)
     setGameState(data.game_state)
     setResetKey(k => k + 1)
@@ -401,6 +404,7 @@ export default function App() {
   }, [])
 
   const doPrestige = useCallback(async (multiplier: number = 1) => {
+    const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
     await fetchAndSaveWeekConfig()
     const weekConfig = loadWeekConfig()
     if (weekConfig) applyWeekConfig(weekConfig)
@@ -414,7 +418,7 @@ export default function App() {
     const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
 
     setGameState(prev => {
-      const earned = getPrestigePoints(prev.totalEarned) * multiplier
+      const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
       const newPrestigePoints = prev.prestigePoints + earned
       const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
       const newPrestigeCount = prev.prestigeCount + 1
@@ -848,13 +852,13 @@ export default function App() {
           <LeaderboardTab
             playerName={gameState.playerName}
             mode={lbMode}
-            onNameChange={name => {
+            onNameChange={async name => {
+              if (!name.trim()) return
               const { playerName: oldName, prestigePoints, prestigeCount, totalEarned } = gameStateRef.current
               setGameState(prev => ({ ...prev, playerName: name }))
-              deleteScores(oldName).then(() => {
-                submitPrestigeScore(name, prestigePoints, prestigeCount)
-                submitGoldScore(name, totalEarned)
-              })
+              await deleteScores(oldName)
+              await submitPrestigeScore(name, prestigePoints, prestigeCount)
+              await submitGoldScore(name, totalEarned)
             }}
           />
         )}

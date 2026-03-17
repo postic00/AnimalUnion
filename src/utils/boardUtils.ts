@@ -38,7 +38,9 @@ export function getCell(board: Board, row: number, col: number) {
 // 셀 기반 공간 해시 생성 (이동 루프 전 1회 호출)
 export function buildSpatialHash(items: Item[], bucketSize: number): Map<string, Item[]> {
   const map = new Map<string, Item[]>()
+  if (bucketSize <= 0) return map
   for (const item of items) {
+    if (!isFinite(item.x) || !isFinite(item.y)) continue
     const key = `${Math.floor(item.x / bucketSize)}-${Math.floor(item.y / bucketSize)}`
     const bucket = map.get(key)
     if (bucket) bucket.push(item)

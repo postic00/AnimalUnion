@@ -32,7 +32,7 @@ export const CONFIG = {
   // FA 처리 시간 (잡기/처리 분리)
   FA_PICK_TIME: 1000,            // 잡기/놓기 시간 (ms, 고정)
   FA_PROCESS_TIME_BASE: 800,     // 처리 기본 시간 (ms, 수량×레벨 연산)
-  FA_LEVEL_EFFICIENCY: 1,        // 레벨당 처리속도 증가 배수
+  FA_LEVEL_EFFICIENCY: 2,        // 레벨당 처리속도 증가 배수
 
   // FA 건설 비용
   FA_BUILD_COST_BASE: 10,

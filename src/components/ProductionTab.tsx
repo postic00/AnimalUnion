@@ -22,7 +22,8 @@ const GRADES: Record<number, { name: string; emoji: string; color: string; borde
 }
 
 export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker }: Props) {
-  const buildCost = getProducerBuildCost()
+  const builtCount = producers.filter(p => p.built).length
+  const buildCost = getProducerBuildCost(builtCount)
   const clickerCost = getClickerUpgradeCost(clicker.level)
   const clickerValue = getClickerValue(clicker.level)
 

@@ -9,8 +9,8 @@ export function getBundleCost(bundleCount: number): number {
 }
 
 // PR 건설 비용
-export function getProducerBuildCost(): number {
-  return Math.floor(CONFIG.PR_BUILD_COST_BASE * Math.pow(1, CONFIG.PR_BUILD_COST_EXPONENT))
+export function getProducerBuildCost(builtCount: number = 0): number {
+  return Math.floor(CONFIG.PR_BUILD_COST_BASE * Math.pow(2, builtCount))
 }
 
 // PR 업그레이드 비용
@@ -26,8 +26,10 @@ export function getProducerInterval(level: number): number {
 
 // 아이템 가치: 등급 기본값 × 가치레벨 배수
 export function getItemValue(grade: number, itemValueLevel = 1): number {
-  const baseValue = CONFIG.GRADE_BASE_VALUES[Math.min(grade - 1, 19)]
-  return baseValue * (1 + (itemValueLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL)
+  const idx = Math.max(0, Math.min(grade - 1, 19))
+  const baseValue = CONFIG.GRADE_BASE_VALUES[idx] ?? 1
+  const safeLevel = Math.max(1, itemValueLevel)
+  return baseValue * (1 + (safeLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL)
 }
 
 // PR 아이템 가치
@@ -61,11 +63,11 @@ export function getFactoryPickTime(): number {
   return CONFIG.FA_PICK_TIME
 }
 
-// FA 처리 시간: PROCESS_TIME_BASE × quantity / (level × EFFICIENCY)
+// FA 처리 시간: PROCESS_TIME_BASE × quantity / EFFICIENCY^(level-1)
 export function getFactoryProcessTime(level: number, quantity: number): number {
-  if (level === 0) return CONFIG.FA_PROCESS_TIME_BASE * quantity
-  // return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / (level * CONFIG.FA_LEVEL_EFFICIENCY)
-  return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / Math.pow(CONFIG.FA_LEVEL_EFFICIENCY, level-1)
+  const safeQty = Math.max(1, quantity)
+  if (level <= 0) return CONFIG.FA_PROCESS_TIME_BASE * safeQty
+  return (CONFIG.FA_PROCESS_TIME_BASE * safeQty) / Math.pow(CONFIG.FA_LEVEL_EFFICIENCY, level - 1)
 }
 
 // FA 등급 보너스
@@ -141,12 +143,12 @@ export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[
 
 // 재료 수량: 2^(level-1)
 export function getMaterialQuantity(level: number): number {
-  return Math.pow(2, level - 1)
+  return Math.pow(2, Math.max(1, level) - 1)
 }
 
 // 클릭커 1클릭당 기여량: 2^(level-1)
 export function getClickerValue(level: number): number {
-  return Math.pow(2, level - 1)
+  return Math.pow(2, Math.max(1, level) - 1)
 }
 
 // 클릭커 업그레이드 비용 (생산기와 동일 공식)

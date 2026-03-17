@@ -48,7 +48,8 @@ export function loadGame(): { board: Board; gameState: GameState; savedAt: numbe
     if (!raw) return null
     const data: SaveData = JSON.parse(raw)
     if (data.version !== SAVE_VERSION) return null
-    return { board: data.board, gameState: data.gameState, savedAt: data.savedAt, boosts: data.boosts }
+    if (!Array.isArray(data.board) || !data.gameState || typeof data.gameState !== 'object') return null
+    return { board: data.board, gameState: data.gameState, savedAt: data.savedAt ?? Date.now(), boosts: data.boosts }
   } catch (e) {
     console.warn('로드 실패:', e)
     return null

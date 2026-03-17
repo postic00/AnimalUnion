@@ -425,8 +425,8 @@ export function useGameLoop(
               const grade = fas.grabbed!.grade
               const newBuffer = [...fas.buffer]
               const existing = newBuffer.find(b => b.grade === grade)
-              if (existing) existing.count++
-              else newBuffer.push({ grade, count: 1 })
+              if (existing) existing.count += fas.grabbed!.quantity
+              else newBuffer.push({ grade, count: fas.grabbed!.quantity })
               faStatesRef.current[key] = { ...fas, state: 'IDLE', timer: 0, grabbed: null, buffer: newBuffer }
             } else {
               faStatesRef.current[key] = { ...fas, timer: newTimer }

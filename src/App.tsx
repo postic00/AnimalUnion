@@ -851,12 +851,11 @@ export default function App() {
             playerName={gameState.playerName}
             mode={lbMode}
             onNameChange={name => {
-              const oldName = gameStateRef.current.playerName
+              const { playerName: oldName, prestigePoints, prestigeCount, totalEarned } = gameStateRef.current
               setGameState(prev => ({ ...prev, playerName: name }))
               deleteScores(oldName).then(() => {
-                const s = gameStateRef.current
-                submitPrestigeScore(name, s.prestigePoints, s.prestigeCount)
-                submitGoldScore(name, s.totalEarned)
+                submitPrestigeScore(name, prestigePoints, prestigeCount)
+                submitGoldScore(name, totalEarned)
               })
             }}
           />

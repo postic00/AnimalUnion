@@ -13,7 +13,7 @@ export function getDeviceId(): string {
 }
 
 const SAVE_KEY = 'animal-union-save'
-const SAVE_VERSION = '1.0.0'
+const SAVE_VERSION = '1.1.0'
 
 interface SaveData {
   version: string
@@ -47,7 +47,10 @@ export function loadGame(): { board: Board; gameState: GameState; savedAt: numbe
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null
     const data: SaveData = JSON.parse(raw)
-    if (data.version !== SAVE_VERSION) return null
+    if (!data.version || data.version < SAVE_VERSION) {
+      deleteSave()
+      return null
+    }
     if (!Array.isArray(data.board) || !data.gameState || typeof data.gameState !== 'object') return null
     return { board: data.board, gameState: data.gameState, savedAt: data.savedAt ?? Date.now(), boosts: data.boosts }
   } catch (e) {

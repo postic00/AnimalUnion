@@ -1,5 +1,5 @@
 import type { GameState } from '../types/gameState'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getItemValueResetRefund, getAnimalResetRefund } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import { CONFIG } from '../config'
 import coinIcon from '../assets/coin.svg'
@@ -30,10 +30,11 @@ interface Props {
   onUpgradeFaBuffer: () => void
 }
 
-export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
-  const { totalEarned, prestigePoints, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
+export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeReset, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
+  const { totalEarned, prestigePoints, itemValueLevels, animals, rsBufferLevel, faBufferLevel } = gameState
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
+  const refundAmount = getItemValueResetRefund(itemValueLevels) + getAnimalResetRefund(animals)
 
   return (
     <div className={styles.container}>
@@ -55,6 +56,15 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
             <span className={styles.prestigeBtnSub}>포인트 유지</span>
           </div>
           <span className={styles.prestigeBtnPoints}>+{formatGold(earnPoints)}</span>
+        </button>
+        <button className={styles.prestigeBtnKeep} onClick={onPrestigeReset} disabled={refundAmount === 0}
+          style={{ background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' }}>
+          <span className={styles.prestigeBtnIcon}>↩️</span>
+          <div className={styles.prestigeBtnTexts}>
+            <span className={styles.prestigeBtnTitle}>포인트 환급</span>
+            <span className={styles.prestigeBtnSub}>업그레이드 초기화</span>
+          </div>
+          <span className={styles.prestigeBtnPoints}>+{formatGold(refundAmount)}</span>
         </button>
       </div>
 

@@ -230,22 +230,27 @@ export function getProductGradeUnlockCost(grade: number): number {
 }
 
 // 조합 레시피 정의 (outputGrade → 필요 재료)
+// 기본 재료: 1=고추, 2=설탕, 3=딸기
+// Tier1(4-6): 단일 재료 가공  Tier2(7-9): 2재료 혼합
+// Tier3(10-12): 중간 가공품  Tier4(13-14): 3단계 조합
+// Tier5(15-16): 고급 가공    Tier6(17-18): 프리미엄
+// Tier7(19-20): 최상위
 export const RECIPES: Record<number, { grade: number; count: number }[]> = {
-  4:  [{ grade: 1, count: 2 }],
-  5:  [{ grade: 2, count: 2 }],
-  6:  [{ grade: 3, count: 2 }],
-  7:  [{ grade: 5, count: 3 }],
-  8:  [{ grade: 4, count: 2 }, { grade: 6, count: 1 }],
-  9:  [{ grade: 5, count: 2 }, { grade: 7, count: 1 }],
-  10: [{ grade: 8, count: 2 }, { grade: 4, count: 2 }],
-  11: [{ grade: 9, count: 2 }, { grade: 7, count: 2 }],
-  12: [{ grade: 10, count: 2 }, { grade: 11, count: 2 }, { grade: 3, count: 3 }],
-  13: [{ grade: 12, count: 1 }, { grade: 10, count: 2 }],
-  14: [{ grade: 12, count: 1 }, { grade: 11, count: 2 }],
-  15: [{ grade: 13, count: 2 }, { grade: 8, count: 2 }],
-  16: [{ grade: 14, count: 2 }, { grade: 9, count: 2 }],
-  17: [{ grade: 15, count: 2 }, { grade: 12, count: 2 }],
-  18: [{ grade: 16, count: 3 }, { grade: 14, count: 2 }],
-  19: [{ grade: 17, count: 2 }, { grade: 15, count: 2 }, { grade: 12, count: 2 }],
-  20: [{ grade: 19, count: 1 }, { grade: 18, count: 1 }],
+  4:  [{ grade: 1, count: 2 }],                                                     // 고추×2 → 고추장
+  5:  [{ grade: 2, count: 2 }],                                                     // 설탕×2 → 설탕시럽
+  6:  [{ grade: 3, count: 2 }],                                                     // 딸기×2 → 딸기잼
+  7:  [{ grade: 4, count: 1 }, { grade: 5, count: 2 }],                            // 고추장+설탕시럽×2 → 고추사탕
+  8:  [{ grade: 6, count: 2 }, { grade: 5, count: 1 }],                            // 딸기잼×2+설탕시럽 → 딸기에이드
+  9:  [{ grade: 4, count: 2 }, { grade: 6, count: 1 }],                            // 고추장×2+딸기잼 → 딸기고추소스
+  10: [{ grade: 7, count: 1 }, { grade: 8, count: 1 }],                            // 고추사탕+딸기에이드 → 딸기고추잼
+  11: [{ grade: 4, count: 2 }, { grade: 5, count: 2 }],                            // 고추장×2+설탕시럽×2 → 고추설탕크래커
+  12: [{ grade: 6, count: 2 }, { grade: 4, count: 2 }, { grade: 5, count: 1 }],   // 딸기잼×2+고추장×2+설탕시럽 → 프리미엄소스
+  13: [{ grade: 10, count: 1 }, { grade: 11, count: 2 }],                          // 딸기고추잼+고추설탕크래커×2 → 매운케이크
+  14: [{ grade: 10, count: 1 }, { grade: 12, count: 2 }],                          // 딸기고추잼+프리미엄소스×2 → 딸기크림파이
+  15: [{ grade: 13, count: 2 }, { grade: 8, count: 2 }],                           // 매운케이크×2+딸기에이드×2 → 딸기젤리
+  16: [{ grade: 14, count: 2 }, { grade: 9, count: 2 }],                           // 딸기크림파이×2+딸기고추소스×2 → 딸기크림
+  17: [{ grade: 15, count: 2 }, { grade: 12, count: 2 }],                          // 딸기젤리×2+프리미엄소스×2 → 고추딸기파이
+  18: [{ grade: 16, count: 3 }, { grade: 14, count: 2 }],                          // 딸기크림×3+딸기크림파이×2 → 딸기설탕케이크
+  19: [{ grade: 17, count: 2 }, { grade: 18, count: 2 }, { grade: 12, count: 2 }], // 고추딸기파이×2+딸기설탕케이크×2+프리미엄소스×2 → 딸기고추마카롱
+  20: [{ grade: 19, count: 1 }, { grade: 18, count: 1 }],                          // 딸기고추마카롱+딸기설탕케이크 → 🏆
 }

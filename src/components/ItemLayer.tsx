@@ -2,7 +2,7 @@ import { memo } from 'react'
 import type { Item } from '../types/item'
 import { CONFIG } from '../config'
 import { formatQuantity } from '../utils/formatGold'
-import { GRADE_EMOJIS } from '../data/gradeEmojis'
+import { GradeIcon } from './GradeIcon'
 import styles from './ItemLayer.module.css'
 
 interface Props {
@@ -17,7 +17,6 @@ export default memo(function ItemLayer({ items, cellSize }: Props) {
   return (
     <div className={styles.layer}>
       {items.map(item => {
-        const emoji = GRADE_EMOJIS[item.grade] ?? '📦'
         const isPacked = item.pkGrades.length > 0
         const bonuses = [
           item.waBonus > 0 ? { val: item.waBonus, cls: styles.bonusWA } : null,
@@ -37,8 +36,12 @@ export default memo(function ItemLayer({ items, cellSize }: Props) {
               top: item.y - size / 2,
             }}
           >
-            <span className={styles.emoji} style={{ fontSize: emojiSize }}>{isPacked ? '🎁' : emoji}</span>
-            {isPacked && <span className={styles.gradeBadge} style={{ fontSize: Math.round(size * 0.4) }}>{emoji}</span>}
+            <GradeIcon size={emojiSize} grade={item.grade} packed={isPacked}/>
+            {isPacked && (
+              <span className={styles.gradeBadge}>
+                <GradeIcon size={Math.round(size * 0.35)} grade={item.grade}/>
+              </span>
+            )}
 
             {/* 좌측 하단: 갯수 */}
             {item.quantity > 1 && (

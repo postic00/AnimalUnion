@@ -1,11 +1,12 @@
 import type { Clicker } from '../types/clicker'
+import { GradeIcon } from './GradeIcon'
 import styles from './TabBar.module.css'
 
 const BOOST_DURATION = 10 * 60 * 1000 // 10분
 
 interface Props {
   clicker: Clicker
-  clickerEmoji: string
+  clickerGrade: number
   onClickerClick: () => void
   onTabChange: (tab: number | null) => void
   activeTab: number | null
@@ -32,7 +33,7 @@ const TABS = [
   { label: '설정', icon: '🔧' },
 ]
 
-export default function TabBar({ clicker, clickerEmoji, onClickerClick, onTabChange, activeTab, speedBoostUntil, goldBoostUntil, now, onSpeedBoost, onGoldBoost }: Props) {
+export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostUntil, goldBoostUntil, now, onSpeedBoost, onGoldBoost }: Props) {
   const radius = 24
   const circumference = 2 * Math.PI * radius
   const progress = clicker.clickCount / clicker.threshold
@@ -79,7 +80,9 @@ export default function TabBar({ clicker, clickerEmoji, onClickerClick, onTabCha
           <circle cx="28" cy="28" r={radius} className={styles.ringBg} />
           <circle cx="28" cy="28" r={radius} className={styles.ringFill} strokeDasharray={circumference} strokeDashoffset={dashOffset} />
         </svg>
-        <span className={styles.clickerIcon}>{clickerEmoji}</span>
+        <span className={styles.clickerIcon}>
+          {clickerGrade > 0 ? <GradeIcon size={28} grade={clickerGrade}/> : '👆'}
+        </span>
       </button>
 
       {/* 배속 버튼 (좌측 하단) */}

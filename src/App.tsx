@@ -31,6 +31,7 @@ import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import type { Factory } from './types/factory'
+import { AnimalSvg } from './components/AnimalSvg'
 import { RECIPES } from './balance'
 import {
   getBundleCost,
@@ -51,7 +52,6 @@ import {
   getBufferUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
-import { GRADE_EMOJIS } from './data/gradeEmojis'
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
@@ -117,11 +117,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<number | null>(null)
   const activeTabRef = useRef(activeTab)
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
+  const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
   const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
   const [prestigeSection, setPrestigeSection] = useState<'item' | 'buffer'>('item')
-  const [clickerEmoji, setClickerEmoji] = useState('👆')
+  const [clickerGrade, setClickerGrade] = useState(0)  // 0 = 손가락(기본)
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
   const [muted, setMuted] = useState<boolean>(loadMuted())
@@ -256,7 +257,7 @@ export default function App() {
           ? builtGrades[Math.floor(Math.random() * builtGrades.length)]
           : 1
         clickerGradeRef.current = grade
-        setTimeout(() => setClickerEmoji(GRADE_EMOJIS[grade] ?? '🌶️'), 0)
+        setTimeout(() => setClickerGrade(grade), 0)
       }
 
       // 매 클릭마다 현재 레벨로 threshold 재계산
@@ -679,10 +680,19 @@ export default function App() {
         onSaveRef={boardSaveRef}
         muted={muted}
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
+        onFactoryClick={(row, col) => {
+          setActiveTab(0)
+          setProdSection('factory')
+          setFocusFactory({ row, col })
+        }}
+        onProducerClick={() => {
+          setActiveTab(0)
+          setProdSection('production')
+        }}
       />}
       {!showSplash && <TabBar
         clicker={gameState.clicker}
-        clickerEmoji={clickerEmoji}
+        clickerGrade={clickerGrade}
         onClickerClick={handleClickerClick}
         onTabChange={(tab) => {
           setActiveTab(tab)
@@ -723,7 +733,7 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
               <div style={{ display: 'flex', gap: 6 }}>
-                {([['hamster', '🐹 햄스터'], ['cat', '🐱 고양이'], ['dog', '🐶 강아지']] as const).map(([type, label]) => (
+                {([['hamster', '햄스터'], ['cat', '고양이'], ['dog', '강아지']] as const).map(([type, label]) => (
                   <button
                     key={type}
                     onClick={() => setAnimalType(type)}
@@ -733,8 +743,12 @@ export default function App() {
                       background: animalType === type ? '#eef2ff' : '#fff',
                       color: animalType === type ? '#6366f1' : '#9ca3af',
                       fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 4,
                     }}
-                  >{label}</button>
+                  >
+                    <AnimalSvg species={type} size={18}/>
+                    {label}
+                  </button>
                 ))}
               </div>
             </div>
@@ -818,6 +832,8 @@ export default function App() {
             onSetAnimal={handleSetFactoryAnimal}
             animals={gameState.animals}
             maxGrade={20}
+            focusFactory={focusFactory}
+            onFocusConsumed={() => setFocusFactory(null)}
           />
         )}
         {activeTab === 1 && (

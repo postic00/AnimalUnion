@@ -3,9 +3,10 @@ import type { AnimalId } from '../types/animal'
 import { ANIMAL_IDS } from '../types/animal'
 import { getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat } from '../balance'
 import { formatGold, formatNumber } from '../utils/formatGold'
+import { AnimalSvg } from './AnimalSvg'
+import type { AnimalSpecies } from './AnimalSvg'
 import styles from './PrestigeTab.module.css'
 
-const ANIMAL_EMOJI: Record<string, string> = { hamster: '🐹', cat: '🐱', dog: '🐶' }
 const ANIMAL_TYPE_NAME: Record<string, string> = { hamster: '햄스터', cat: '고양이', dog: '강아지' }
 
 const HAT_COLORS = [
@@ -16,12 +17,11 @@ const HAT_COLORS = [
 ]
 
 function AnimalIcon({ id }: { id: string }) {
-  const type = id.match(/^([a-z]+)/)?.[1] ?? ''
+  const type = (id.match(/^([a-z]+)/)?.[1] ?? 'hamster') as AnimalSpecies
   const num = parseInt(id.match(/(\d+)$/)?.[1] ?? '1')
-  const emoji = ANIMAL_EMOJI[type] ?? '🐾'
   const hatColor = HAT_COLORS[(num - 1) % HAT_COLORS.length]
   return (
-    <div style={{ position: 'relative', width: 36, height: 42, flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: 36, height: 46, flexShrink: 0 }}>
       <div style={{
         position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
         background: hatColor,
@@ -33,7 +33,9 @@ function AnimalIcon({ id }: { id: string }) {
       }}>
         <span style={{ fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{num}</span>
       </div>
-      <span style={{ fontSize: 28, lineHeight: 1, position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>{emoji}</span>
+      <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>
+        <AnimalSvg species={type} size={32}/>
+      </span>
     </div>
   )
 }

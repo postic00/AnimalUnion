@@ -107,6 +107,7 @@ export function useGameLoop(
   const [renderItems, setRenderItems] = useState<Item[]>(initialItems ?? [])
   const [progresses, setProgresses] = useState<Progresses>({})
   const [faPhases, setFaPhases] = useState<FAPhases>({})
+  const [bufferCounts, setBufferCounts] = useState<Record<string, { count: number; capacity: number }>>({})
   const itemsRef = useRef<Item[]>(initialItems ?? [])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
@@ -126,6 +127,7 @@ export function useGameLoop(
   const faStatesRef = useRef<Record<string, FAState>>({})
   const pendingClickerSpawnsRef = useRef(0)
   const pendingClickerGradeRef = useRef<number>(1)
+  const mountedRef = useRef(false)
   const materialQuantityLevelsRef = useRef(materialQuantityLevels)
   materialQuantityLevelsRef.current = materialQuantityLevels
   const itemValueLevelsRef = useRef(itemValueLevels)
@@ -138,13 +140,16 @@ export function useGameLoop(
   useEffect(() => {
     if (cellSize === 0) return
 
-    // 보드 변경 시 전체 리셋
-    itemsRef.current = initialItems ?? []
-    setRenderItems(initialItems ?? [])
-    faStatesRef.current = (initialFaStates as Record<string, FAState>) ?? {}
-    produceTimersRef.current = {}
-    rsQueuesRef.current = {}
-    pendingClickerSpawnsRef.current = 0
+    if (!mountedRef.current) {
+      // 최초 마운트: 저장된 상태로 초기화
+      mountedRef.current = true
+      itemsRef.current = initialItems ?? []
+      setRenderItems(initialItems ?? [])
+      faStatesRef.current = (initialFaStates as Record<string, FAState>) ?? {}
+      produceTimersRef.current = {}
+      rsQueuesRef.current = {}
+      pendingClickerSpawnsRef.current = 0
+    }
     lastTimeRef.current = 0
 
     const itemSize = cellSize * CONFIG.ITEM_GAP_RATIO
@@ -338,7 +343,8 @@ export function useGameLoop(
                 faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PROCESSING', processTimer: 0, processing: fas.pendingProcess, pendingProcess: null }
               }
             } else if (fas.processState === 'PROCESSING') {
-              const processTime = getFactoryProcessTime(factory.level, fas.processing!.quantity)
+              const outputQty = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
+              const processTime = getFactoryProcessTime(factory.level, outputQty)
               const newTimer = fas.processTimer + delta
               if (newTimer >= processTime) {
                 onFactoryProcessRef.current?.(factory.animalId ?? null)
@@ -453,7 +459,7 @@ export function useGameLoop(
         }
       })
 
-      // 클릭커 스폰
+      // 클릭커 스폰 → RS 버퍼 큐에 추가
       while (pendingClickerSpawnsRef.current > 0) {
         pendingClickerSpawnsRef.current -= 1
         let rsRow = -1, rsCol = -1
@@ -464,16 +470,19 @@ export function useGameLoop(
           if (rsRow !== -1) break
         }
         if (rsRow === -1) break
+
+        const rsKey = `rs-${rsRow}-${rsCol}`
+        if (!rsQueuesRef.current[rsKey]) rsQueuesRef.current[rsKey] = []
+        const capacity = getRsBufferCapacity(rsBufferLevelRef.current)
+        if (rsQueuesRef.current[rsKey].length >= capacity) break
+
         const center = getCellCenter(rsRow, rsCol, cellSize)
-        const rsOccupied = items.some(it =>
-          Math.sqrt((it.x - center.x) ** 2 + (it.y - center.y) ** 2) < itemSize
-        )
-        if (rsOccupied) break
         const dir = getCellDirection('RS')
         const next = getNextTarget(board, cellSize, center.x, center.y)
         if (!next) break
+
         const grade = pendingClickerGradeRef.current
-        items = [...items, {
+        rsQueuesRef.current[rsKey].push({
           id: crypto.randomUUID(),
           x: center.x, y: center.y,
           dx: dir.dx, dy: dir.dy,
@@ -483,7 +492,7 @@ export function useGameLoop(
           quantity: getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1),
           waBonus: 0, paBonus: 0, pkBonus: 0,
           waGrades: [], paGrades: [], pkGrades: [],
-        }]
+        })
       }
 
       // RE 도달 → 골드 획득
@@ -507,7 +516,7 @@ export function useGameLoop(
 
     const renderInterval = setInterval(() => {
       setRenderItems([...itemsRef.current])
-    }, 100)
+    }, 50)
 
     const progressInterval = setInterval(() => {
       const p: Progresses = {}
@@ -531,15 +540,37 @@ export function useGameLoop(
         const cellKey = `${factory.row}-${factory.col}`
         fp[cellKey] = fas.processState !== 'IDLE' ? fas.processState : fas.grabState
         if (fas.processState === 'PROCESSING') {
-          const qty = factory.type === 'PA'
-            ? getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
-            : fas.processing?.quantity ?? getMaterialQuantity(1)
+          const qty = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
           const processTime = getFactoryProcessTime(factory.level, qty)
           p[cellKey] = Math.min(fas.processTimer / processTime, 1)
         } else if (fas.processState === 'WAITING') {
           p[cellKey] = 1
         }
       })
+      const bc: Record<string, { count: number; capacity: number }> = {}
+      const rsCapacity = getRsBufferCapacity(rsBufferLevelRef.current)
+      board.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          if (cell.type !== 'RS') return
+          const rsKey = `rs-${rowIdx}-${colIdx}`
+          const count = rsQueuesRef.current[rsKey]?.length ?? 0
+          bc[`${rowIdx}-${colIdx}`] = { count, capacity: rsCapacity }
+        })
+      })
+      const faCapacity = getFaBufferCapacity(faBufferLevelRef.current)
+      factoriesRef.current.forEach(factory => {
+        if (!factory.built) return
+        const fas = faStatesRef.current[`fa-${factory.row}-${factory.col}`]
+        if (!fas) return
+        const cellKey = `${factory.row}-${factory.col}`
+        if (factory.type === 'PA') {
+          const count = fas.buffer.reduce((s, b) => s + b.count, 0)
+          bc[cellKey] = { count, capacity: faCapacity }
+        } else {
+          bc[cellKey] = { count: fas.pendingProcess ? 1 : 0, capacity: 1 }
+        }
+      })
+      setBufferCounts(bc)
       setProgresses(p)
       setFaPhases(fp)
     }, 100)
@@ -556,5 +587,5 @@ export function useGameLoop(
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items: renderItems, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef }
+  return { items: renderItems, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef }
 }

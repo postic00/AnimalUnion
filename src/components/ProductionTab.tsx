@@ -2,6 +2,7 @@ import type { Producer } from '../types/producer'
 import type { Clicker } from '../types/clicker'
 import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getClickerValue, getClickerUpgradeCost } from '../balance'
 import { formatGold, formatQuantity } from '../utils/formatGold'
+import { GradeIcon } from './GradeIcon'
 import coinIcon from '../assets/coin.svg'
 import styles from './ProductionTab.module.css'
 
@@ -17,8 +18,8 @@ interface Props {
 
 const GRADES: Record<number, { name: string; emoji: string; color: string; border: string; text: string; sub: string }> = {
   1: { name: '고추', emoji: '🌶️', color: '#fff1f1', border: '#fca5a5', text: '#991b1b', sub: '#dc2626' },
-  2: { name: '양파', emoji: '🧅', color: '#f5f3ff', border: '#c4b5fd', text: '#5b21b6', sub: '#7c3aed' },
-  3: { name: '마늘', emoji: '🧄', color: '#f0fdf4', border: '#86efac', text: '#14532d', sub: '#16a34a' },
+  2: { name: '설탕', emoji: '🍬', color: '#fffbeb', border: '#fcd34d', text: '#92400e', sub: '#d97706' },
+  3: { name: '딸기', emoji: '🍓', color: '#fdf2f8', border: '#f9a8d4', text: '#9d174d', sub: '#db2777' },
 }
 
 export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker }: Props) {
@@ -64,7 +65,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
             return (
               <div key={index} className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
                 <div className={styles.cardLeft}>
-                  <span className={styles.gradeEmoji} style={{ opacity: 0.35 }}>{grade.emoji}</span>
+                  <span className={styles.gradeEmoji} style={{ opacity: 0.35 }}><GradeIcon size={36} grade={producer.grade}/></span>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName} style={{ color: '#6b7280' }}>생산기 {index + 1}</span>
                     <span className={styles.cardSub} style={{ color: '#9ca3af' }}>미건설 · {grade.name}</span>
@@ -88,7 +89,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
           return (
             <div key={index} className={styles.card} style={{ background: grade.color, borderColor: grade.border }}>
               <div className={styles.cardLeft}>
-                <span className={styles.gradeEmoji}>{grade.emoji}</span>
+                <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
                 <div className={styles.cardInfo}>
                   <div className={styles.cardNameRow}>
                     <span className={styles.cardName} style={{ color: grade.text }}>생산기 {index + 1}</span>

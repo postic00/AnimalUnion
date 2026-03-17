@@ -7,7 +7,8 @@ import { ANIMAL_NAMES } from '../types/animal'
 import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import coinIcon from '../assets/coin.svg'
-import { GRADE_EMOJIS } from '../data/gradeEmojis'
+import { GradeIcon } from './GradeIcon'
+import { AnimalSvg, getSpeciesFromId } from './AnimalSvg'
 import styles from './FactoryTab.module.css'
 
 interface Props {
@@ -22,19 +23,10 @@ interface Props {
   onUpgradeLevel: (row: number, col: number) => void
   onSetAnimal: (row: number, col: number, animalId: AnimalId | null) => void
   maxGrade: number
+  focusFactory?: { row: number; col: number } | null
+  onFocusConsumed?: () => void
 }
 
-const ANIMAL_EMOJI: Record<string, string> = {
-  hamster: '🐹',
-  cat: '🐱',
-  dog: '🐶',
-}
-
-function getAnimalEmoji(animalId: string | null): string | null {
-  if (!animalId) return null
-  const type = animalId.match(/^([a-z]+)/)?.[1] ?? ''
-  return ANIMAL_EMOJI[type] ?? null
-}
 
 const TYPE_META: Record<Factory['type'], { label: string; icon: string; color: string; bg: string; border: string; sub: string }> = {
   WA: { label: '세척', icon: '💧', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe', sub: '#3b82f6' },
@@ -113,7 +105,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
 
 const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
 
-export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade }: Props) {
+export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -128,6 +120,23 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
 
   const [closedFloors, setClosedFloors] = useState<Record<number, boolean>>({})
   const toggleFloor = (i: number) => setClosedFloors(prev => ({ ...prev, [i]: !prev[i] }))
+
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  useEffect(() => {
+    if (!focusFactory) return
+    const key = `${focusFactory.row}-${focusFactory.col}`
+    // 해당 floor가 닫혀있으면 열기
+    const floorIdx = floors.findIndex(cells => cells.some(c => c.row === focusFactory.row && c.col === focusFactory.col))
+    if (floorIdx !== -1 && closedFloors[floorIdx]) {
+      setClosedFloors(prev => ({ ...prev, [floorIdx]: false }))
+    }
+    // 다음 렌더 후 스크롤
+    requestAnimationFrame(() => {
+      cardRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      onFocusConsumed?.()
+    })
+  }, [focusFactory]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildCost = getFactoryBuildCost()
 
@@ -149,7 +158,7 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
 
             if (!factory || !factory.built) {
               return (
-                <div key={i} className={styles.emptyCard}>
+                <div key={i} ref={el => { cardRefs.current[`${row}-${col}`] = el }} className={styles.emptyCard}>
                   <span className={styles.emptyLabel}>공장 {i + 1} · 미건설</span>
                   <button className={styles.buildBtn} onClick={() => onBuild(row, col)} disabled={gold < buildCost}>
                     <img src={coinIcon} className={styles.btnIcon} alt="" />
@@ -169,15 +178,18 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
               { value: 'UP_TO_DOWN', label: '↓ 하행' },
               { value: 'DOWN_TO_UP', label: '↑ 상행' },
             ]
+            const cardKey = `${row}-${col}`
             return (
-              <div key={i} className={styles.card} style={{ background: meta.bg, borderColor: meta.border }}>
+              <div key={i} ref={el => { cardRefs.current[cardKey] = el }} className={styles.card} style={{ background: meta.bg, borderColor: meta.border }}>
                 <div className={styles.cardBody}>
                   {/* 좌측: 아이콘 + 동물 + 이름 + 레벨 */}
                   <div className={styles.cardLeft}>
                     <div className={styles.iconStack}>
                       <span className={styles.typeIcon}>{meta.icon}</span>
                       <span className={styles.animalBadge}>
-                        {factory.animalId ? getAnimalEmoji(factory.animalId) : <span className={styles.noAnimal}>✕</span>}
+                        {factory.animalId
+                          ? <AnimalSvg species={getSpeciesFromId(factory.animalId)} size={22}/>
+                          : <span className={styles.noAnimal}>✕</span>}
                       </span>
                     </div>
                     <div className={styles.cardInfo}>
@@ -196,7 +208,7 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
                       <div className={styles.gradeControl}>
                         <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= (factory.type === 'PA' ? PA_MIN_GRADE : 1)}>‹</button>
                         <span className={styles.gradeVal} style={{ color: meta.color }}>
-                          <span style={{ fontSize: 18 }}>{GRADE_EMOJIS[factory.grade] ?? '?'}</span>
+                          <GradeIcon size={24} grade={factory.grade}/>
                         </span>
                         <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>›</button>
                       </div>

@@ -7,6 +7,7 @@ import { ANIMAL_NAMES } from '../types/animal'
 import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import coinIcon from '../assets/coin.svg'
+import { GRADE_EMOJIS } from '../data/gradeEmojis'
 import styles from './FactoryTab.module.css'
 
 interface Props {
@@ -21,13 +22,6 @@ interface Props {
   onUpgradeLevel: (row: number, col: number) => void
   onSetAnimal: (row: number, col: number, animalId: AnimalId | null) => void
   maxGrade: number
-}
-
-const GRADE_EMOJIS: Record<number, string> = {
-  1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',
-  6: '🫒', 7: '🍢', 8: '🌰', 9: '🍇', 10: '🍯',
-  11: '🧁', 12: '🍤', 13: '⭐', 14: '✨', 15: '🍲',
-  16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
 }
 
 const ANIMAL_EMOJI: Record<string, string> = {

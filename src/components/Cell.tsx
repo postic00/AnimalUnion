@@ -80,10 +80,7 @@ interface Props {
   onClick?: () => void
 }
 
-const GRADE_EMOJIS = [
-  '🌶️','🧅','🧄','🫙','🍓','🫒','🍢','🌰','🍇','🍯',
-  '🧁','🍤','⭐','✨','🍲','🍡','🫗','🍭','🥘','🏆',
-]
+import { GRADE_EMOJIS } from '../data/gradeEmojis'
 
 const FA_STYLE: Record<string, CSSProperties> = {
   WA: { background: 'transparent', border: 'none', color: '#1e40af' },
@@ -151,10 +148,10 @@ function CellEmoji({ cell, factory, producer, progress }: Pick<Props, 'cell' | '
     case 'EM': return null
     case 'PR':
       if (!producer?.built) return <span style={{ fontSize: '28px', opacity: 0.35, position: 'relative', zIndex: 1 }}>🌱</span>
-      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[(producer.grade ?? 1) - 1]}</span>
+      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 1 }}>{GRADE_EMOJIS[producer.grade ?? 1] ?? '🌶️'}</span>
     case 'FA':
       if (!factory?.built) return <span style={{ fontSize: '28px', opacity: 0.45, position: 'relative', zIndex: 1 }}>🏗️</span>
-      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 10 }}>{GRADE_EMOJIS[(factory.grade ?? 1) - 1]}</span>
+      return <span style={{ ...emojiStyle, position: 'relative', zIndex: 10 }}>{GRADE_EMOJIS[factory.grade ?? 1] ?? '🌶️'}</span>
     default:
       return <span style={{ fontSize: '10px' }}>{cell.type}</span>
   }

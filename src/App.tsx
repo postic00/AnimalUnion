@@ -51,13 +51,7 @@ import {
   getBufferUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
-
-const GRADE_EMOJIS: Record<number, string> = {
-  1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',
-  6: '🫒', 7: '🍢', 8: '🌰', 9: '🍇', 10: '🍯',
-  11: '🧁', 12: '🍤', 13: '⭐', 14: '✨', 15: '🍲',
-  16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
-}
+import { GRADE_EMOJIS } from './data/gradeEmojis'
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])

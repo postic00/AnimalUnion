@@ -2,14 +2,8 @@ import { memo } from 'react'
 import type { Item } from '../types/item'
 import { CONFIG } from '../config'
 import { formatQuantity } from '../utils/formatGold'
+import { GRADE_EMOJIS } from '../data/gradeEmojis'
 import styles from './ItemLayer.module.css'
-
-const GRADE_EMOJIS: Record<number, string> = {
-  1: '🌶️', 2: '🧅', 3: '🧄', 4: '🫙', 5: '🍓',
-  6: '🫒', 7: '🍢', 8: '🌰', 9: '🍇', 10: '🍯',
-  11: '🧁', 12: '🍤', 13: '⭐', 14: '✨', 15: '🍲',
-  16: '🍡', 17: '🫗', 18: '🍭', 19: '🥘', 20: '🏆',
-}
 
 interface Props {
   items: Item[]

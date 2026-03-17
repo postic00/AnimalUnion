@@ -91,7 +91,7 @@ export function useGameLoop(
   initialItems?: Item[],
   initialFaStates?: Record<string, FAState>,
 ) {
-  const [items, setItems] = useState<Item[]>(initialItems ?? [])
+  const [renderItems, setRenderItems] = useState<Item[]>(initialItems ?? [])
   const [progresses, setProgresses] = useState<Progresses>({})
   const [faPhases, setFaPhases] = useState<FAPhases>({})
   const itemsRef = useRef<Item[]>(initialItems ?? [])
@@ -127,7 +127,7 @@ export function useGameLoop(
 
     // 보드 변경 시 전체 리셋
     itemsRef.current = initialItems ?? []
-    setItems(initialItems ?? [])
+    setRenderItems(initialItems ?? [])
     faStatesRef.current = (initialFaStates as Record<string, FAState>) ?? {}
     produceTimersRef.current = {}
     rsQueuesRef.current = {}
@@ -516,11 +516,14 @@ export function useGameLoop(
       })
 
       itemsRef.current = items
-      setItems([...items])
       animId = requestAnimationFrame(tick)
     }
 
     animId = requestAnimationFrame(tick)
+
+    const renderInterval = setInterval(() => {
+      setRenderItems([...itemsRef.current])
+    }, 16)
 
     const progressInterval = setInterval(() => {
       const p: Progresses = {}
@@ -557,6 +560,7 @@ export function useGameLoop(
 
     return () => {
       cancelAnimationFrame(animId)
+      clearInterval(renderInterval)
       clearInterval(progressInterval)
     }
   }, [board, cellSize])
@@ -566,5 +570,5 @@ export function useGameLoop(
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef }
+  return { items: renderItems, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef }
 }

@@ -55,6 +55,7 @@ export default function SplashScreen({ onDone }: Props) {
 
     const timer = setTimeout(() => {
       timerDoneRef.current = true
+      configDoneRef.current = true  // 타이머 만료 시 config 대기 없이 강제 진행
       console.log('[SplashScreen] timerDone=true, configDone:', configDoneRef.current)
       tryDone()
     }, MIN_DISPLAY_MS)

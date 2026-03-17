@@ -15,7 +15,7 @@ export function getProducerBuildCost(): number {
 
 // PR 업그레이드 비용
 export function getProducerUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level + 1, CONFIG.PRODUCER_UPGRADE_EXPONENT))
+  return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level, CONFIG.PRODUCER_UPGRADE_EXPONENT))
 }
 
 // PR 생산 주기
@@ -43,17 +43,17 @@ export function getItemValueLevelCost(level: number): number {
 
 // FA 건설 비용
 export function getFactoryBuildCost(): number {
-  return Math.floor(CONFIG.FA_BUILD_COST_BASE * Math.pow(1, CONFIG.FA_BUILD_COST_EXPONENT))
+  return CONFIG.FA_BUILD_COST_BASE
 }
 
 // FA 등급 업그레이드 비용
 export function getFactoryGradeUpgradeCost(grade: number): number {
-  return Math.floor(CONFIG.FA_GRADE_UPGRADE_BASE * Math.pow(grade + 1, CONFIG.FA_GRADE_UPGRADE_EXPONENT))
+  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
 }
 
 // FA 레벨 업그레이드 비용
 export function getFactoryLevelUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level + 1, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
+  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
 }
 
 // FA 잡기/놓기 시간 (고정)
@@ -64,7 +64,8 @@ export function getFactoryPickTime(): number {
 // FA 처리 시간: PROCESS_TIME_BASE × quantity / (level × EFFICIENCY)
 export function getFactoryProcessTime(level: number, quantity: number): number {
   if (level === 0) return CONFIG.FA_PROCESS_TIME_BASE * quantity
-  return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / (level * CONFIG.FA_LEVEL_EFFICIENCY)
+  // return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / (level * CONFIG.FA_LEVEL_EFFICIENCY)
+  return (CONFIG.FA_PROCESS_TIME_BASE * quantity) / Math.pow(CONFIG.FA_LEVEL_EFFICIENCY, level-1)
 }
 
 // FA 등급 보너스

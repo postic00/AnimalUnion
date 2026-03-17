@@ -28,7 +28,7 @@ import {
   isBlocked,
 } from '../utils/boardUtils'
 
-let nextId = 0
+let nextId = Date.now()
 
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
 export type FAPhases = Record<string, FAPhase>
@@ -192,7 +192,7 @@ export function useGameLoop(
             if (!next) return
 
             const newItem: Item = {
-              id: `item-${nextId++}`,
+              id: crypto.randomUUID(),
               x: center.x, y: center.y,
               dx: dir.dx, dy: dir.dy,
               targetX: next.targetX, targetY: next.targetY,
@@ -444,7 +444,7 @@ export function useGameLoop(
                 itemValueLevelsRef.current[factory.grade - 1] ?? 1,
                 materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
               )
-              const outputItem = { ...base, id: `item-${nextId++}` }
+              const outputItem = { ...base, id: crypto.randomUUID() }
               onFactoryProcessRef.current?.(factory.animalId ?? null)
               faStatesRef.current[key] = { ...fas, state: 'PLACING', timer: 0, buffer: [], outputItem }
             } else {
@@ -492,7 +492,7 @@ export function useGameLoop(
         if (!next) break
         const grade = pendingClickerGradeRef.current
         items = [...items, {
-          id: `item-${nextId++}`,
+          id: crypto.randomUUID(),
           x: center.x, y: center.y,
           dx: dir.dx, dy: dir.dy,
           targetX: next.targetX, targetY: next.targetY,

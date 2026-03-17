@@ -112,6 +112,7 @@ export default function App() {
   const earnedInSecRef = useRef(0)
   const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
+  const boardSaveRef = useRef<() => void>(() => {})
   const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
   const activeTabRef = useRef(activeTab)
@@ -171,6 +172,7 @@ export default function App() {
         speedBoostUntil: speedBoostUntilRef.current,
         goldBoostUntil: goldBoostUntilRef.current,
       })
+      boardSaveRef.current()
       setSavedAt(Date.now())
     }
     const onVisibility = () => { if (document.hidden) save() }
@@ -670,6 +672,7 @@ export default function App() {
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={() => setPlacingAnimalId(null)}
         spawnClickerItemRef={spawnClickerItemRef}
+        onSaveRef={boardSaveRef}
         muted={muted}
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
       />}

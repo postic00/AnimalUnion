@@ -33,11 +33,12 @@ interface Props {
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
   spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
+  onSaveRef: MutableRefObject<() => void>
   muted: boolean
   speedMultiplier: number
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, muted, speedMultiplier }: Props) {
+export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -58,19 +59,10 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
 
   const { items, progresses, faPhases, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined)
 
-  useEffect(() => {
-    const save = () => {
-      saveItems(itemsRef.current)
-      saveFaStates(faStatesRef.current)
-    }
-    const interval = setInterval(save, 10_000)
-    window.addEventListener('beforeunload', save)
-    document.addEventListener('visibilitychange', () => { if (document.hidden) save() })
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener('beforeunload', save)
-    }
-  }, [])
+  onSaveRef.current = () => {
+    saveItems(itemsRef.current)
+    saveFaStates(faStatesRef.current)
+  }
   spawnClickerItemRef.current = spawnClickerItem
 
   if (cellSize === 0) return null

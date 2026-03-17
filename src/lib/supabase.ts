@@ -31,10 +31,19 @@ export async function submitPrestigeScore(playerName: string, score: number, pre
 
 export async function submitGoldScore(playerName: string, score: number) {
   if (!playerName.trim() || !isFinite(score) || score < 0) return false
-  const { error } = await supabase
+  // update 시도 후 없으면 insert
+  const { count } = await supabase
     .from('leaderboard_gold')
-    .upsert({ player_name: playerName, score }, { onConflict: 'player_name' })
-  return !error
+    .update({ score })
+    .eq('player_name', playerName)
+    .select('player_name', { count: 'exact', head: true })
+  if ((count ?? 0) === 0) {
+    const { error } = await supabase
+      .from('leaderboard_gold')
+      .insert({ player_name: playerName, score })
+    return !error
+  }
+  return true
 }
 
 export async function fetchPrestigeLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {

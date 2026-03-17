@@ -39,7 +39,7 @@ export interface FAState {
 
   processState: 'IDLE' | 'PROCESSING' | 'PLACING' | 'WAITING'
   processTimer: number
-  pendingProcess: Item | null     // grab 완료 → process 픽업 대기 (WA/PK)
+  pendingQueue: Item[]            // grab 완료 → process 픽업 대기 (WA/PK 다중 버퍼)
   processing: Item | null         // process 채널: 처리 중인 아이템 (WA/PK)
   outputItem: Item | null         // 출력 대기 아이템
 
@@ -48,7 +48,7 @@ export interface FAState {
 
 const DEFAULT_FA_STATE: FAState = {
   grabState: 'IDLE', grabTimer: 0, grabbed: null,
-  processState: 'IDLE', processTimer: 0, pendingProcess: null, processing: null, outputItem: null,
+  processState: 'IDLE', processTimer: 0, pendingQueue: [], processing: null, outputItem: null,
   buffer: [],
 }
 
@@ -156,9 +156,11 @@ export function useGameLoop(
     const pixelsPerMs = cellSize / CONFIG.MOVE_SPEED
     const pickTime = getFactoryPickTime()
 
-    let animId: number
+    let tickId: ReturnType<typeof setInterval>
+    let tickCount = 0
 
-    const tick = (time: number) => {
+    const tick = () => {
+      const time = performance.now()
       if (lastTimeRef.current === 0) lastTimeRef.current = time
       const rawDelta = Math.min(time - lastTimeRef.current, 50)
       const delta = rawDelta * (speedMultiplierRef.current ?? 1)
@@ -272,6 +274,22 @@ export function useGameLoop(
         }
       })
 
+      // 탈선 방어: 30틱(~1초)마다 유효하지 않은 셀에 있는 아이템 제거
+      tickCount++
+      if (tickCount % 30 === 0) {
+        items = items.filter(item => {
+          if (!isFinite(item.x) || !isFinite(item.y)) return false
+          const col = Math.floor(item.x / cellSize)
+          const row = Math.floor(item.y / cellSize)
+          const cell = getCell(board, row, col)
+          if (!cell) return false
+          const type = cell.type
+          return type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
+          || type === 'RS' || type === 'RE' || type === 'FA' || type === 'PR'
+          || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL'
+        })
+      }
+
       // FA 처리
       factoriesRef.current.forEach(factory => {
         if (!factory.built || factory.level < 1) return
@@ -314,10 +332,13 @@ export function useGameLoop(
             ? applyWaBonus(item, factory, animalsRef.current)
             : applyPkBonus(item, factory, animalsRef.current)
 
+          const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
+          const pendingQueue = faStatesRef.current[key].pendingQueue ?? []
+
           // GRAB 채널
           {
             const fas = faStatesRef.current[key]
-            if (fas.grabState === 'IDLE' && fas.pendingProcess === null) {
+            if (fas.grabState === 'IDLE' && pendingQueue.length < bufferCapacity) {
               const idx = items.findIndex(isTargetItem)
               if (idx !== -1) {
                 const grabbed = items[idx]
@@ -328,7 +349,7 @@ export function useGameLoop(
               const newTimer = fas.grabTimer + delta
               if (newTimer >= pickTime) {
                 const pending = applyBonus(fas.grabbed!)
-                faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'IDLE', grabTimer: 0, grabbed: null, pendingProcess: pending }
+                faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'IDLE', grabTimer: 0, grabbed: null, pendingQueue: [...pendingQueue, pending] }
               } else {
                 faStatesRef.current[key] = { ...faStatesRef.current[key], grabTimer: newTimer }
               }
@@ -338,9 +359,11 @@ export function useGameLoop(
           // PROCESS 채널
           {
             const fas = faStatesRef.current[key]
+            const queue = fas.pendingQueue ?? []
             if (fas.processState === 'IDLE') {
-              if (fas.pendingProcess !== null) {
-                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PROCESSING', processTimer: 0, processing: fas.pendingProcess, pendingProcess: null }
+              if (queue.length > 0) {
+                const [next, ...rest] = queue
+                faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'PROCESSING', processTimer: 0, processing: next, pendingQueue: rest }
               }
             } else if (fas.processState === 'PROCESSING') {
               const outputQty = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
@@ -509,14 +532,13 @@ export function useGameLoop(
       })
 
       itemsRef.current = items
-      animId = requestAnimationFrame(tick)
     }
 
-    animId = requestAnimationFrame(tick)
+    tickId = setInterval(tick, 33)
 
     const renderInterval = setInterval(() => {
       setRenderItems([...itemsRef.current])
-    }, 50)
+    }, 100)
 
     const progressInterval = setInterval(() => {
       const p: Progresses = {}
@@ -567,7 +589,8 @@ export function useGameLoop(
           const count = fas.buffer.reduce((s, b) => s + b.count, 0)
           bc[cellKey] = { count, capacity: faCapacity }
         } else {
-          bc[cellKey] = { count: fas.pendingProcess ? 1 : 0, capacity: 1 }
+          const queue = fas.pendingQueue ?? []
+          bc[cellKey] = { count: queue.length, capacity: faCapacity }
         }
       })
       setBufferCounts(bc)
@@ -576,7 +599,7 @@ export function useGameLoop(
     }, 100)
 
     return () => {
-      cancelAnimationFrame(animId)
+      clearInterval(tickId)
       clearInterval(renderInterval)
       clearInterval(progressInterval)
     }

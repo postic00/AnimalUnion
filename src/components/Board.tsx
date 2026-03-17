@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { formatGold } from '../utils/formatGold'
 import { soundByAnimalId } from '../utils/sound'
 import type { MutableRefObject } from 'react'
@@ -40,7 +40,7 @@ interface Props {
   onProducerClick?: (row: number, col: number) => void
 }
 
-export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -116,4 +116,4 @@ export default function Board({ board, onAddBundle, onGoldEarned, bundleCost, ca
       </button>
     </div>
   )
-}
+})

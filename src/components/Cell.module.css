@@ -16,65 +16,11 @@
   color: transparent;
 }
 
-/* 레일 공통 — 컨베이어 벨트 */
-.RS, .RE, .RL, .RR, .RU, .RD {
-  color: rgba(255,255,255,0.9);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-
-/* 좌우 레일 — 가로 줄무늬 */
-.RR, .RL {
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #cbd5e1 0px, #cbd5e1 10px,
-      #94a3b8 10px, #94a3b8 18px
-    );
-  background-size: 18px 100%;
-  animation: beltH 0.5s linear infinite;
-  color: rgba(71, 85, 105, 0.9);
-}
-
-.RL {
-  animation-direction: reverse;
-}
-
-/* 상하 레일 — 세로 줄무늬 */
-.RD, .RU {
-  background:
-    repeating-linear-gradient(
-      180deg,
-      #cbd5e1 0px, #cbd5e1 10px,
-      #94a3b8 10px, #94a3b8 18px
-    );
-  background-size: 100% 18px;
-  animation: beltV 0.5s linear infinite;
-  color: rgba(71, 85, 105, 0.9);
-}
-
-.RU {
-  animation-direction: reverse;
-}
-
-/* RS — 시작점 (민트/초록 강조) */
-.RS {
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #34d399 0px, #34d399 10px,
-      #10b981 10px, #10b981 18px
-    );
-  background-size: 18px 100%;
-  animation: beltH 0.5s linear infinite;
-  color: rgba(6, 78, 59, 0.9);
-}
-
-/* RE — 판매 종료점 (빨강/코랄) */
-.RE {
-  background: #f87171;
-  animation: none;
-  font-size: 18px;
-  color: #7f1d1d;
+/* 레일 공통 — 보더 없음, SVG가 배경 담당 */
+.RS, .RE, .RLN, .RRN, .RUN, .RDN, .RDR, .RLR, .RDL, .RRL {
+  border: none;
+  background: transparent;
+  padding: 0;
 }
 
 /* 생산자 */

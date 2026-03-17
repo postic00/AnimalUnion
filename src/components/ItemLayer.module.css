@@ -10,6 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: left 100ms linear, top 100ms linear;
   /* 접시 디자인 */
   background: radial-gradient(circle at 38% 35%, #fffef8 60%, #f0ece4 100%);
   border: 2.5px solid #d4cfc8;

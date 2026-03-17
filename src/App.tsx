@@ -59,18 +59,19 @@ function addBundle(board: BoardType): BoardType {
   const lastRow = newBoard[newBoard.length - 1]
   const reIndex = lastRow.findIndex(cell => cell.type === 'RE')
   if (reIndex !== -1) {
-    lastRow[reIndex] = { type: 'RD' }
+    // RE → RDL (왼쪽에서 와서 아래로) or RDR (오른쪽에서 와서 아래로)
+    lastRow[reIndex] = { type: reIndex === 0 ? 'RDL' : 'RDR' }
   }
 
   const goRight = reIndex === 0
 
   const rowA: Cell[] = goRight
-    ? [{ type: 'RD' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }]
-    : [{ type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'RD' }]
+    ? [{ type: 'RDN' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }]
+    : [{ type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'RDN' }]
 
   const rowB: Cell[] = goRight
-    ? [{ type: 'RR' }, { type: 'RR' }, { type: 'RR' }, { type: 'RR' }, { type: 'RR' }, { type: 'RR' }, { type: 'RE' }]
-    : [{ type: 'RE' }, { type: 'RL' }, { type: 'RL' }, { type: 'RL' }, { type: 'RL' }, { type: 'RL' }, { type: 'RL' }]
+    ? [{ type: 'RRL' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RE' }]
+    : [{ type: 'RE' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLR' }]
 
   return [...newBoard, rowA, rowB]
 }
@@ -305,12 +306,14 @@ export default function App() {
     })
   }, [])
 
-  const handleAddBundle = () => {
-    const cost = getBundleCost(gameState.bundleCount)
-    if (gameState.gold < cost) return
-    setGameState(prev => ({ ...prev, gold: prev.gold - cost, bundleCount: prev.bundleCount + 1 }))
+  const handleAddBundle = useCallback(() => {
+    setGameState(prev => {
+      const cost = getBundleCost(prev.bundleCount)
+      if (prev.gold < cost) return prev
+      return { ...prev, gold: prev.gold - cost, bundleCount: prev.bundleCount + 1 }
+    })
     setBoard(prev => addBundle(prev))
-  }
+  }, [])
 
   const handleBuildFactory = useCallback((row: number, col: number) => {
     setGameState(prev => {
@@ -572,6 +575,19 @@ export default function App() {
     setPlacingAnimalId(null)
   }, [placingAnimalId])
 
+  const handleCancelPlacing = useCallback(() => setPlacingAnimalId(null), [])
+
+  const handleFactoryClick = useCallback((row: number, col: number) => {
+    setActiveTab(0)
+    setProdSection('factory')
+    setFocusFactory({ row, col })
+  }, [])
+
+  const handleProducerClick = useCallback(() => {
+    setActiveTab(0)
+    setProdSection('production')
+  }, [])
+
   const handleRecallAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => ({
       ...prev,
@@ -675,20 +691,13 @@ export default function App() {
         rsBufferLevel={gameState.rsBufferLevel}
         placingAnimalId={placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
-        onCancelPlacing={() => setPlacingAnimalId(null)}
+        onCancelPlacing={handleCancelPlacing}
         spawnClickerItemRef={spawnClickerItemRef}
         onSaveRef={boardSaveRef}
         muted={muted}
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
-        onFactoryClick={(row, col) => {
-          setActiveTab(0)
-          setProdSection('factory')
-          setFocusFactory({ row, col })
-        }}
-        onProducerClick={() => {
-          setActiveTab(0)
-          setProdSection('production')
-        }}
+        onFactoryClick={handleFactoryClick}
+        onProducerClick={handleProducerClick}
       />}
       {!showSplash && <TabBar
         clicker={gameState.clicker}

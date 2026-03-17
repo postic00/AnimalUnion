@@ -17,18 +17,22 @@ export function getItemCell(item: Item, cellSize: number) {
 
 export function getCellDirection(type: CellType): { dx: number; dy: number } {
   switch (type) {
-    case 'RS': return { dx: 1, dy: 0 }
-    case 'RR': return { dx: 1, dy: 0 }
-    case 'RL': return { dx: -1, dy: 0 }
-    case 'RU': return { dx: 0, dy: -1 }
-    case 'RD': return { dx: 0, dy: 1 }
-    case 'PR': return { dx: 0, dy: 1 }
-    default:   return { dx: 0, dy: 0 }
+    case 'RS':  return { dx: 1,  dy: 0  }
+    case 'RRN':  return { dx: 1,  dy: 0  }
+    case 'RLN':  return { dx: -1, dy: 0  }
+    case 'RUN':  return { dx: 0,  dy: -1 }
+    case 'RDN':  return { dx: 0,  dy: 1  }
+    case 'PR':  return { dx: 0,  dy: 1  }
+    case 'RDR': return { dx: 0,  dy: 1  }  // 오른쪽→아래
+    case 'RLR': return { dx: -1, dy: 0  }  // 아래→왼쪽
+    case 'RDL': return { dx: 0,  dy: 1  }  // 왼쪽→아래
+    case 'RRL': return { dx: 1,  dy: 0  }  // 아래→오른쪽
+    default:    return { dx: 0,  dy: 0  }
   }
 }
 
 export function isRailCell(type: CellType): boolean {
-  return ['RS', 'RE', 'RL', 'RR', 'RU', 'RD'].includes(type)
+  return ['RS', 'RE', 'RLN', 'RRN', 'RUN', 'RDN', 'RDR', 'RLR', 'RDL', 'RRL'].includes(type)
 }
 
 export function getCell(board: Board, row: number, col: number) {

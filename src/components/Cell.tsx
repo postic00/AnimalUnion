@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { CSSProperties } from 'react'
 import type { Cell as CellType } from '../types/board'
 import type { Factory } from '../types/factory'
@@ -81,6 +82,8 @@ interface Props {
 }
 
 import { GradeIcon } from './GradeIcon'
+import { ProducerAnimation } from './ProducerIcon'
+import { RailIcon } from './RailIcon'
 
 const FA_STYLE: Record<string, CSSProperties> = {
   WA: { background: 'transparent', border: 'none', color: '#1e40af' },
@@ -141,16 +144,20 @@ function CellEmoji({ cell, factory, producer, progress, size }: Pick<Props, 'cel
   }
 
   switch (cell.type) {
-    case 'RL': return <span style={{ fontSize: '14px' }}>◀</span>
-    case 'RR': return <span style={{ fontSize: '14px' }}>▶</span>
-    case 'RU': return <span style={{ fontSize: '14px' }}>▲</span>
-    case 'RD': return <span style={{ fontSize: '14px' }}>▼</span>
-    case 'RS': return <span style={{ fontSize: '14px' }}>▶</span>
-    case 'RE': return <span style={{ fontSize: '18px' }}>⭐</span>
+    case 'RLN':
+    case 'RRN':
+    case 'RUN':
+    case 'RDN':
+    case 'RS':
+    case 'RE':
+    case 'RDR':
+    case 'RLR':
+    case 'RDL':
+    case 'RRL': return <RailIcon type={cell.type} size={size}/>
     case 'EM': return null
     case 'PR':
       if (!producer?.built) return <span style={{ fontSize: '28px', opacity: 0.35, position: 'relative', zIndex: 1 }}>🌱</span>
-      return <span style={{ ...svgStyle, position: 'relative', zIndex: 1 }}><GradeIcon size={iconSize} grade={producer.grade ?? 1}/></span>
+      return null
     case 'FA':
       if (!factory?.built) return <span style={{ fontSize: '28px', opacity: 0.45, position: 'relative', zIndex: 1 }}>🏗️</span>
       return <span style={{ ...svgStyle, position: 'relative', zIndex: 10 }}><GradeIcon size={iconSize} grade={factory.grade ?? 1}/></span>
@@ -200,13 +207,12 @@ const LABEL_STYLE: CSSProperties = {
   pointerEvents: 'none',
 }
 
-export default function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, onClick }: Props) {
+export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, onClick }: Props) {
   const dynamicStyle = getDynamicStyle(cell, factory, producer)
-  const isPR = cell.type === 'PR'
-  const showProgress = progress !== undefined && progress > 0 && isPR
   const { ring, bg } = getProgressColors(cell, factory, producer)
   const label = getLevelLabel(cell, factory, producer)
   const isActiveFA = cell.type === 'FA' && factory?.built && factory.level > 0
+  const isActivePR = cell.type === 'PR' && producer?.built
   const iconSm = Math.round(size * 0.36)
 
   return (
@@ -215,16 +221,22 @@ export default function Cell({ cell, size, factory, producer, progress, bufferIn
       style={{ width: size, height: size, cursor: placing ? 'pointer' : undefined, position: 'relative', zIndex: isActiveFA ? 7 : undefined, ...dynamicStyle }}
       onClick={onClick}
     >
-      {/* PR 전용 progress ring */}
-      {showProgress && (
-        <ProgressRing size={size} progress={progress!} color={ring} bgColor={bg} />
-      )}
-
-      {isActiveFA ? (
+      {isActivePR ? (
         <>
-          {/* 가운데: 처리 애니메이션 */}
-          <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ProcessAnimation type={factory!.type} size={Math.round(size * 0.7)}/>
+          {/* 가운데: 판다 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
+          <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 + (progress ?? 0) * 0.7, transition: 'opacity 0.1s linear' }}>
+            <ProducerAnimation grade={producer!.grade ?? 1} size={Math.round(size * 0.85)}/>
+          </span>
+          {/* 좌측 하단: 생산 아이템 등급 */}
+          <span style={{ position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }}>
+            <GradeIcon size={iconSm} grade={producer!.grade ?? 1}/>
+          </span>
+        </>
+      ) : isActiveFA ? (
+        <>
+          {/* 가운데: 처리 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
+          <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 + (progress ?? 0) * 0.7, transition: 'opacity 0.1s linear' }}>
+            <ProcessAnimation type={factory!.type} species={getSpecies(factory!.animalId ?? null)} size={Math.round(size * 0.7)}/>
           </span>
           {/* 좌측 하단: 아이템 등급 */}
           <span style={{ position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }}>
@@ -241,8 +253,8 @@ export default function Cell({ cell, size, factory, producer, progress, bufferIn
 
       {label && <span style={LABEL_STYLE}>{label}</span>}
 
-      {/* 버퍼 표시 (FA-PA: count/capacity, WA/PK: 점) */}
-      {bufferInfo && bufferInfo.capacity > 1 && (
+      {/* 버퍼 표시 (count/capacity) */}
+      {bufferInfo && (
         <span style={{
           position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)',
           fontSize: '7px', fontWeight: 700,
@@ -253,17 +265,6 @@ export default function Cell({ cell, size, factory, producer, progress, bufferIn
           {bufferInfo.count}/{bufferInfo.capacity}
         </span>
       )}
-      {bufferInfo && bufferInfo.capacity === 1 && bufferInfo.count > 0 && (
-        <span style={{
-          position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)',
-          fontSize: '7px', fontWeight: 700,
-          background: 'rgba(234,179,8,0.85)',
-          color: '#fff', borderRadius: 3, padding: '1px 3px',
-          whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none',
-        }}>
-          ●
-        </span>
-      )}
     </div>
   )
-}
+})

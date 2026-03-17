@@ -25,7 +25,7 @@ export async function submitPrestigeScore(playerName: string, score: number, pre
   if (!playerName.trim() || !isFinite(score) || score < 0 || prestigeCount < 0) return false
   const { error } = await supabase
     .from('leaderboard')
-    .upsert({ player_name: playerName, score, prestige_count: prestigeCount }, { onConflict: 'player_name' })
+    .upsert({ player_name: playerName, score: Math.floor(score), prestige_count: prestigeCount }, { onConflict: 'player_name' })
   return !error
 }
 
@@ -33,7 +33,7 @@ export async function submitGoldScore(playerName: string, score: number) {
   if (!playerName.trim() || !isFinite(score) || score < 0) return false
   const { error } = await supabase
     .from('leaderboard_gold')
-    .upsert({ player_name: playerName, score }, { onConflict: 'player_name' })
+    .upsert({ player_name: playerName, score: Math.floor(score) }, { onConflict: 'player_name' })
   return !error
 }
 

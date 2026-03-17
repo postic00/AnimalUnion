@@ -14,6 +14,7 @@ export function getDeviceId(): string {
 
 const SAVE_KEY = 'animal-union-save'
 const SAVE_VERSION = '1.1.0'
+const MIN_SAVE_VERSION = '1.1.0' // 이 버전 미만이면 로컬 데이터 삭제
 
 interface SaveData {
   version: string

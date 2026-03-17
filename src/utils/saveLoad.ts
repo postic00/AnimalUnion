@@ -48,7 +48,7 @@ export function loadGame(): { board: Board; gameState: GameState; savedAt: numbe
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null
     const data: SaveData = JSON.parse(raw)
-    if (!data.version || data.version < SAVE_VERSION) {
+    if (!data.version || data.version < MIN_SAVE_VERSION) {
       deleteSave()
       return null
     }

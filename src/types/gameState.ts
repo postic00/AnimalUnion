@@ -28,7 +28,7 @@ export interface GameState {
 
 export const initialGameState: GameState = {
   playerName: '',
-  gold: 100,
+  gold: 0,
   goldPerSec: 0,
   bundleCount: 0,
   producers: [

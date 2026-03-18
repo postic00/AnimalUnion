@@ -1,5 +1,5 @@
 import type { GameState } from '../types/gameState'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity } from '../balance'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed } from '../balance'
 import { formatGold } from '../utils/formatGold'
 import { CONFIG } from '../config'
 import coinIcon from '../assets/coin.svg'
@@ -27,10 +27,12 @@ interface Props {
   onLevelUpItemValue: (gradeIndex: number) => void
   onUpgradeRsBuffer: () => void
   onUpgradeFaBuffer: () => void
+  onUpgradeRailSpeed: () => void
 }
 
-export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer }: Props) {
+export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer, onUpgradeRailSpeed }: Props) {
   const { totalEarned, prestigePoints, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
+  const railSpeedLevel = gameState.railSpeedLevel ?? 1
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
   return (
@@ -87,7 +89,7 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
         </div>
       )}
 
-      {/* 저장소 */}
+      {/* 기타 */}
       {section === 'buffer' && (
         <div className={styles.list}>
           <div className={styles.card}>
@@ -119,6 +121,25 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
             <button className={styles.starBtn} onClick={onUpgradeFaBuffer} disabled={prestigePoints < getBufferUpgradeCost(faBufferLevel)}>
               ⭐ {formatGold(getBufferUpgradeCost(faBufferLevel))}
             </button>
+          </div>
+          <div className={styles.card}>
+            <div className={styles.cardLeft}>
+              <span className={styles.cardEmoji}>🚄</span>
+              <div className={styles.cardInfo}>
+                <div className={styles.cardNameRow}>
+                  <span className={styles.cardName}>레일 속도</span>
+                  <span className={styles.levelBadge}>Lv.{railSpeedLevel}/{CONFIG.RAIL_SPEED_MAX_LEVEL}</span>
+                </div>
+                <span className={styles.cardSub}>{Math.round(getRailMoveSpeed(railSpeedLevel))}ms/칸</span>
+              </div>
+            </div>
+            {railSpeedLevel >= CONFIG.RAIL_SPEED_MAX_LEVEL ? (
+              <span className={styles.levelBadge}>MAX</span>
+            ) : (
+              <button className={styles.starBtn} onClick={onUpgradeRailSpeed} disabled={prestigePoints < getRailSpeedUpgradeCost(railSpeedLevel)}>
+                ⭐ {formatGold(getRailSpeedUpgradeCost(railSpeedLevel))}
+              </button>
+            )}
           </div>
         </div>
       )}

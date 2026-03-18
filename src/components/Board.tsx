@@ -29,6 +29,7 @@ interface Props {
   itemValueLevels: number[]
   faBufferLevel: number
   rsBufferLevel: number
+  railSpeedLevel: number
   placingAnimalId: AnimalId | null
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
@@ -41,7 +42,7 @@ interface Props {
   onFaLiveStateChange?: (states: FALiveStates) => void
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, onFaLiveStateChange)
+  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, onFaLiveStateChange)
 
   onSaveRef.current = () => {
     saveItems(itemsRef.current)

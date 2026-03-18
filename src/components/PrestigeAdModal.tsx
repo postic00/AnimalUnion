@@ -1,4 +1,5 @@
 import { CONFIG } from '../config'
+import { formatGold } from '../utils/formatGold'
 import styles from './PrestigeAdModal.module.css'
 
 interface Props {
@@ -27,7 +28,7 @@ export default function PrestigeAdModal({ earned, currentPoints, onPrestige, onW
         <div className={styles.pointsTable}>
           <div className={styles.pointsRow}>
             <span className={styles.pointsLabel}>현재</span>
-            <span className={styles.pointsValue}>⭐ {currentPoints.toLocaleString()}</span>
+            <span className={styles.pointsValue}>⭐ {formatGold(currentPoints)}</span>
           </div>
           <div className={styles.pointsRow}>
             <span className={styles.pointsLabel}>예상</span>
@@ -35,7 +36,7 @@ export default function PrestigeAdModal({ earned, currentPoints, onPrestige, onW
               {isNewSeason && (
                 <span className={styles.penalty}>새로운 시즌 -{Math.round((1 - weekRate) * 100)}%</span>
               )}
-              <span className={styles.pointsValue}>⭐ {expected1x.toLocaleString()}</span>
+              <span className={styles.pointsValue}>⭐ {formatGold(expected1x)}</span>
             </div>
           </div>
         </div>
@@ -44,7 +45,7 @@ export default function PrestigeAdModal({ earned, currentPoints, onPrestige, onW
           <span className={styles.adBtnIcon}>📺</span>
           <div className={styles.adBtnInfo}>
             <span className={styles.adBtnTitle}>광고 보고 2배 획득</span>
-            <span className={styles.adBtnSub}>예상 ⭐ {expected2x.toLocaleString()}</span>
+            <span className={styles.adBtnSub}>예상 ⭐ {formatGold(expected2x)}</span>
           </div>
         </button>
 

@@ -18,6 +18,10 @@ import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supaba
 import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userProfile'
 import SplashScreen from './components/SplashScreen'
 import FactoryInfoModal from './components/FactoryInfoModal'
+import FactoryBuildModal from './components/FactoryBuildModal'
+import ProducerInfoModal from './components/ProducerInfoModal'
+import UpgradeAmountToggle from './components/UpgradeAmountToggle'
+import type { UpgradeAmount } from './components/UpgradeAmountToggle'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
@@ -49,6 +53,7 @@ import {
   getClickerThreshold,
   getClickerUpgradeCost,
   getBufferUpgradeCost,
+  getRailSpeedUpgradeCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
 
@@ -117,6 +122,8 @@ export default function App() {
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
   const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
+  const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
+  const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
   const [faLiveStates, setFaLiveStates] = useState<import('./hooks/useGameLoop').FALiveStates>({})
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
@@ -293,15 +300,26 @@ export default function App() {
     })
   }, [])
 
-  const handleUpgradeProducer = useCallback((index: number) => {
+  const handleUpgradeProducer = useCallback((index: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
       const producer = prev.producers[index]
-      const cost = getProducerUpgradeCost(producer.level)
-      if (prev.gold < cost) return prev
+      if (!producer) return prev
+      let gold = prev.gold
+      let level = producer.level
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getProducerUpgradeCost(level)
+        if (gold < cost) break
+        gold -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
       if (!mutedRef.current) soundBuild()
       const producers = [...prev.producers]
-      producers[index] = { ...producer, level: producer.level + 1 }
-      return { ...prev, gold: prev.gold - cost, producers }
+      producers[index] = { ...producer, level }
+      return { ...prev, gold, producers }
     })
   }, [])
 
@@ -354,19 +372,24 @@ export default function App() {
     }))
   }, [])
 
-  const handleUpgradeFactoryLevel = useCallback((row: number, col: number) => {
+  const handleUpgradeFactoryLevel = useCallback((row: number, col: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
       const factory = prev.factories.find(f => f.row === row && f.col === col)
       if (!factory) return prev
-      const cost = getFactoryLevelUpgradeCost(factory.level)
-      if (prev.gold < cost) return prev
-      return {
-        ...prev,
-        gold: prev.gold - cost,
-        factories: prev.factories.map(f =>
-          f.row === row && f.col === col ? { ...f, level: f.level + 1 } : f
-        ),
+      let gold = prev.gold
+      let level = factory.level
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getFactoryLevelUpgradeCost(level)
+        if (gold < cost) break
+        gold -= cost
+        level++
+        count++
       }
+      if (count === 0) return prev
+      if (!mutedRef.current) soundBuild()
+      return { ...prev, gold, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level } : f) }
     })
   }, [])
 
@@ -422,7 +445,6 @@ export default function App() {
 
     setGameState(prev => {
       const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
-      const newPrestigePoints = prev.prestigePoints + earned
       const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
@@ -438,11 +460,15 @@ export default function App() {
         totalEarned: 0,
         clicker: initialGameState.clicker,
         materialQuantityLevels: initialGameState.materialQuantityLevels,
+        itemValueLevels: initialGameState.itemValueLevels,
+        animals: initialGameState.animals,
+        rsBufferLevel: initialGameState.rsBufferLevel,
+        faBufferLevel: initialGameState.faBufferLevel,
+        railSpeedLevel: initialGameState.railSpeedLevel,
         prestigeCount: newPrestigeCount,
-        prestigePoints: newPrestigePoints,
+        // 업그레이드 전부 초기화 → 쓴 포인트 전부 환불 → 미사용 = 누적 합계
+        prestigePoints: newTotalPrestigePoints,
         totalPrestigePoints: newTotalPrestigePoints,
-        rsBufferLevel: prev.rsBufferLevel,
-        faBufferLevel: prev.faBufferLevel,
       }
     })
 
@@ -528,16 +554,26 @@ export default function App() {
     })
   }, [])
 
-  const handleUpgradeAnimal = useCallback((id: AnimalId) => {
+  const handleUpgradeAnimal = useCallback((id: AnimalId, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
       const animal = prev.animals.find(a => a.id === id)
       if (!animal || !animal.unlocked) return prev
-      const cost = getAnimalUpgradeCost(animal.level)
-      if (prev.prestigePoints < cost) return prev
+      let points = prev.prestigePoints
+      let level = animal.level
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getAnimalUpgradeCost(level)
+        if (points < cost) break
+        points -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
       return {
         ...prev,
-        prestigePoints: prev.prestigePoints - cost,
-        animals: prev.animals.map(a => a.id === id ? { ...a, level: a.level + 1 } : a),
+        prestigePoints: points,
+        animals: prev.animals.map(a => a.id === id ? { ...a, level } : a),
       }
     })
   }, [])
@@ -566,9 +602,6 @@ export default function App() {
   const handleCancelPlacing = useCallback(() => setPlacingAnimalId(null), [])
 
   const handleFactoryClick = useCallback((row: number, col: number) => {
-    setActiveTab(0)
-    setProdSection('factory')
-    setFocusFactory({ row, col })
     setSelectedFactory({ row, col })
   }, [])
 
@@ -576,9 +609,8 @@ export default function App() {
     setFaLiveStates(states)
   }, [])
 
-  const handleProducerClick = useCallback(() => {
-    setActiveTab(0)
-    setProdSection('production')
+  const handleProducerClick = useCallback((row: number, col: number) => {
+    setSelectedProducer({ row, col })
   }, [])
 
   const handleRecallAnimal = useCallback((id: AnimalId) => {
@@ -588,41 +620,98 @@ export default function App() {
     }))
   }, [])
 
-  const handleLevelUpItemValue = useCallback((gradeIndex: number) => {
+  const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const level = prev.itemValueLevels[gradeIndex] ?? 1
-      const cost = getItemValueLevelCost(level)
-      if (prev.prestigePoints < cost) return prev
+      let points = prev.prestigePoints
+      let level = prev.itemValueLevels[gradeIndex] ?? 1
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getItemValueLevelCost(level)
+        if (points < cost) break
+        points -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
       const itemValueLevels = [...prev.itemValueLevels]
-      itemValueLevels[gradeIndex] = level + 1
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, itemValueLevels }
+      itemValueLevels[gradeIndex] = level
+      return { ...prev, prestigePoints: points, itemValueLevels }
     })
   }, [])
 
-  const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number) => {
+  const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const level = prev.materialQuantityLevels[gradeIndex] ?? 1
-      const cost = getMaterialQuantityLevelCost(level)
-      if (prev.gold < cost) return prev
+      let gold = prev.gold
+      let level = prev.materialQuantityLevels[gradeIndex] ?? 1
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getMaterialQuantityLevelCost(level)
+        if (gold < cost) break
+        gold -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
       const materialQuantityLevels = [...prev.materialQuantityLevels]
-      materialQuantityLevels[gradeIndex] = level + 1
-      return { ...prev, gold: prev.gold - cost, materialQuantityLevels }
+      materialQuantityLevels[gradeIndex] = level
+      return { ...prev, gold, materialQuantityLevels }
     })
   }, [])
 
-  const handleUpgradeRsBuffer = useCallback(() => {
+  const handleUpgradeRsBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const cost = getBufferUpgradeCost(prev.rsBufferLevel)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, rsBufferLevel: prev.rsBufferLevel + 1 }
+      let points = prev.prestigePoints
+      let level = prev.rsBufferLevel
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getBufferUpgradeCost(level)
+        if (points < cost) break
+        points -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
+      return { ...prev, prestigePoints: points, rsBufferLevel: level }
     })
   }, [])
 
-  const handleUpgradeFaBuffer = useCallback(() => {
+  const handleUpgradeFaBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const cost = getBufferUpgradeCost(prev.faBufferLevel)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, faBufferLevel: prev.faBufferLevel + 1 }
+      let points = prev.prestigePoints
+      let level = prev.faBufferLevel
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        const cost = getBufferUpgradeCost(level)
+        if (points < cost) break
+        points -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
+      return { ...prev, prestigePoints: points, faBufferLevel: level }
+    })
+  }, [])
+
+  const handleUpgradeRailSpeed = useCallback((amount: UpgradeAmount = 1) => {
+    setGameState(prev => {
+      let points = prev.prestigePoints
+      let level = prev.railSpeedLevel ?? 1
+      const limit = amount === 'MAX' ? Infinity : amount
+      let count = 0
+      while (count < limit) {
+        if (level >= CONFIG.RAIL_SPEED_MAX_LEVEL) break
+        const cost = getRailSpeedUpgradeCost(level)
+        if (points < cost) break
+        points -= cost
+        level++
+        count++
+      }
+      if (count === 0) return prev
+      return { ...prev, prestigePoints: points, railSpeedLevel: level }
     })
   }, [])
 
@@ -682,6 +771,7 @@ export default function App() {
         itemValueLevels={gameState.itemValueLevels}
         faBufferLevel={gameState.faBufferLevel}
         rsBufferLevel={gameState.rsBufferLevel}
+        railSpeedLevel={gameState.railSpeedLevel ?? 1}
         placingAnimalId={placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={handleCancelPlacing}
@@ -714,65 +804,79 @@ export default function App() {
         onClose={() => setActiveTab(null)}
         header={
           activeTab === 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>공장</h2>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
-                  <button
-                    key={sec}
-                    onClick={() => setProdSection(sec)}
-                    style={{
-                      padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                      borderColor: prodSection === sec ? '#16a34a' : '#e5e7eb',
-                      background: prodSection === sec ? '#f0fdf4' : '#fff',
-                      color: prodSection === sec ? '#16a34a' : '#9ca3af',
-                      fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                    }}
-                  >{label}</button>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>공장</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
+                    <button
+                      key={sec}
+                      onClick={() => setProdSection(sec)}
+                      style={{
+                        padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
+                        borderColor: prodSection === sec ? '#16a34a' : '#e5e7eb',
+                        background: prodSection === sec ? '#f0fdf4' : '#fff',
+                        color: prodSection === sec ? '#16a34a' : '#9ca3af',
+                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
               </div>
+              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
+            </div>
+          ) : activeTab === 1 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>재료 관리</h2>
+              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
             </div>
           ) : activeTab === 2 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {([['hamster', '햄스터'], ['cat', '고양이'], ['dog', '강아지']] as const).map(([type, label]) => (
-                  <button
-                    key={type}
-                    onClick={() => setAnimalType(type)}
-                    style={{
-                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                      borderColor: animalType === type ? '#6366f1' : '#e5e7eb',
-                      background: animalType === type ? '#eef2ff' : '#fff',
-                      color: animalType === type ? '#6366f1' : '#9ca3af',
-                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 4,
-                    }}
-                  >
-                    <AnimalSvg species={type} size={18}/>
-                    {label}
-                  </button>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {([['hamster', '햄스터'], ['cat', '고양이'], ['dog', '강아지']] as const).map(([type, label]) => (
+                    <button
+                      key={type}
+                      onClick={() => setAnimalType(type)}
+                      style={{
+                        padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
+                        borderColor: animalType === type ? '#6366f1' : '#e5e7eb',
+                        background: animalType === type ? '#eef2ff' : '#fff',
+                        color: animalType === type ? '#6366f1' : '#9ca3af',
+                        fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                      }}
+                    >
+                      <AnimalSvg species={type} size={18}/>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
             </div>
           ) : activeTab === 3 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {([['item', '📦 아이템'], ['buffer', '🏭 저장소']] as const).map(([sec, label]) => (
-                  <button
-                    key={sec}
-                    onClick={() => setPrestigeSection(sec)}
-                    style={{
-                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                      borderColor: prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
-                      background: prestigeSection === sec ? '#fffbeb' : '#fff',
-                      color: prestigeSection === sec ? '#d97706' : '#9ca3af',
-                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                    }}
-                  >{label}</button>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {([['item', '📦 아이템'], ['buffer', '🔧 기타']] as const).map(([sec, label]) => (
+                    <button
+                      key={sec}
+                      onClick={() => setPrestigeSection(sec)}
+                      style={{
+                        padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
+                        borderColor: prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
+                        background: prestigeSection === sec ? '#fffbeb' : '#fff',
+                        color: prestigeSection === sec ? '#d97706' : '#9ca3af',
+                        fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
               </div>
+              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
             </div>
           ) : activeTab === 4 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -818,7 +922,7 @@ export default function App() {
             materialQuantityLevels={gameState.materialQuantityLevels}
             clicker={gameState.clicker}
             onBuild={handleBuildProducer}
-            onUpgrade={handleUpgradeProducer}
+            onUpgrade={(i) => handleUpgradeProducer(i, upgradeAmount)}
             onUpgradeClicker={handleUpgradeClicker}
           />
         )}
@@ -831,7 +935,7 @@ export default function App() {
             onSetType={handleSetFactoryType}
             onSetDir={handleSetFactoryDir}
             onSetGrade={handleSetFactoryGrade}
-            onUpgradeLevel={handleUpgradeFactoryLevel}
+            onUpgradeLevel={(row, col) => handleUpgradeFactoryLevel(row, col, upgradeAmount)}
             onSetAnimal={handleSetFactoryAnimal}
             animals={gameState.animals}
             maxGrade={20}
@@ -842,7 +946,7 @@ export default function App() {
         {activeTab === 1 && (
           <MaterialTab
             gameState={gameState}
-            onUpgradeQuantity={handleUpgradeMaterialQuantity}
+            onUpgradeQuantity={(i) => handleUpgradeMaterialQuantity(i, upgradeAmount)}
           />
         )}
         {activeTab === 2 && (
@@ -850,7 +954,7 @@ export default function App() {
             gameState={gameState}
             animalType={animalType}
             onUnlockAnimal={handleUnlockAnimal}
-            onUpgradeAnimal={handleUpgradeAnimal}
+            onUpgradeAnimal={(id) => handleUpgradeAnimal(id, upgradeAmount)}
             onStartPlacing={handleStartPlacing}
             onRecallAnimal={handleRecallAnimal}
           />
@@ -861,9 +965,10 @@ export default function App() {
             section={prestigeSection}
             onPrestige={handlePrestige}
             onPrestigeKeepPoints={handlePrestigeKeepPoints}
-            onLevelUpItemValue={handleLevelUpItemValue}
-            onUpgradeRsBuffer={handleUpgradeRsBuffer}
-            onUpgradeFaBuffer={handleUpgradeFaBuffer}
+            onLevelUpItemValue={(i) => handleLevelUpItemValue(i, upgradeAmount)}
+            onUpgradeRsBuffer={() => handleUpgradeRsBuffer(upgradeAmount)}
+            onUpgradeFaBuffer={() => handleUpgradeFaBuffer(upgradeAmount)}
+            onUpgradeRailSpeed={() => handleUpgradeRailSpeed(upgradeAmount)}
           />
         )}
         {activeTab === 4 && (
@@ -901,17 +1006,52 @@ export default function App() {
         />
       )}
 
-      {/* 공장 정보 팝업 */}
+      {/* 공장 팝업 */}
       {selectedFactory && (() => {
         const factory = gameState.factories.find(f => f.row === selectedFactory.row && f.col === selectedFactory.col)
-        if (!factory?.built) return null
+        if (!factory?.built) {
+          return (
+            <FactoryBuildModal
+              gold={gameState.gold}
+              onBuild={() => handleBuildFactory(selectedFactory.row, selectedFactory.col)}
+              onClose={() => setSelectedFactory(null)}
+            />
+          )
+        }
         const liveKey = `${selectedFactory.row}-${selectedFactory.col}`
+        const { row, col } = selectedFactory
         return (
           <FactoryInfoModal
             factory={factory}
             live={faLiveStates[liveKey]}
+            gold={gameState.gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
+            maxGrade={20}
             onClose={() => setSelectedFactory(null)}
+            onSetType={type => handleSetFactoryType(row, col, type)}
+            onSetDir={dir => handleSetFactoryDir(row, col, dir)}
+            onSetGrade={grade => handleSetFactoryGrade(row, col, grade)}
+            onUpgradeLevel={() => handleUpgradeFactoryLevel(row, col, upgradeAmount)}
+          />
+        )
+      })()}
+
+      {/* 생산기 팝업 */}
+      {selectedProducer && (() => {
+        const producer = gameState.producers.find(p => p.row === selectedProducer.row && p.col === selectedProducer.col)
+        if (!producer) return null
+        const producerIndex = gameState.producers.indexOf(producer)
+        const builtCount = gameState.producers.filter(p => p.built).length
+        return (
+          <ProducerInfoModal
+            producer={producer}
+            producerIndex={producerIndex}
+            gold={gameState.gold}
+            materialQuantityLevels={gameState.materialQuantityLevels}
+            builtCount={builtCount}
+            onBuild={() => handleBuildProducer(producerIndex)}
+            onUpgrade={() => handleUpgradeProducer(producerIndex, upgradeAmount)}
+            onClose={() => setSelectedProducer(null)}
           />
         )
       })()}

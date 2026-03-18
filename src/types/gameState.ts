@@ -23,6 +23,7 @@ export interface GameState {
   animals: Animal[]          // 환생 유지
   rsBufferLevel: number      // RS 버퍼 레벨 (환생 유지)
   faBufferLevel: number      // FA 버퍼 레벨 (환생 유지)
+  railSpeedLevel: number     // 레일 속도 레벨 (환생 유지)
 }
 
 export const initialGameState: GameState = {
@@ -46,4 +47,5 @@ export const initialGameState: GameState = {
   animals: initialAnimals,
   rsBufferLevel: 1,
   faBufferLevel: 1,
+  railSpeedLevel: 1,
 }

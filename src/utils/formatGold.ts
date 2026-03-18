@@ -1,6 +1,9 @@
-const SUFFIXES = ['', 'k', 'm', 'b', 't', 'aa', 'ab', 'ac', 'ad', 'ae', 'af', 'ag', 'ah', 'ai', 'aj', 'ak', 'al', 'am', 'an', 'ao', 'ap', 'aq', 'ar', 'as', 'at', 'au', 'av', 'aw', 'ax', 'ay', 'az', 'ba', 'bb', 'bc']
+const alpha = 'abcdefghijklmnopqrstuvwxyz'
+const SUFFIXES: string[] = ['', 'k', 'm', 'b', 't']
+for (let i = 0; i < 26; i++) for (let j = 0; j < 26; j++) SUFFIXES.push(alpha[i] + alpha[j])
 
 export function formatNumber(n: number): string {
+  if (!isFinite(n) || isNaN(n)) return '∞'
   if (n < 1000) return String(Math.floor(n))
   const tier = Math.floor(Math.log10(n) / 3)
   const capped = Math.min(tier, SUFFIXES.length - 1)
@@ -14,6 +17,7 @@ export function formatGold(n: number): string {
 }
 
 export function formatQuantity(n: number): string {
+  if (!isFinite(n) || isNaN(n)) return '∞'
   if (n < 1000) return String(Math.floor(n))
   const tier = Math.floor(Math.log10(n) / 3)
   const capped = Math.min(tier, SUFFIXES.length - 1)

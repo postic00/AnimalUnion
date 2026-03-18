@@ -3,33 +3,42 @@ import type { Factory } from './types/factory'
 import type { Item } from './types/item'
 import type { Animal } from './types/animal'
 
+// 공통 COST 함수: BASE * RATE^(lv*EXP + lv²*ACC)
+export function calcCost(base: number, rate: number, exp: number, acc: number, lv: number): number {
+  return Math.floor(base * Math.pow(rate, lv * exp + lv * lv * acc))
+}
+
+// 공통 PROC 함수: BASE * lv * EXP * ACC
+export function calcProc(base: number, exp: number, acc: number, lv: number): number {
+  return base * lv * exp * acc
+}
+
 // 라인 확장 비용
 export function getBundleCost(bundleCount: number): number {
-  return Math.floor(CONFIG.BUNDLE_COST_BASE * Math.pow(bundleCount + 1, CONFIG.BUNDLE_COST_EXPONENT))
+  return calcCost(CONFIG.BD_COST_BASE, CONFIG.BD_COST_RATE, CONFIG.BD_COST_EXP, CONFIG.BD_COST_ACC, bundleCount + 1)
 }
 
 // PR 건설 비용
-export function getProducerBuildCost(builtCount: number = 0): number {
-  return Math.floor(CONFIG.PR_BUILD_COST_BASE * Math.pow(2, builtCount))
+export function getProducerBuildCost(_builtCount: number = 0): number {
+  return CONFIG.PR_BUILD_COST_BASE
 }
 
 // PR 업그레이드 비용
 export function getProducerUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level, CONFIG.PRODUCER_UPGRADE_EXPONENT))
+  return calcCost(CONFIG.PR_COST_BASE, CONFIG.PR_COST_RATE, CONFIG.PR_COST_EXP, CONFIG.PR_COST_ACC, level)
 }
 
 // PR 생산 주기
 export function getProducerInterval(level: number): number {
   if (level === 0) return Infinity
-  return CONFIG.PRODUCE_INTERVAL / Math.pow(CONFIG.PRODUCE_INTERVAL_MULTIPLIER, level - 1)
+  return CONFIG.PR_PROC_BASE / Math.pow(CONFIG.PR_PROC_RATE, level - 1)
 }
 
 // 아이템 가치: 등급 기본값 × 가치레벨 배수
 export function getItemValue(grade: number, itemValueLevel = 1): number {
   const idx = Math.max(0, Math.min(grade - 1, 19))
   const baseValue = CONFIG.GRADE_BASE_VALUES[idx] ?? 1
-  const safeLevel = Math.max(1, itemValueLevel)
-  return baseValue * (1 + (safeLevel - 1) * CONFIG.ITEM_VALUE_PER_LEVEL)
+  return baseValue * calcProc(CONFIG.IT_PROC_BASE, CONFIG.IT_PROC_EXP, CONFIG.IT_PROC_ACC, Math.max(1, itemValueLevel))
 }
 
 // PR 아이템 가치
@@ -39,9 +48,8 @@ export function getProducerValue(grade: number, itemValueLevel = 1): number {
 
 // 아이템 가치 레벨업 비용
 export function getItemValueLevelCost(level: number): number {
-  return Math.floor(CONFIG.ITEM_VALUE_LEVEL_COST_BASE * Math.pow(level, CONFIG.ITEM_VALUE_LEVEL_COST_EXPONENT))
+  return calcCost(CONFIG.IT_COST_BASE, CONFIG.IT_COST_RATE, CONFIG.IT_COST_EXP, CONFIG.IT_COST_ACC, level)
 }
-
 
 // FA 건설 비용
 export function getFactoryBuildCost(): number {
@@ -50,12 +58,12 @@ export function getFactoryBuildCost(): number {
 
 // FA 등급 업그레이드 비용
 export function getFactoryGradeUpgradeCost(grade: number): number {
-  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(grade, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
+  return calcCost(CONFIG.FA_COST_BASE, CONFIG.FA_COST_RATE, CONFIG.FA_COST_EXP, CONFIG.FA_COST_ACC, grade)
 }
 
 // FA 레벨 업그레이드 비용
 export function getFactoryLevelUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.FA_LEVEL_UPGRADE_BASE * Math.pow(level, CONFIG.FA_LEVEL_UPGRADE_EXPONENT))
+  return calcCost(CONFIG.FA_COST_BASE, CONFIG.FA_COST_RATE, CONFIG.FA_COST_EXP, CONFIG.FA_COST_ACC, level)
 }
 
 // FA 잡기/놓기 시간 (고정)
@@ -63,11 +71,11 @@ export function getFactoryPickTime(): number {
   return CONFIG.FA_PICK_TIME
 }
 
-// FA 처리 시간: PROCESS_TIME_BASE × quantity / EFFICIENCY^(level-1)
+// FA 처리 시간: PROC_BASE × quantity / PROC_RATE^(level-1)
 export function getFactoryProcessTime(level: number, quantity: number): number {
   const safeQty = Math.max(1, quantity)
-  if (level <= 0) return CONFIG.FA_PROCESS_TIME_BASE * safeQty
-  return (CONFIG.FA_PROCESS_TIME_BASE * safeQty) / Math.pow(CONFIG.FA_LEVEL_EFFICIENCY, level - 1)
+  if (level <= 0) return CONFIG.FA_PROC_BASE * safeQty
+  return (CONFIG.FA_PROC_BASE * safeQty) / Math.pow(CONFIG.FA_PROC_RATE, level - 1)
 }
 
 // FA 등급 보너스
@@ -84,7 +92,7 @@ export function getFinalGold(item: Item): number {
   return item.value * item.quantity * (1 + item.waBonus) * (1 + item.paBonus) * (1 + item.pkBonus)
 }
 
-// WA 보너스 적용 (가치만 증가, 등급 변경 없음)
+// WA 보너스 적용
 export function applyWaBonus(item: Item, factory: Factory, animals: Animal[]): Item {
   const { grade } = factory
   if (grade === 0) return item
@@ -105,7 +113,7 @@ export function applyPkBonus(item: Item, factory: Factory, animals: Animal[]): I
   return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
 }
 
-// PA/PK 출력 아이템 생성 (레시피 조합 결과)
+// PA/PK 출력 아이템 생성
 export function createRecipeOutput(
   outputGrade: number,
   factory: Factory,
@@ -121,7 +129,7 @@ export function createRecipeOutput(
   const paBonus = factory.type === 'PA' ? bonus : 0
   const pkBonus = factory.type === 'PK' ? bonus : 0
   return {
-    id: '',  // caller sets id
+    id: '',
     x: 0, y: 0, dx: 0, dy: 0, targetX: 0, targetY: 0,
     grade: outputGrade,
     value,
@@ -141,19 +149,19 @@ export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[
   return item
 }
 
-// 재료 수량: 2^(level-1)
+// 재료 수량: RATE^(level-1)
 export function getMaterialQuantity(level: number): number {
-  return Math.pow(2, Math.max(1, level) - 1)
+  return Math.pow(CONFIG.IC_PROC_RATE, Math.max(1, level) - 1)
 }
 
-// 클릭커 1클릭당 기여량: 2^(level-1)
+// 클릭커 1클릭당 기여량
 export function getClickerValue(level: number): number {
-  return Math.pow(2, Math.max(1, level) - 1)
+  return Math.pow(CONFIG.IC_PROC_RATE, Math.max(1, level) - 1)
 }
 
-// 클릭커 업그레이드 비용 (생산기와 동일 공식)
+// 클릭커 업그레이드 비용
 export function getClickerUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.PRODUCER_UPGRADE_BASE * Math.pow(level + 1, CONFIG.PRODUCER_UPGRADE_EXPONENT))
+  return calcCost(CONFIG.PR_COST_BASE, CONFIG.PR_COST_RATE, CONFIG.PR_COST_EXP, CONFIG.PR_COST_ACC, level + 1)
 }
 
 // 클릭커 threshold 계산
@@ -163,37 +171,50 @@ export function getClickerThreshold(quantity: number, clickerLevel: number): num
 
 // 재료 수량 레벨업 비용
 export function getMaterialQuantityLevelCost(level: number): number {
-  return Math.floor(CONFIG.MATERIAL_QUANTITY_COST_BASE * Math.pow(level, CONFIG.MATERIAL_QUANTITY_COST_EXPONENT))
+  return calcCost(CONFIG.IC_COST_BASE, CONFIG.IC_COST_RATE, CONFIG.IC_COST_EXP, CONFIG.IC_COST_ACC, level)
 }
 
 // RS 버퍼 용량
 export function getRsBufferCapacity(level: number): number {
-  return CONFIG.RS_BUFFER_BASE + (level - 1) * CONFIG.RS_BUFFER_PER_LEVEL
+  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level))
 }
 
 // FA 버퍼 용량
 export function getFaBufferCapacity(level: number): number {
-  return CONFIG.FA_BUFFER_BASE + (level - 1) * CONFIG.FA_BUFFER_PER_LEVEL
+  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level))
 }
 
 // 버퍼 업그레이드 비용
 export function getBufferUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.BUFFER_UPGRADE_COST_BASE * Math.pow(level, CONFIG.BUFFER_UPGRADE_COST_EXPONENT))
+  return calcCost(CONFIG.BF_COST_BASE, CONFIG.BF_COST_RATE, CONFIG.BF_COST_EXP, CONFIG.BF_COST_ACC, level)
+}
+
+// 레일 이동 속도
+export function getRailMoveSpeed(level: number): number {
+  const safeLevel = Math.max(1, Math.min(level, CONFIG.RAIL_SPEED_MAX_LEVEL))
+  const t = (safeLevel - 1) / (CONFIG.RAIL_SPEED_MAX_LEVEL - 1)
+  const multiplier = CONFIG.RL_PROC_RATE + (CONFIG.RAIL_SPEED_MAX_MULTIPLIER - CONFIG.RL_PROC_RATE) * t
+  return CONFIG.RL_PROC_BASE / multiplier
+}
+
+// 레일 속도 업그레이드 비용
+export function getRailSpeedUpgradeCost(level: number): number {
+  return calcCost(CONFIG.RL_COST_BASE, CONFIG.RL_COST_RATE, CONFIG.RL_COST_EXP, CONFIG.RL_COST_ACC, level)
 }
 
 // 동물 해금 비용
 export function getAnimalUnlockCost(): number {
-  return CONFIG.ANIMAL_UNLOCK_COST
+  return CONFIG.AM_UNLOCK_COST
 }
 
 // 동물 업그레이드 비용
 export function getAnimalUpgradeCost(level: number): number {
-  return Math.floor(CONFIG.ANIMAL_UPGRADE_COST_BASE * Math.pow(level, CONFIG.ANIMAL_UPGRADE_COST_EXPONENT))
+  return calcCost(CONFIG.AM_COST_BASE, CONFIG.AM_COST_RATE, CONFIG.AM_COST_EXP, CONFIG.AM_COST_ACC, level)
 }
 
 // 동물 stat
 export function getAnimalStat(level: number): number {
-  return CONFIG.ANIMAL_STAT_BASE + (level - 1) * CONFIG.ANIMAL_STAT_PER_LEVEL
+  return calcProc(CONFIG.AM_PROC_BASE, CONFIG.AM_PROC_EXP, CONFIG.AM_PROC_ACC, level)
 }
 
 // 아이템 가치 초기화 시 환급 포인트
@@ -229,28 +250,23 @@ export function getProductGradeUnlockCost(grade: number): number {
   return Math.pow(2, grade - 2)
 }
 
-// 조합 레시피 정의 (outputGrade → 필요 재료)
-// 기본 재료: 1=고추, 2=설탕, 3=딸기
-// Tier1(4-6): 단일 재료 가공  Tier2(7-9): 2재료 혼합
-// Tier3(10-12): 중간 가공품  Tier4(13-14): 3단계 조합
-// Tier5(15-16): 고급 가공    Tier6(17-18): 프리미엄
-// Tier7(19-20): 최상위
+// 조합 레시피 정의
 export const RECIPES: Record<number, { grade: number; count: number }[]> = {
-  4:  [{ grade: 1, count: 2 }],                                                     // 고추×2 → 고추장
-  5:  [{ grade: 2, count: 2 }],                                                     // 설탕×2 → 설탕시럽
-  6:  [{ grade: 3, count: 2 }],                                                     // 딸기×2 → 딸기잼
-  7:  [{ grade: 4, count: 1 }, { grade: 5, count: 2 }],                            // 고추장+설탕시럽×2 → 고추사탕
-  8:  [{ grade: 6, count: 2 }, { grade: 5, count: 1 }],                            // 딸기잼×2+설탕시럽 → 딸기에이드
-  9:  [{ grade: 4, count: 2 }, { grade: 6, count: 1 }],                            // 고추장×2+딸기잼 → 딸기고추소스
-  10: [{ grade: 7, count: 1 }, { grade: 8, count: 1 }],                            // 고추사탕+딸기에이드 → 딸기고추잼
-  11: [{ grade: 4, count: 2 }, { grade: 5, count: 2 }],                            // 고추장×2+설탕시럽×2 → 고추설탕크래커
-  12: [{ grade: 6, count: 2 }, { grade: 4, count: 2 }, { grade: 5, count: 1 }],   // 딸기잼×2+고추장×2+설탕시럽 → 프리미엄소스
-  13: [{ grade: 10, count: 1 }, { grade: 11, count: 2 }],                          // 딸기고추잼+고추설탕크래커×2 → 매운케이크
-  14: [{ grade: 10, count: 1 }, { grade: 12, count: 2 }],                          // 딸기고추잼+프리미엄소스×2 → 딸기크림파이
-  15: [{ grade: 13, count: 2 }, { grade: 8, count: 2 }],                           // 매운케이크×2+딸기에이드×2 → 딸기젤리
-  16: [{ grade: 14, count: 2 }, { grade: 9, count: 2 }],                           // 딸기크림파이×2+딸기고추소스×2 → 딸기크림
-  17: [{ grade: 15, count: 2 }, { grade: 12, count: 2 }],                          // 딸기젤리×2+프리미엄소스×2 → 고추딸기파이
-  18: [{ grade: 16, count: 3 }, { grade: 14, count: 2 }],                          // 딸기크림×3+딸기크림파이×2 → 딸기설탕케이크
-  19: [{ grade: 17, count: 2 }, { grade: 18, count: 2 }, { grade: 12, count: 2 }], // 고추딸기파이×2+딸기설탕케이크×2+프리미엄소스×2 → 딸기고추마카롱
-  20: [{ grade: 19, count: 1 }, { grade: 18, count: 1 }],                          // 딸기고추마카롱+딸기설탕케이크 → 🏆
+  4:  [{ grade: 1, count: 2 }],
+  5:  [{ grade: 2, count: 2 }],
+  6:  [{ grade: 3, count: 2 }],
+  7:  [{ grade: 4, count: 1 }, { grade: 5, count: 2 }],
+  8:  [{ grade: 6, count: 2 }, { grade: 5, count: 1 }],
+  9:  [{ grade: 4, count: 2 }, { grade: 6, count: 1 }],
+  10: [{ grade: 7, count: 1 }, { grade: 8, count: 1 }],
+  11: [{ grade: 4, count: 2 }, { grade: 5, count: 2 }],
+  12: [{ grade: 6, count: 2 }, { grade: 4, count: 2 }, { grade: 5, count: 1 }],
+  13: [{ grade: 10, count: 1 }, { grade: 11, count: 2 }],
+  14: [{ grade: 10, count: 1 }, { grade: 12, count: 2 }],
+  15: [{ grade: 13, count: 2 }, { grade: 8, count: 2 }],
+  16: [{ grade: 14, count: 2 }, { grade: 9, count: 2 }],
+  17: [{ grade: 15, count: 2 }, { grade: 12, count: 2 }],
+  18: [{ grade: 16, count: 3 }, { grade: 14, count: 2 }],
+  19: [{ grade: 17, count: 2 }, { grade: 18, count: 2 }, { grade: 12, count: 2 }],
+  20: [{ grade: 19, count: 1 }, { grade: 18, count: 1 }],
 }

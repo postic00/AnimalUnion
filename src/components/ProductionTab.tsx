@@ -1,6 +1,6 @@
 import type { Producer } from '../types/producer'
 import type { Clicker } from '../types/clicker'
-import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getClickerValue, getClickerUpgradeCost } from '../balance'
+import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost } from '../balance'
 import { formatGold, formatQuantity } from '../utils/formatGold'
 import { GradeIcon } from './GradeIcon'
 import coinIcon from '../assets/coin.svg'
@@ -60,6 +60,8 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
         {producers.map((producer, index) => {
           const grade = GRADES[producer.grade] ?? GRADES[1]
           const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
+          const interval = getProducerInterval(producer.level) * quantity
+          const perSec = interval > 0 && isFinite(interval) ? quantity * 1000 / interval : 0
 
           if (!producer.built) {
             return (
@@ -96,7 +98,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                     <span className={styles.levelBadge} style={{ background: grade.sub }}>Lv.{producer.level}</span>
                   </div>
                   <span className={styles.cardSub} style={{ color: grade.sub }}>
-                    {isActive ? `가동중 · ×${formatQuantity(quantity)}` : '비활성'}
+                    {isActive ? `${formatQuantity(perSec)}/s` : '비활성'}
                   </span>
                 </div>
               </div>

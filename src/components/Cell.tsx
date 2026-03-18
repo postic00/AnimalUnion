@@ -4,6 +4,7 @@ import type { Cell as CellType } from '../types/board'
 import type { Factory } from '../types/factory'
 import type { Producer } from '../types/producer'
 import type { AnimalId } from '../types/animal'
+import { formatQuantity } from '../utils/formatGold'
 
 import { ProcessAnimation } from './ProcessAnimation'
 import { FactoryTypeIcon } from './FactoryTypeIcon'
@@ -222,7 +223,7 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
           color: '#fff', borderRadius: 3, padding: '1px 3px',
           whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none',
         }}>
-          {bufferInfo.count}/{bufferInfo.capacity}
+          {formatQuantity(bufferInfo.count)}/{formatQuantity(bufferInfo.capacity)}
         </span>
       )}
     </div>

@@ -125,24 +125,30 @@
   transition: width 0.2s ease;
 }
 
-.recipeBuffer {
+.storageList {
   display: flex;
   flex-direction: column;
   gap: 3px;
   margin-top: 2px;
 }
 
-.recipeRow {
+.storageRow {
   display: flex;
   align-items: center;
   gap: 3px;
   justify-content: center;
 }
 
-.recipeNeed {
+.storageQty {
   font-size: 11px;
   font-weight: 700;
   color: #374151;
+}
+
+.storageNeed {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
 }
 
 .dirLabel {
@@ -210,4 +216,125 @@
   background: #22c55e;
   border-radius: 4px;
   transition: width 0.1s linear;
+}
+
+/* 출력 아이템 */
+.outputItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.outputQty {
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* 컨트롤 섹션 */
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.typeRow {
+  display: flex;
+  gap: 6px;
+}
+
+.typeBtn {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 0;
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.typeBtnActive {
+  border-color: transparent;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.gradeControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 6px 10px;
+  border: 1.5px solid #e5e7eb;
+  flex: 1;
+  justify-content: center;
+}
+
+.gradeBtn {
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.gradeBtn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.dirBtn {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 0;
+  border-radius: 10px;
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+}
+
+.levelUpBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 11px 0;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.levelUpBtn:disabled {
+  background: #e5e7eb !important;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.levelUpCost {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.coinIcon {
+  width: 16px;
+  height: 16px;
 }

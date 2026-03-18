@@ -1,0 +1,213 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px;
+  width: calc(100% - 32px);
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 헤더 */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.typeName {
+  font-size: 15px;
+  font-weight: 800;
+  color: #191f28;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 8px;
+  padding: 2px 7px;
+}
+
+.bonusBadge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #fff7ed;
+  color: #ea580c;
+  border-radius: 8px;
+  padding: 2px 7px;
+}
+
+.animalBadge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #16a34a;
+  border-radius: 8px;
+  padding: 2px 7px;
+}
+
+.closeBtn {
+  margin-left: auto;
+  border: none;
+  background: none;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+/* 3단 레이아웃 */
+.body {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* 좌우 패널 */
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-width: 0;
+}
+
+.panelLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.panelCount {
+  font-size: 20px;
+  font-weight: 900;
+  color: #191f28;
+  text-align: center;
+  line-height: 1;
+}
+
+.panelCapacity {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.bufferBar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bufferFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
+.recipeBuffer {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.recipeRow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
+}
+
+.recipeNeed {
+  font-size: 11px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.dirLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* 중앙 패널 */
+.middle {
+  flex: 1.2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-width: 0;
+}
+
+.divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 2px 0;
+}
+
+.stateBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stateLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.stateDot {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.stateText {
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.progressBar {
+  width: 100%;
+  height: 5px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.progressFill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}

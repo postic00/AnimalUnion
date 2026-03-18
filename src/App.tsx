@@ -17,6 +17,7 @@ import ConfirmModal from './components/ConfirmModal'
 import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supabase'
 import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userProfile'
 import SplashScreen from './components/SplashScreen'
+import FactoryInfoModal from './components/FactoryInfoModal'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
@@ -115,6 +116,8 @@ export default function App() {
   const activeTabRef = useRef(activeTab)
   useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
+  const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
+  const [faLiveStates, setFaLiveStates] = useState<import('./hooks/useGameLoop').FALiveStates>({})
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
   const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
@@ -566,6 +569,11 @@ export default function App() {
     setActiveTab(0)
     setProdSection('factory')
     setFocusFactory({ row, col })
+    setSelectedFactory({ row, col })
+  }, [])
+
+  const handleFaLiveStateChange = useCallback((states: import('./hooks/useGameLoop').FALiveStates) => {
+    setFaLiveStates(states)
   }, [])
 
   const handleProducerClick = useCallback(() => {
@@ -683,6 +691,7 @@ export default function App() {
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
         onFactoryClick={handleFactoryClick}
         onProducerClick={handleProducerClick}
+        onFaLiveStateChange={handleFaLiveStateChange}
       />}
       {!showSplash && <TabBar
         clicker={gameState.clicker}
@@ -891,6 +900,21 @@ export default function App() {
           onClose={() => setAdTarget(null)}
         />
       )}
+
+      {/* 공장 정보 팝업 */}
+      {selectedFactory && (() => {
+        const factory = gameState.factories.find(f => f.row === selectedFactory.row && f.col === selectedFactory.col)
+        if (!factory?.built) return null
+        const liveKey = `${selectedFactory.row}-${selectedFactory.col}`
+        return (
+          <FactoryInfoModal
+            factory={factory}
+            live={faLiveStates[liveKey]}
+            materialQuantityLevels={gameState.materialQuantityLevels}
+            onClose={() => setSelectedFactory(null)}
+          />
+        )
+      })()}
 
       {/* 환생 모달 */}
       {showPrestigeModal && (

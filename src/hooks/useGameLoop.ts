@@ -32,6 +32,16 @@ import {
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
 export type FAPhases = Record<string, FAPhase>
 
+export interface FALiveState {
+  grabState: 'IDLE' | 'GRABBING'
+  processState: 'IDLE' | 'PROCESSING' | 'PLACING' | 'WAITING'
+  inputBuffer: number
+  inputCapacity: number
+  hasOutputItem: boolean
+  processProgress: number
+}
+export type FALiveStates = Record<string, FALiveState>
+
 export interface FAState {
   grabState: 'IDLE' | 'GRABBING'
   grabTimer: number
@@ -103,6 +113,7 @@ export function useGameLoop(
   speedMultiplier?: number,
   initialItems?: Item[],
   initialFaStates?: Record<string, FAState>,
+  onFaLiveStateChange?: (states: FALiveStates) => void,
 ) {
   const [renderItems, setRenderItems] = useState<Item[]>(initialItems ?? [])
   const [progresses, setProgresses] = useState<Progresses>({})
@@ -134,6 +145,8 @@ export function useGameLoop(
   itemValueLevelsRef.current = itemValueLevels
   const faBufferLevelRef = useRef(faBufferLevel)
   faBufferLevelRef.current = faBufferLevel
+  const onFaLiveStateChangeRef = useRef(onFaLiveStateChange)
+  onFaLiveStateChangeRef.current = onFaLiveStateChange
   const rsBufferLevelRef = useRef(rsBufferLevel)
   rsBufferLevelRef.current = rsBufferLevel
 
@@ -596,6 +609,30 @@ export function useGameLoop(
       setBufferCounts(bc)
       setProgresses(p)
       setFaPhases(fp)
+
+      if (onFaLiveStateChangeRef.current) {
+        const live: FALiveStates = {}
+        factoriesRef.current.forEach(factory => {
+          if (!factory.built) return
+          const fas = faStatesRef.current[`fa-${factory.row}-${factory.col}`]
+          if (!fas) return
+          const cellKey = `${factory.row}-${factory.col}`
+          const capacity = getFaBufferCapacity(faBufferLevelRef.current)
+          const inputBuffer = factory.type === 'PA'
+            ? fas.buffer.reduce((s, b) => s + b.count, 0)
+            : (fas.pendingQueue ?? []).length
+          const processTime = getFactoryProcessTime(factory.level, 1)
+          live[cellKey] = {
+            grabState: fas.grabState,
+            processState: fas.processState,
+            inputBuffer,
+            inputCapacity: capacity,
+            hasOutputItem: fas.outputItem !== null,
+            processProgress: fas.processState === 'PROCESSING' ? Math.min(fas.processTimer / processTime, 1) : 0,
+          }
+        })
+        onFaLiveStateChangeRef.current(live)
+      }
     }, 100)
 
     return () => {

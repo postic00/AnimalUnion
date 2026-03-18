@@ -12,7 +12,7 @@ import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
 import { saveItems, loadItems, saveFaStates, loadFaStates } from '../utils/saveLoad'
-import type { FAState } from '../hooks/useGameLoop'
+import type { FAState, FALiveStates } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 
@@ -38,9 +38,10 @@ interface Props {
   speedMultiplier: number
   onFactoryClick?: (row: number, col: number) => void
   onProducerClick?: (row: number, col: number) => void
+  onFaLiveStateChange?: (states: FALiveStates) => void
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined)
+  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, onFaLiveStateChange)
 
   onSaveRef.current = () => {
     saveItems(itemsRef.current)

@@ -3,16 +3,16 @@
   top: 0;
   z-index: 10;
   width: 100%;
-  height: calc(56px + env(safe-area-inset-top));
+  height: 56px;
   background: rgba(255, 248, 240, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(184, 134, 11, 0.25);
   display: flex;
-  align-items: flex-end;
-  padding: 0 16px env(safe-area-inset-top) 16px;
+  align-items: center;
+  padding: 0 16px;
   padding-bottom: 8px;
-  padding-top: env(safe-area-inset-top);
+  padding-top: 8px;
   gap: 16px;
 }
 

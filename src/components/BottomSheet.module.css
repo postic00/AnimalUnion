@@ -1,6 +1,6 @@
 .sheet {
   position: fixed;
-  bottom: 56px;
+  bottom: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   left: 0;
   right: 0;
   z-index: 21;

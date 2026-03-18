@@ -40,9 +40,10 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
   const dashOffset = circumference * (1 - Math.min(progress, 1))
   const isFull = clicker.clickCount >= clicker.threshold && clicker.clickCount > 0
 
+  const safeBottom = 'var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))'
   const floatBottom = activeTab !== null
-    ? 'calc(40vh + 76px + env(safe-area-inset-bottom))'
-    : 'calc(76px + env(safe-area-inset-bottom))'
+    ? `calc(40vh + 76px + ${safeBottom})`
+    : `calc(76px + ${safeBottom})`
 
   const speedRemain = Math.max(0, speedBoostUntil - now)
   const goldRemain = Math.max(0, goldBoostUntil - now)

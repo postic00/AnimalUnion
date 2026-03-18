@@ -499,6 +499,7 @@ export default function App() {
         totalEarned: 0,
         clicker: initialGameState.clicker,
         materialQuantityLevels: initialGameState.materialQuantityLevels,
+        prestigePoints: prev.prestigePoints + earned,
         prestigeCount: newPrestigeCount,
         totalPrestigePoints: newTotalPrestigePoints,
         rsBufferLevel: prev.rsBufferLevel,

@@ -5,24 +5,33 @@ import styles from './PrestigeAdModal.module.css'
 interface Props {
   earned: number
   currentPoints: number
+  availablePoints: number
+  keepPoints?: boolean
   onPrestige: () => void
   onWatchAd: () => void
   onClose: () => void
 }
 
-export default function PrestigeAdModal({ earned, currentPoints, onPrestige, onWatchAd, onClose }: Props) {
+export default function PrestigeAdModal({ earned, currentPoints, availablePoints, keepPoints = false, onPrestige, onWatchAd, onClose }: Props) {
   const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
   const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
 
-  const expected1x = Math.floor((currentPoints + earned) * weekRate)
-  const expected2x = Math.floor((currentPoints + earned * 2) * weekRate)
+  // 포인트 유지: 현재 가용 포인트 기준, 새 시즌이면 weekRate 패널티
+  // 포인트 리셋: 총 누적 포인트 환불 기준
+  // 포인트 리셋: (총 누적 + earned) × weekRate / 포인트 유지: 보유 * weekRate + earned
+  const expected1x = keepPoints
+    ? Math.floor(availablePoints * weekRate + earned)
+    : Math.floor((currentPoints + earned) * weekRate)
+  const expected2x = keepPoints
+    ? Math.floor(availablePoints * weekRate + earned * 2)
+    : Math.floor((currentPoints + earned * 2) * weekRate)
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.header}>
           <span className={styles.icon}>⭐</span>
-          <h2 className={styles.title}>환생</h2>
+          <h2 className={styles.title}>{keepPoints ? '환생 (포인트 유지)' : '환생'}</h2>
         </div>
 
         <div className={styles.pointsTable}>
@@ -32,13 +41,14 @@ export default function PrestigeAdModal({ earned, currentPoints, onPrestige, onW
           </div>
           <div className={styles.pointsRow}>
             <span className={styles.pointsLabel}>예상</span>
-            <div className={styles.pointsRight}>
-              {isNewSeason && (
-                <span className={styles.penalty}>새로운 시즌 -{Math.round((1 - weekRate) * 100)}%</span>
-              )}
-              <span className={styles.pointsValue}>⭐ {formatGold(expected1x)}</span>
-            </div>
+            <span className={styles.pointsValue}>⭐ {formatGold(expected1x)}</span>
           </div>
+          {isNewSeason && (
+            <div className={styles.newSeasonInfo}>
+              <span className={styles.newSeasonBadge}>🌟 새 시즌</span>
+              <span className={styles.newSeasonDesc}>환생 포인트가 {Math.round((1 - weekRate) * 100)}% 감소합니다</span>
+            </div>
+          )}
         </div>
 
         <button className={styles.adBtn} onClick={onWatchAd}>

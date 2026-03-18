@@ -165,8 +165,9 @@ export default function App() {
   const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
   const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
   const [now, setNow] = useState(Date.now())
-  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | null>(null)
+  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | null>(null)
   const [showPrestigeModal, setShowPrestigeModal] = useState(false)
+  const [showPrestigeKeepModal, setShowPrestigeKeepModal] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const boardRef2 = useRef(board)
@@ -396,12 +397,14 @@ export default function App() {
   const handleHardReset = useCallback(() => {
     deleteSave()
     localStorage.removeItem('tutorialDone')
+    localStorage.removeItem('animal-union-week-config')
     setBoard(initialBoard)
     setGameState(initialGameState)
     setResetKey(k => k + 1)
     setSavedAt(null)
     setActiveTab(null)
     setShowTutorial(true)
+    setShowSplash(true)
   }, [])
 
   const boardRef = useRef(board)
@@ -435,13 +438,15 @@ export default function App() {
     const weekConfig = loadWeekConfig()
     if (weekConfig) applyWeekConfig(weekConfig)
 
+    const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
+
     if (!mutedRef.current) soundCat()
     saveItems([])
     saveFaStates({})
     setResetKey(k => k + 1)
     setBoard(initialBoard)
 
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
+    const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
 
     setGameState(prev => {
       const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
@@ -450,7 +455,7 @@ export default function App() {
       if (prev.playerName) {
         submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
       }
-      return {
+      const resetBase = {
         ...prev,
         gold: 0,
         goldPerSec: 0,
@@ -466,10 +471,14 @@ export default function App() {
         faBufferLevel: initialGameState.faBufferLevel,
         railSpeedLevel: initialGameState.railSpeedLevel,
         prestigeCount: newPrestigeCount,
-        // 업그레이드 전부 초기화 → 쓴 포인트 전부 환불 → 미사용 = 누적 합계
-        prestigePoints: newTotalPrestigePoints,
         totalPrestigePoints: newTotalPrestigePoints,
       }
+      if (isNewSeason) {
+        // 새 시즌: 전부 리셋, 총 누적 포인트에 weekRate 패널티 적용
+        return { ...resetBase, prestigePoints: Math.floor(newTotalPrestigePoints * weekRate) }
+      }
+      // 같은 시즌: 전부 리셋 + 쓴 포인트 환불
+      return { ...resetBase, prestigePoints: newTotalPrestigePoints }
     })
 
     // 환생 후 CURRENT_WEEK = WEEK 저장 (이번 시즌 참여 표시)
@@ -486,6 +495,55 @@ export default function App() {
   }, [])
 
 
+  const doPrestigeKeepPoints = useCallback(async (multiplier: number = 1) => {
+    const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
+    await fetchAndSaveWeekConfig()
+    const weekConfig = loadWeekConfig()
+    if (weekConfig) applyWeekConfig(weekConfig)
+
+    if (!mutedRef.current) soundCat()
+    saveItems([])
+    saveFaStates({})
+    setResetKey(k => k + 1)
+    setBoard(initialBoard)
+
+    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
+
+    setGameState(prev => {
+      const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
+      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
+      const newPrestigeCount = prev.prestigeCount + 1
+      if (prev.playerName) {
+        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+      }
+      const keptPoints = Math.floor(prev.prestigePoints * weekRate) + earned
+      return {
+        ...prev,
+        gold: 0,
+        goldPerSec: 0,
+        bundleCount: 0,
+        producers: initialGameState.producers,
+        factories: initialGameState.factories,
+        totalEarned: 0,
+        clicker: initialGameState.clicker,
+        materialQuantityLevels: initialGameState.materialQuantityLevels,
+        prestigePoints: keptPoints,
+        prestigeCount: newPrestigeCount,
+        totalPrestigePoints: newTotalPrestigePoints,
+        rsBufferLevel: prev.rsBufferLevel,
+        faBufferLevel: prev.faBufferLevel,
+      }
+    })
+
+    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
+    saveWeekConfig(updatedConfig)
+    applyWeekConfig(updatedConfig)
+  }, [])
+
+  const handlePrestigeKeepPoints = useCallback(() => {
+    setShowPrestigeKeepModal(true)
+  }, [])
+
   const handleAdComplete = useCallback(() => {
     const target = adTarget
     setAdTarget(null)
@@ -496,51 +554,11 @@ export default function App() {
     } else if (target === 'prestige') {
       setShowPrestigeModal(false)
       doPrestige(2)
+    } else if (target === 'prestigeKeep') {
+      setShowPrestigeKeepModal(false)
+      doPrestigeKeepPoints(2)
     }
-  }, [adTarget, doPrestige])
-
-  const handlePrestigeKeepPoints = useCallback(async () => {
-    await fetchAndSaveWeekConfig()
-    const weekConfig = loadWeekConfig()
-    if (weekConfig) applyWeekConfig(weekConfig)
-
-    saveItems([])
-    saveFaStates({})
-    setResetKey(k => k + 1)
-    setBoard(initialBoard)
-
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
-
-    setGameState(prev => {
-      const earned = getPrestigePoints(prev.totalEarned)
-      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
-      const newPrestigeCount = prev.prestigeCount + 1
-      if (prev.playerName) {
-        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
-      }
-      return {
-        ...prev,
-        gold: initialGameState.gold,
-        goldPerSec: 0,
-        bundleCount: 0,
-        producers: initialGameState.producers,
-        factories: initialGameState.factories,
-        totalEarned: 0,
-        clicker: initialGameState.clicker,
-        materialQuantityLevels: initialGameState.materialQuantityLevels,
-        prestigePoints: prev.prestigePoints + earned,
-        prestigeCount: newPrestigeCount,
-        totalPrestigePoints: newTotalPrestigePoints,
-        rsBufferLevel: prev.rsBufferLevel,
-        faBufferLevel: prev.faBufferLevel,
-      }
-    })
-
-    // 환생 후 CURRENT_WEEK = WEEK 저장
-    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
-    saveWeekConfig(updatedConfig)
-    applyWeekConfig(updatedConfig)
-  }, [])
+  }, [adTarget, doPrestige, doPrestigeKeepPoints])
 
   const handleUnlockAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => {
@@ -1061,9 +1079,23 @@ export default function App() {
         <PrestigeAdModal
           earned={getPrestigePoints(gameState.totalEarned)}
           currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
+          availablePoints={gameState.prestigePoints}
           onPrestige={() => { setShowPrestigeModal(false); doPrestige(1) }}
           onWatchAd={() => { setAdTarget('prestige') }}
           onClose={() => setShowPrestigeModal(false)}
+        />
+      )}
+
+      {/* 포인트 유지 환생 모달 */}
+      {showPrestigeKeepModal && (
+        <PrestigeAdModal
+          earned={getPrestigePoints(gameState.totalEarned)}
+          currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
+          availablePoints={gameState.prestigePoints}
+          keepPoints
+          onPrestige={() => { setShowPrestigeKeepModal(false); doPrestigeKeepPoints(1) }}
+          onWatchAd={() => { setAdTarget('prestigeKeep') }}
+          onClose={() => setShowPrestigeKeepModal(false)}
         />
       )}
 

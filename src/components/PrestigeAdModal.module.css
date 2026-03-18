@@ -81,6 +81,27 @@
   padding: 2px 6px;
 }
 
+.newSeasonInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+  margin-top: 2px;
+}
+
+.newSeasonBadge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #7c3aed;
+}
+
+.newSeasonDesc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
 .adBtn {
   width: 100%;
   display: flex;
@@ -130,11 +151,16 @@
 }
 
 .cancelBtn {
+  width: 100%;
+  min-height: 44px;
   background: none;
   border: none;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #9ca3af;
   cursor: pointer;
-  padding: 4px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

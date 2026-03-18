@@ -24,6 +24,6 @@ public class MainActivity extends BridgeActivity {
     }
 
     private void applyFitsSystemWindows() {
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     }
 }

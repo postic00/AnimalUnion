@@ -878,6 +878,7 @@ export default function App() {
       {!showSplash && <BottomSheet
         open={activeTab !== null}
         onClose={() => setActiveTab(null)}
+        scrollKey={activeTab}
         header={
           activeTab === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1022,6 +1023,7 @@ export default function App() {
         {activeTab === 1 && (
           <MaterialTab
             gameState={gameState}
+            gold={gold}
             onUpgradeQuantity={(i) => handleUpgradeMaterialQuantity(i, upgradeAmount)}
           />
         )}

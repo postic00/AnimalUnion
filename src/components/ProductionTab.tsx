@@ -37,11 +37,11 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
             <span className={styles.gradeEmoji}>👆</span>
             <div className={styles.cardInfo}>
               <div className={styles.cardNameRow}>
-                <span className={styles.cardName} style={{ color: '#1e40af' }}>클릭커</span>
+                <span className={styles.cardName} style={{ color: '#1e40af' }}>클릭 생산기</span>
                 <span className={styles.levelBadge} style={{ background: '#3b82f6' }}>Lv.{clicker.level}</span>
               </div>
               <span className={styles.cardSub} style={{ color: '#2563eb' }}>
-                클릭당 ×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(1)}
+                클릭당 ×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(3)}
               </span>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                     <span className={styles.levelBadge} style={{ background: grade.sub }}>Lv.{producer.level}</span>
                   </div>
                   <span className={styles.cardSub} style={{ color: grade.sub }}>
-                    {isActive ? `${formatQuantity(perSec)}/s` : '비활성'}
+                    {isActive ? `${perSec < 1 ? perSec.toFixed(3) : formatQuantity(perSec)}/s` : '비활성'}
                   </span>
                 </div>
               </div>

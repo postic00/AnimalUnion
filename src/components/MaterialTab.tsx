@@ -30,11 +30,12 @@ const MATERIALS: Record<number, { name: string; emoji: string; color: string; bg
 
 interface Props {
   gameState: GameState
+  gold: number
   onUpgradeQuantity: (gradeIndex: number) => void
 }
 
-export default function MaterialTab({ gameState, onUpgradeQuantity }: Props) {
-  const { gold, materialQuantityLevels } = gameState
+export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Props) {
+  const { materialQuantityLevels } = gameState
 
   return (
     <div className={styles.container}>

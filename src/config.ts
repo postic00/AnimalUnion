@@ -25,8 +25,13 @@ export const CONFIG = {
 
   // 아이템 등급별 기본 가격
   GRADE_BASE_VALUES: [
-    1, 1, 1, 10, 20, 35, 55, 80, 100, 150,
-    200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000,
+    1, 1, 1,
+    10, 10, 10,
+    100, 130, 200,
+    1200, 3100, 5000,
+    20000, 75000, 150000,
+    390000, 2000000, 5100000,
+    57000000, 200000000,
   ] as number[],
 
   // FA 등급별 보너스 배열
@@ -43,7 +48,7 @@ export const CONFIG = {
   FA_COST_BASE: 50,   FA_COST_RATE: 1.3, FA_COST_EXP: 3,   FA_COST_ACC: 0.03,
 
   // IT (아이템 가치)
-  IT_PROC_BASE: 1,    IT_PROC_RATE: 1,   IT_PROC_EXP: 3,   IT_PROC_ACC: 1,
+  IT_PROC_BASE: 1,    IT_PROC_RATE: 1,   IT_PROC_EXP: 1,   IT_PROC_ACC: 1,
   IT_COST_BASE: 20,   IT_COST_RATE: 1.3, IT_COST_EXP: 3,   IT_COST_ACC: 0.03,
 
   // IC (아이템 수량)

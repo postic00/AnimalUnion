@@ -17,7 +17,7 @@ export default memo(function ItemLayer({ items, cellSize }: Props) {
   return (
     <div className={styles.layer}>
       {items.map(item => {
-        const isPacked = item.pkGrades.length > 0
+        const isPacked = (item.pkGrades?.length ?? 0) > 0
         const bonuses = [
           item.waBonus > 0 ? { val: item.waBonus, cls: styles.bonusWA } : null,
           item.paBonus > 0 ? { val: item.paBonus, cls: styles.bonusPA } : null,

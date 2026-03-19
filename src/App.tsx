@@ -1147,7 +1147,6 @@ export default function App() {
             onCloudSave={handleCloudSave}
             onCloudLoad={handleCloudLoad}
             onHardReset={() => setShowResetConfirm(true)}
-            onShowTutorial={() => { setActiveTab(null); setTutorialStep(0); setTutorialItemCount(0) }}
           />
         )}
       </BottomSheet>}

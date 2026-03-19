@@ -8,7 +8,6 @@ interface Props {
   onCloudSave: () => Promise<boolean>
   onCloudLoad: () => Promise<boolean>
   onHardReset: () => void
-  onShowTutorial: () => void
 }
 
 function formatDate(ts: number): string {
@@ -17,7 +16,7 @@ function formatDate(ts: number): string {
   return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onHardReset, onShowTutorial }: Props) {
+export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onHardReset }: Props) {
   const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [loading, setLoading] = useState<'save' | 'load' | null>(null)
 
@@ -65,23 +64,6 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
         </div>
       </div>
 
-      {/* 튜토리얼 */}
-      <div className={styles.card} style={{ background: '#fefce8', borderColor: '#fde68a' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>📖</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#78350f' }}>튜토리얼</span>
-            <span className={styles.cardSub} style={{ color: '#d97706' }}>게임 방법을 다시 볼게요</span>
-          </div>
-        </div>
-        <button
-          className={styles.resetBtn}
-          style={{ background: '#f59e0b' }}
-          onClick={onShowTutorial}
-        >
-          보기
-        </button>
-      </div>
 
       {/* 소리 */}
       <div className={styles.card} style={{ background: '#f0fdf4', borderColor: '#86efac' }}>

@@ -64,6 +64,25 @@
   line-height: 1;
 }
 
+@keyframes closePulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.6); }
+  50%       { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.9); }
+}
+.closeBtnHighlight {
+  background: #fee2e2 !important;
+  border-radius: 8px;
+  color: #ef4444 !important;
+  animation: closePulse 1s ease-in-out infinite;
+}
+
+@keyframes buildPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 16px 4px rgba(255, 255, 255, 0.5); }
+  50%       { box-shadow: 0 0 0 3px rgba(255, 255, 255, 1),   0 0 28px 8px rgba(255, 255, 255, 0.9); }
+}
+.actionBtnHighlight {
+  animation: buildPulse 1s ease-in-out infinite;
+}
+
 .stats {
   display: flex;
   align-items: center;

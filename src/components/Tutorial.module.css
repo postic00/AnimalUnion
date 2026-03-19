@@ -1,134 +1,409 @@
-.overlay {
+.tutorialOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
+  z-index: 25;
+  pointer-events: none;
 }
 
-.modal {
+.tutorialSkip {
+  position: absolute;
+  top: calc(16px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  right: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  cursor: pointer;
+  pointer-events: all;
+  z-index: 26;
+}
+
+/* 클리커 버튼 위치에 스포트라이트 */
+.clickerSpotlight {
+  position: fixed;
+  right: 8px;
+  bottom: calc(70px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* 툴팁: 클리커 버튼 왼쪽 */
+.clickerTooltip {
+  position: fixed;
+  right: 92px;
+  bottom: calc(72px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   background: #fff;
-  border-radius: 28px;
-  padding: 32px 24px 28px;
-  width: 100%;
-  max-width: 360px;
+  border-radius: 16px;
+  padding: 12px 16px;
+  width: 200px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.clickerTooltip::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: 20px;
+  border: 8px solid transparent;
+  border-left-color: #fff;
+  border-right: none;
+}
+
+.tooltipText {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.progressBar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.progressFill {
+  height: 100%;
+  background: #3182f6;
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.progressLabel {
+  font-size: 12px;
+  font-weight: 800;
+  color: #3182f6;
+  margin: 0;
+  text-align: right;
+}
+
+/* ── 공용: 배경 클릭 차단 (spotlight 밖 영역) ── */
+.eventBlocker {
+  position: absolute;
+  inset: 0;
+  pointer-events: all;
+}
+
+/* ── 공장탭 열린 상태: 보드 상단 툴팁 (BottomSheet 위에 표시) ── */
+.sheetTopTooltip {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px 20px;
+  width: 240px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: all;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-}
-
-.skipBtn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 4px 8px;
-}
-
-.emoji {
-  font-size: 56px;
-  line-height: 1;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.title {
-  font-size: 20px;
-  font-weight: 900;
-  color: #111827;
-  text-align: center;
-  letter-spacing: -0.5px;
-  line-height: 1.35;
-  margin: 0 0 14px;
-  white-space: pre-line;
-}
-
-.desc {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4b5563;
-  text-align: center;
-  line-height: 1.7;
-  margin: 0 0 10px;
-  white-space: pre-line;
-}
-
-.sub {
-  font-size: 12px;
-  font-weight: 700;
-  color: #f97316;
-  text-align: center;
-  margin: 0 0 24px;
-  background: #fff7ed;
-  padding: 6px 14px;
-  border-radius: 20px;
-}
-
-.dots {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 24px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #e5e7eb;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.2s, width 0.2s;
-}
-
-.dotActive {
-  background: #f97316;
-  width: 22px;
-  border-radius: 4px;
-}
-
-.btnRow {
-  display: flex;
   gap: 10px;
-  width: 100%;
 }
 
-.prevBtn {
-  flex: 1;
-  padding: 14px;
+/* ── 공용: 전체 dim + 중앙 툴팁 ── */
+.boardDim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.boardCenterTooltip {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px 20px;
+  width: 240px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Step 5: FactoryBuildModal 위 안내 툴팁 (z-600 오버레이용) ── */
+.buildGuideTooltip {
+  position: fixed;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
   border-radius: 16px;
-  border: 1.5px solid #e5e7eb;
-  background: #f9fafb;
+  padding: 12px 16px;
+  width: 220px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Step 2: 부스트 버튼 스포트라이트 ── */
+
+/* ⚡ 속도 버튼만 스포트라이트 */
+.speedSpotlight {
+  position: fixed;
+  left: 8px;
+  bottom: calc(70px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  width: 74px;
+  height: 74px;
+  border-radius: 37px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+.speedTooltip {
+  position: fixed;
+  left: 92px;
+  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 190px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.speedTooltip::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 8px solid transparent;
+  border-right-color: #fff;
+  border-left: none;
+}
+
+/* 💰 골드 버튼만 스포트라이트 */
+.goldSpotlight {
+  position: fixed;
+  left: 8px;
+  bottom: calc(138px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  width: 74px;
+  height: 74px;
+  border-radius: 37px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+.goldTooltip {
+  position: fixed;
+  left: 92px;
+  bottom: calc(144px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 190px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.goldTooltip::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 8px solid transparent;
+  border-right-color: #fff;
+  border-left: none;
+}
+
+.tooltipSub {
+  font-size: 12px;
   color: #374151;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: pointer;
+  margin: 0;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .nextBtn {
-  flex: 2;
-  padding: 14px;
-  border-radius: 16px;
-  border: none;
-  background: #f97316;
+  background: #3182f6;
   color: #fff;
-  font-size: 15px;
+  border: none;
+  border-radius: 12px;
+  padding: 9px 24px;
+  font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition: background 0.2s;
+  width: 100%;
 }
 
-.nextBtnFinal {
-  background: #16a34a;
+/* ── Step 3: 공장 탭 스포트라이트 ── */
+
+/* 탭바 첫 번째 탭 (공장) 영역 */
+.factoryTabSpotlight {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* 공장 탭 히트박스 (투명 클릭 영역) */
+.factoryTabHitbox {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  pointer-events: all;
+}
+
+/* 툴팁: 공장 탭 위 */
+.factoryTabTooltip {
+  position: fixed;
+  left: 8px;
+  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 190px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 아래 방향 화살표 (왼쪽 탭 중앙 가리킴) */
+.factoryTabTooltip::after {
+  content: '';
+  position: absolute;
+  left: calc(100vw / 12 - 8px);
+  bottom: -8px;
+  border: 8px solid transparent;
+  border-top-color: #fff;
+  border-bottom: none;
+}
+
+/* ── Step 15: 재료 탭 스포트라이트 (tab 1) ── */
+.materialTabSpotlight {
+  position: fixed;
+  left: calc(100vw / 6);
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* ── Step 16: 동물 탭 스포트라이트 (tab 2) ── */
+.animalTabSpotlight {
+  position: fixed;
+  left: calc(100vw * 2 / 6);
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* ── Step 12: 환생 탭 스포트라이트 ── */
+.prestigeTabSpotlight {
+  position: fixed;
+  left: calc(100vw * 3 / 6);
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* 툴팁: 환생 탭 위 */
+.prestigeTabTooltip {
+  position: fixed;
+  left: calc(100vw * 3 / 6 + 4px);
+  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 190px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 아래 방향 화살표 (환생 탭 중앙 가리킴) */
+.prestigeTabTooltip::after {
+  content: '';
+  position: absolute;
+  left: calc(100vw / 12 - 8px);
+  bottom: -8px;
+  border: 8px solid transparent;
+  border-top-color: #fff;
+  border-bottom: none;
+}
+
+/* ── Step 14: 순위 탭 스포트라이트 ── */
+.leaderboardTabSpotlight {
+  position: fixed;
+  left: calc(100vw * 4 / 6);
+  bottom: 0;
+  width: calc(100vw / 6);
+  height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+/* 툴팁: 순위 탭 위 */
+.leaderboardTabTooltip {
+  position: fixed;
+  right: calc(100vw * 2 / 6 + 4px);
+  bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 190px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 아래 방향 화살표 (순위 탭 중앙 가리킴) */
+.leaderboardTabTooltip::after {
+  content: '';
+  position: absolute;
+  right: calc(100vw / 12 - 8px);
+  bottom: -8px;
+  border: 8px solid transparent;
+  border-top-color: #fff;
+  border-bottom: none;
 }

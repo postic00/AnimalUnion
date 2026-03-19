@@ -24,6 +24,15 @@
   padding-top: 4px;
 }
 
+@keyframes tabPulse {
+  0%, 100% { background: rgba(49, 130, 246, 0.12); }
+  50%       { background: rgba(49, 130, 246, 0.28); }
+}
+.tabHighlight {
+  animation: tabPulse 1s ease-in-out infinite;
+  border-radius: 10px;
+}
+
 .tabIcon {
   font-size: 20px;
   line-height: 1;

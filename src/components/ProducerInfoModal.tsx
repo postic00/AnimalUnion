@@ -21,9 +21,11 @@ interface Props {
   onBuild: () => void
   onUpgrade: () => void
   onClose: () => void
+  tutorialHighlightBuild?: boolean
+  tutorialHighlightClose?: boolean
 }
 
-export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose }: Props) {
+export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, tutorialHighlightBuild, tutorialHighlightClose }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const buildCost = getProducerBuildCost(builtCount)
   const upgradeCost = getProducerUpgradeCost(producer.level)
@@ -49,7 +51,7 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
           {producer.built && (
             <span className={styles.levelBadge}>Lv.{producer.level}</span>
           )}
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
         </div>
 
         {/* 상태 */}
@@ -89,7 +91,7 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
           </button>
         ) : (
           <button
-            className={styles.actionBtn}
+            className={`${styles.actionBtn}${tutorialHighlightBuild ? ` ${styles.actionBtnHighlight}` : ''}`}
             style={{ background: '#22c55e' }}
             onClick={() => { onBuild(); onClose() }}
             disabled={gold < buildCost}

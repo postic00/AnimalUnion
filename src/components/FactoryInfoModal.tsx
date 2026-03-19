@@ -36,9 +36,10 @@ interface Props {
   onSetDir: (dir: Factory['dir']) => void
   onSetGrade: (grade: number) => void
   onUpgradeLevel: () => void
+  tutorialHighlightClose?: boolean
 }
 
-export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel }: Props) {
+export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
   const [live, setLive] = useState<FALiveState | undefined>(() => faLiveStatesRef.current?.[liveKey])
   const liveKeyRef = useRef(liveKey)
   liveKeyRef.current = liveKey
@@ -79,7 +80,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
           {factory.animalId && (
             <span className={styles.animalBadge}>{ANIMAL_NAMES[factory.animalId]}</span>
           )}
-          <button className={styles.closeBtn} onClick={onClose}>✕</button>
+          <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
         </div>
 
         {/* 3단 레이아웃 */}

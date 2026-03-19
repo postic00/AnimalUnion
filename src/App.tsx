@@ -109,7 +109,7 @@ export default function App() {
   const [board, setBoard] = useState<BoardType>(initData.board)
   const [resetKey, setResetKey] = useState(0)
   const [gameState, setGameState] = useState<GameState>(initData.gameState)
-  const [gold, setGold] = useState(initData.gameState.gold)
+  const [gold, setGold] = useState(() => !localStorage.getItem('tutorialDone') ? Math.max(initData.gameState.gold, 100) : initData.gameState.gold)
   const [totalEarned, setTotalEarned] = useState(initData.gameState.totalEarned)
   const [goldPerSec, setGoldPerSec] = useState(0)
   const [savedAt, setSavedAt] = useState<number | null>(initData.savedAt)
@@ -144,7 +144,20 @@ export default function App() {
   const [muted, setMuted] = useState<boolean>(loadMuted())
   const [showSplash, setShowSplash] = useState(true)
   const handleSplashDone = useCallback(() => setShowSplash(false), [])
-  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem('tutorialDone'))
+  const [tutorialStep, setTutorialStep] = useState<number | null>(() => !localStorage.getItem('tutorialDone') ? 0 : null)
+  const [tutorialItemCount, setTutorialItemCount] = useState(0)
+
+  useEffect(() => {
+    if (tutorialStep === 0 && tutorialItemCount >= 1) setTutorialStep(1)
+  }, [tutorialItemCount, tutorialStep])
+
+  useEffect(() => {
+    const s = tutorialStep
+    if (s === null) return
+    if ([3, 6, 8, 11, 13, 19, 21, 23].includes(s)) setActiveTab(null)
+    if (s === 14) { setActiveTab(0); setProdSection('production') }
+    if (s === 20) { setActiveTab(0); setProdSection('production') }
+  }, [tutorialStep])
 
   useEffect(() => { initAdMob() }, [])
 
@@ -282,6 +295,7 @@ export default function App() {
       if (clickCount >= threshold) {
         if (now < spawnUnlockTimeRef.current) return prev  // 아직 잠금 중 → 무시
         spawnClickerItemRef.current?.(clickerGradeRef.current)
+        setTutorialItemCount(c => c + 1)
 
         return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD } }
       }
@@ -330,7 +344,11 @@ export default function App() {
       producers[index] = { ...producers[index], built: true, level: 1 }
       return { ...prev, producers }
     })
-  }, [])
+    if (tutorialStep === 9) {
+      setTutorialStep(10)
+      setSelectedProducer(null)
+    }
+  }, [tutorialStep])
 
   const handleUpgradeProducer = useCallback((index: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -379,7 +397,11 @@ export default function App() {
       }
       return { ...prev, factories: [...prev.factories, newFactory] }
     })
-  }, [])
+    if (tutorialStep === 4) {
+      setTutorialStep(5)
+      setSelectedFactory(null)
+    }
+  }, [tutorialStep])
 
   const handleSetFactoryType = useCallback((row: number, col: number, type: Factory['type']) => {
     const paMinGrade = Math.min(...Object.keys(RECIPES).map(Number))
@@ -440,13 +462,14 @@ export default function App() {
     localStorage.removeItem('animal-union-week-config')
     setBoard(initialBoard)
     setGameState({ ...initialGameState, playerName: `Player${Date.now().toString(36).toUpperCase()}` })
-    setGold(0)
+    setGold(100)
     setTotalEarned(0)
     setGoldPerSec(0)
     setResetKey(k => k + 1)
     setSavedAt(null)
     setActiveTab(null)
-    setShowTutorial(true)
+    setTutorialStep(0)
+    setTutorialItemCount(0)
     setShowSplash(true)
   }, [])
 
@@ -676,7 +699,9 @@ export default function App() {
 
   const handleFactoryClick = useCallback((row: number, col: number) => {
     setSelectedFactory({ row, col })
-  }, [])
+    if (tutorialStep === 3) setTutorialStep(4)
+    if (tutorialStep === 6) setTutorialStep(7)
+  }, [tutorialStep])
 
   const handleFaLiveStateChange = useCallback((states: import('./hooks/useGameLoop').FALiveStates) => {
     faLiveStatesRef.current = states
@@ -684,7 +709,9 @@ export default function App() {
 
   const handleProducerClick = useCallback((row: number, col: number) => {
     setSelectedProducer({ row, col })
-  }, [])
+    if (tutorialStep === 8) setTutorialStep(9)
+    if (tutorialStep === 11) setTutorialStep(12)
+  }, [tutorialStep])
 
   const handleRecallAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => ({
@@ -828,12 +855,28 @@ export default function App() {
         ))}
       </div>
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
-      {!showSplash && showTutorial && <Tutorial onClose={() => {
-        localStorage.setItem('tutorialDone', '1')
-        setShowTutorial(false)
-      }} />}
+      {!showSplash && tutorialStep !== null && <Tutorial
+        step={tutorialStep}
+        itemCount={tutorialItemCount}
+        onNext={() => {
+          if (tutorialStep === 24) {
+            localStorage.setItem('tutorialDone', '1')
+            setTutorialStep(null)
+          } else {
+            setTutorialStep(s => s !== null ? s + 1 : null)
+          }
+        }}
+        onFactoryTabClick={() => { setActiveTab(0); setProdSection('production'); setTutorialStep(14) }}
+        onSkip={() => {
+          localStorage.setItem('tutorialDone', '1')
+          setTutorialStep(null)
+        }}
+      />}
       {!showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints} totalPrestigePoints={gameState.totalPrestigePoints} />}
-      {!showSplash && <Board
+      {!showSplash && (tutorialStep === 3 || tutorialStep === 6 || tutorialStep === 8 || tutorialStep === 11) && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
+      )}
+      {!showSplash && <div style={(tutorialStep === 3 || tutorialStep === 6 || tutorialStep === 8 || tutorialStep === 11) ? { position: 'relative', zIndex: 24 } : undefined}><Board
         key={resetKey}
         board={board}
         onAddBundle={handleAddBundle}
@@ -858,7 +901,11 @@ export default function App() {
         onFactoryClick={handleFactoryClick}
         onProducerClick={handleProducerClick}
         onFaLiveStateChange={handleFaLiveStateChange}
-      />}
+        tutorialHighlight={
+          (tutorialStep === 3 || tutorialStep === 6) ? 'fa' :
+          (tutorialStep === 8 || tutorialStep === 11) ? 'rs' : undefined
+        }
+      /></div>}
       {!showSplash && <TabBar
         clicker={gameState.clicker}
         clickerGrade={clickerGrade}
@@ -867,17 +914,44 @@ export default function App() {
           setActiveTab(tab)
           saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostUntil, goldBoostUntil })
           setSavedAt(Date.now())
+          if (tutorialStep === 15 && tab === 1) setTutorialStep(16)
+          if (tutorialStep === 16 && tab === 2) setTutorialStep(17)
+          if (tutorialStep === 17 && tab === 3) setTutorialStep(18)
+          if (tutorialStep === 18 && tab === 4) setTutorialStep(19)
+          if (tutorialStep === 21 && tab === 3) setTutorialStep(22)
+          if (tutorialStep === 23 && tab === 4) setTutorialStep(24)
         }}
         activeTab={activeTab}
+        tutorialHighlightTab={
+          tutorialStep === 13 ? 0 :
+          tutorialStep === 15 ? 1 :
+          tutorialStep === 16 ? 2 :
+          (tutorialStep === 17 || tutorialStep === 21) ? 3 :
+          (tutorialStep === 18 || tutorialStep === 23) ? 4 : undefined
+        }
         speedBoostUntil={speedBoostUntil}
         goldBoostUntil={goldBoostUntil}
         now={now}
-        onSpeedBoost={() => { setAdTarget('speed'); }}
-        onGoldBoost={() => { setAdTarget('gold'); }}
+        onSpeedBoost={() => {
+          if (tutorialStep === 1) {
+            setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+            setTutorialStep(2)
+          } else {
+            setAdTarget('speed')
+          }
+        }}
+        onGoldBoost={() => {
+          if (tutorialStep === 2) {
+            setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+            setTutorialStep(3)
+          } else {
+            setAdTarget('gold')
+          }
+        }}
       />}
       {!showSplash && <BottomSheet
         open={activeTab !== null}
-        onClose={() => setActiveTab(null)}
+        onClose={() => { setActiveTab(null); if (tutorialStep === 18) setTutorialStep(19) }}
         scrollKey={activeTab}
         header={
           activeTab === 0 ? (
@@ -888,7 +962,8 @@ export default function App() {
                   {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
                     <button
                       key={sec}
-                      onClick={() => setProdSection(sec)}
+                      onClick={() => { setProdSection(sec); if (tutorialStep === 14 && sec === 'factory') setTutorialStep(15) }}
+                      className={tutorialStep === 14 && sec === 'factory' ? 'tutorial-highlight-btn' : undefined}
                       style={{
                         padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
                         borderColor: prodSection === sec ? '#16a34a' : '#e5e7eb',
@@ -1072,7 +1147,7 @@ export default function App() {
             onCloudSave={handleCloudSave}
             onCloudLoad={handleCloudLoad}
             onHardReset={() => setShowResetConfirm(true)}
-            onShowTutorial={() => { setActiveTab(null); setShowTutorial(true) }}
+            onShowTutorial={() => { setActiveTab(null); setTutorialStep(0); setTutorialItemCount(0) }}
           />
         )}
       </BottomSheet>}
@@ -1094,6 +1169,7 @@ export default function App() {
               gold={gold}
               onBuild={() => handleBuildFactory(selectedFactory.row, selectedFactory.col)}
               onClose={() => setSelectedFactory(null)}
+              tutorialHighlight={tutorialStep === 4}
             />
           )
         }
@@ -1107,7 +1183,8 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             maxGrade={20}
-            onClose={() => setSelectedFactory(null)}
+            onClose={() => { setSelectedFactory(null); if (tutorialStep === 7) setTutorialStep(8) }}
+            tutorialHighlightClose={tutorialStep === 7}
             onSetType={type => handleSetFactoryType(row, col, type)}
             onSetDir={dir => handleSetFactoryDir(row, col, dir)}
             onSetGrade={grade => handleSetFactoryGrade(row, col, grade)}
@@ -1131,7 +1208,9 @@ export default function App() {
             builtCount={builtCount}
             onBuild={() => handleBuildProducer(producerIndex)}
             onUpgrade={() => handleUpgradeProducer(producerIndex, upgradeAmount)}
-            onClose={() => setSelectedProducer(null)}
+            onClose={() => { setSelectedProducer(null); if (tutorialStep === 12) setTutorialStep(13) }}
+            tutorialHighlightBuild={tutorialStep === 9}
+            tutorialHighlightClose={tutorialStep === 12}
           />
         )
       })()}

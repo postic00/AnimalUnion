@@ -15,6 +15,7 @@ interface Props {
   now: number
   onSpeedBoost: () => void
   onGoldBoost: () => void
+  tutorialHighlightTab?: number
 }
 
 function formatRemain(ms: number): string {
@@ -33,7 +34,7 @@ const TABS = [
   { label: '설정', icon: '🔧' },
 ]
 
-export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostUntil, goldBoostUntil, now, onSpeedBoost, onGoldBoost }: Props) {
+export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostUntil, goldBoostUntil, now, onSpeedBoost, onGoldBoost, tutorialHighlightTab }: Props) {
   const radius = 24
   const circumference = 2 * Math.PI * radius
   const progress = clicker.clickCount / clicker.threshold
@@ -62,7 +63,7 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
       {TABS.map(({ label, icon }, i) => (
         <div
           key={i}
-          className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''}`}
+          className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''} ${tutorialHighlightTab === i ? styles.tabHighlight : ''}`}
           onClick={() => handleTab(i)}
         >
           <span className={styles.tabIcon}>{icon}</span>

@@ -7,9 +7,10 @@ interface Props {
   gold: number
   onBuild: () => void
   onClose: () => void
+  tutorialHighlight?: boolean
 }
 
-export default function FactoryBuildModal({ gold, onBuild, onClose }: Props) {
+export default function FactoryBuildModal({ gold, onBuild, onClose, tutorialHighlight }: Props) {
   const cost = getFactoryBuildCost()
   const canAfford = gold >= cost
 
@@ -22,7 +23,7 @@ export default function FactoryBuildModal({ gold, onBuild, onClose }: Props) {
         </div>
         <p className={styles.desc}>이 칸에 공장을 건설합니다.</p>
         <button
-          className={styles.buildBtn}
+          className={`${styles.buildBtn}${tutorialHighlight ? ` ${styles.buildBtnHighlight}` : ''}`}
           onClick={() => { onBuild(); onClose() }}
           disabled={!canAfford}
         >

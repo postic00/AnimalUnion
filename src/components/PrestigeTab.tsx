@@ -5,19 +5,7 @@ import { CONFIG } from '../config'
 import coinIcon from '../assets/coin.svg'
 import styles from './PrestigeTab.module.css'
 
-const PRODUCT_NAMES: Record<number, string> = {
-  1: '고추', 2: '설탕', 3: '딸기', 4: '고추장', 5: '설탕시럽',
-  6: '딸기잼', 7: '고추사탕', 8: '딸기에이드', 9: '딸기고추소스', 10: '딸기고추잼',
-  11: '고추설탕크래커', 12: '프리미엄소스', 13: '매운케이크', 14: '딸기크림파이', 15: '딸기젤리',
-  16: '딸기크림', 17: '고추딸기파이', 18: '딸기설탕케이크', 19: '딸기고추마카롱', 20: '마라탕후루',
-}
-
-const PRODUCT_EMOJIS: Record<number, string> = {
-  1: '🌶️', 2: '🍬', 3: '🍓', 4: '🫙', 5: '🍯',
-  6: '🍓', 7: '🍭', 8: '🥤', 9: '🍲', 10: '🍜',
-  11: '🍪', 12: '🥫', 13: '🎂', 14: '🥧', 15: '🍡',
-  16: '🍦', 17: '🥧', 18: '🎂', 19: '🍬', 20: '🏆',
-}
+import { getGradeData } from '../data/grades'
 
 interface Props {
   gameState: GameState
@@ -68,10 +56,10 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
             return (
               <div key={grade} className={styles.card}>
                 <div className={styles.cardLeft}>
-                  <span className={styles.cardEmoji}>{PRODUCT_EMOJIS[grade] ?? '📦'}</span>
+                  <span className={styles.cardEmoji}>{getGradeData(grade).emoji}</span>
                   <div className={styles.cardInfo}>
                     <div className={styles.cardNameRow}>
-                      <span className={styles.cardName}>{PRODUCT_NAMES[grade] ?? `${grade}등급`}</span>
+                      <span className={styles.cardName}>{getGradeData(grade).name}</span>
                       <span className={styles.levelBadge}>Lv.{level}</span>
                     </div>
                     <span className={styles.cardSub}>

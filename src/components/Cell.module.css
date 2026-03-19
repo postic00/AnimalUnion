@@ -10,6 +10,16 @@
   position: relative;
 }
 
+/* 튜토리얼 하이라이트 */
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0.9), 0 0 12px 4px rgba(255,255,255,0.6); }
+  50%       { box-shadow: inset 0 0 0 3px rgba(255,255,255,1),   0 0 24px 8px rgba(255,255,255,0.9); }
+}
+.tutorialHighlight {
+  animation: tutorialPulse 1s ease-in-out infinite;
+  z-index: 1;
+}
+
 /* 빈 셀 */
 .EM {
   background-color: rgba(255, 236, 210, 0.35);

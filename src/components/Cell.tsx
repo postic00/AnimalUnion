@@ -79,6 +79,7 @@ interface Props {
   progress?: number
   bufferInfo?: { count: number; capacity: number }
   placing?: boolean
+  tutorialHighlight?: boolean
   onClick?: () => void
 }
 
@@ -181,7 +182,7 @@ const BUFFER_BASE: CSSProperties = {
 const BUFFER_NORMAL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(0,0,0,0.5)' }
 const BUFFER_FULL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(220,38,38,0.85)' }
 
-export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, onClick }: Props) {
+export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, tutorialHighlight, onClick }: Props) {
   const dynamicStyle = getDynamicStyle(cell, factory, producer)
   const label = getLevelLabel(cell, factory, producer)
   const isActiveFA = cell.type === 'FA' && factory?.built && factory.level > 0
@@ -201,7 +202,7 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
 
   return (
     <div
-      className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''}`}
+      className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''} ${tutorialHighlight ? styles.tutorialHighlight : ''}`}
       style={cellStyle}
       onClick={onClick}
     >

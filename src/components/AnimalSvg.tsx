@@ -2,111 +2,154 @@ import type { JSX } from 'react'
 
 export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
 
+const SW = 3.5
+const SC = '#1a1a1a'
+
 function Hamster({ s }: { s: number }) {
   return (
-    <svg width={s} height={s} viewBox="0 0 32 32">
+    <svg width={s} height={s} viewBox="0 0 100 100" strokeLinecap="round" strokeLinejoin="round">
       {/* 귀 */}
-      <ellipse cx="8"  cy="10" rx="5.5" ry="5" fill="#f9a8d4"/>
-      <ellipse cx="24" cy="10" rx="5.5" ry="5" fill="#f9a8d4"/>
-      <ellipse cx="8"  cy="10" rx="3.5" ry="3" fill="#fce7f3"/>
-      <ellipse cx="24" cy="10" rx="3.5" ry="3" fill="#fce7f3"/>
-      {/* 얼굴 */}
-      <ellipse cx="16" cy="18" rx="13" ry="12" fill="#fcd5b0"/>
-      {/* 볼 */}
-      <ellipse cx="7"  cy="21" rx="5" ry="4" fill="#fda4af" opacity="0.6"/>
-      <ellipse cx="25" cy="21" rx="5" ry="4" fill="#fda4af" opacity="0.6"/>
+      <circle cx="23" cy="22" r="12" fill="#fde9b8" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="23" cy="24" rx="6.5" ry="7.5" fill="#ffb8c0"/>
+      <circle cx="77" cy="22" r="12" fill="#fde9b8" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="77" cy="24" rx="6.5" ry="7.5" fill="#ffb8c0"/>
+      {/* 몸통 */}
+      <circle cx="50" cy="55" r="41" fill="#fde9b8" stroke={SC} strokeWidth={SW}/>
       {/* 눈 */}
-      <circle cx="11" cy="15" r="2.5" fill="#1c1917"/>
-      <circle cx="21" cy="15" r="2.5" fill="#1c1917"/>
-      <circle cx="12" cy="14" r="1"   fill="#fff"/>
-      <circle cx="22" cy="14" r="1"   fill="#fff"/>
+      <circle cx="35" cy="44" r="9" fill={SC}/>
+      <circle cx="65" cy="44" r="9" fill={SC}/>
+      <circle cx="31" cy="40" r="3" fill="#fff"/>
+      <circle cx="61" cy="40" r="3" fill="#fff"/>
       {/* 코 */}
-      <ellipse cx="16" cy="20" rx="2.5" ry="1.8" fill="#f43f5e"/>
+      <ellipse cx="50" cy="56" rx="4.5" ry="3.5" fill={SC}/>
       {/* 입 */}
-      <path d="M13 22 Q16 25 19 22" fill="none" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M50 59 Q44 64 39 62" fill="none" stroke={SC} strokeWidth="3"/>
+      <path d="M50 59 Q56 64 61 62" fill="none" stroke={SC} strokeWidth="3"/>
+      {/* 왼팔 */}
+      <path d="M19 68 Q26 76 35 73" fill="none" stroke={SC} strokeWidth={SW}/>
+      <path d="M33 75 Q34 83 28 87" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M36 74 Q38 82 33 87" fill="none" stroke={SC} strokeWidth="2.5"/>
+      {/* 오른팔 */}
+      <path d="M81 68 Q74 76 65 73" fill="none" stroke={SC} strokeWidth={SW}/>
+      <path d="M67 75 Q66 83 72 87" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M64 74 Q62 82 67 87" fill="none" stroke={SC} strokeWidth="2.5"/>
+      {/* 발 */}
+      <ellipse cx="33" cy="93" rx="13" ry="6.5" fill="#fde9b8" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="67" cy="93" rx="13" ry="6.5" fill="#fde9b8" stroke={SC} strokeWidth={SW}/>
     </svg>
   )
 }
 
 function Cat({ s }: { s: number }) {
   return (
-    <svg width={s} height={s} viewBox="0 0 32 32">
-      {/* 귀 (삼각형) */}
-      <polygon points="6,14 3,3 13,9"  fill="#d4a96a"/>
-      <polygon points="26,14 29,3 19,9" fill="#d4a96a"/>
-      <polygon points="7,13 5,5 12,9"  fill="#fde68a"/>
-      <polygon points="25,13 27,5 20,9" fill="#fde68a"/>
-      {/* 얼굴 */}
-      <ellipse cx="16" cy="19" rx="13" ry="12" fill="#d4a96a"/>
-      {/* 눈 (슬쩍 찡그린) */}
-      <ellipse cx="11" cy="16" rx="3" ry="2.5" fill="#1c1917"/>
-      <ellipse cx="21" cy="16" rx="3" ry="2.5" fill="#1c1917"/>
-      <circle cx="12.2" cy="15" r="1.1" fill="#fff"/>
-      <circle cx="22.2" cy="15" r="1.1" fill="#fff"/>
-      {/* 동공 (고양이 세로) */}
-      <ellipse cx="11" cy="16" rx="1" ry="2" fill="#7c3aed" opacity="0.6"/>
-      <ellipse cx="21" cy="16" rx="1" ry="2" fill="#7c3aed" opacity="0.6"/>
-      {/* 코 */}
-      <path d="M14 20 L16 22 L18 20 Q16 18 14 20Z" fill="#f43f5e"/>
+    <svg width={s} height={s} viewBox="0 0 100 100" strokeLinecap="round" strokeLinejoin="round">
+      {/* 귀 */}
+      <path d="M20 40 L13 16 L36 28 Z" fill="#f0f0f0" stroke={SC} strokeWidth={SW}/>
+      <path d="M80 40 L87 16 L64 28 Z" fill="#f0f0f0" stroke={SC} strokeWidth={SW}/>
+      <path d="M22 38 L16 20 L34 29 Z" fill="#ffb8c0"/>
+      <path d="M78 38 L84 20 L66 29 Z" fill="#ffb8c0"/>
+      {/* 몸통 */}
+      <circle cx="50" cy="57" r="41" fill="#f8f8f8" stroke={SC} strokeWidth={SW}/>
+      {/* 볼 */}
+      <ellipse cx="28" cy="62" rx="9" ry="6" fill="#ffb8c0" opacity="0.7"/>
+      <ellipse cx="72" cy="62" rx="9" ry="6" fill="#ffb8c0" opacity="0.7"/>
       {/* 수염 */}
-      <line x1="3"  y1="20" x2="12" y2="21" stroke="#92400e" strokeWidth="1" strokeLinecap="round"/>
-      <line x1="3"  y1="22" x2="12" y2="22" stroke="#92400e" strokeWidth="1" strokeLinecap="round"/>
-      <line x1="29" y1="20" x2="20" y2="21" stroke="#92400e" strokeWidth="1" strokeLinecap="round"/>
-      <line x1="29" y1="22" x2="20" y2="22" stroke="#92400e" strokeWidth="1" strokeLinecap="round"/>
+      <line x1="4"  y1="54" x2="27" y2="58" stroke={SC} strokeWidth="2.8"/>
+      <line x1="4"  y1="61" x2="27" y2="61" stroke={SC} strokeWidth="2.8"/>
+      <line x1="4"  y1="68" x2="27" y2="65" stroke={SC} strokeWidth="2.8"/>
+      <line x1="96" y1="54" x2="73" y2="58" stroke={SC} strokeWidth="2.8"/>
+      <line x1="96" y1="61" x2="73" y2="61" stroke={SC} strokeWidth="2.8"/>
+      <line x1="96" y1="68" x2="73" y2="65" stroke={SC} strokeWidth="2.8"/>
+      {/* 눈 */}
+      <circle cx="35" cy="48" r="9" fill={SC}/>
+      <circle cx="65" cy="48" r="9" fill={SC}/>
+      <circle cx="31" cy="44" r="3" fill="#fff"/>
+      <circle cx="61" cy="44" r="3" fill="#fff"/>
+      {/* 코 */}
+      <path d="M46 59 L50 56 L54 59 Q50 62 46 59Z" fill={SC}/>
       {/* 입 */}
-      <path d="M13.5 22.5 Q16 25 18.5 22.5" fill="none" stroke="#92400e" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M50 62 Q44 67 40 65" fill="none" stroke={SC} strokeWidth="3"/>
+      <path d="M50 62 Q56 67 60 65" fill="none" stroke={SC} strokeWidth="3"/>
+      {/* 왼팔 */}
+      <path d="M17 72 Q25 80 34 77" fill="none" stroke={SC} strokeWidth={SW}/>
+      <path d="M32 79 Q33 87 27 91" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M35 78 Q37 86 32 91" fill="none" stroke={SC} strokeWidth="2.5"/>
+      {/* 오른팔 */}
+      <path d="M83 72 Q75 80 66 77" fill="none" stroke={SC} strokeWidth={SW}/>
+      <path d="M68 79 Q67 87 73 91" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M65 78 Q63 86 68 91" fill="none" stroke={SC} strokeWidth="2.5"/>
+      {/* 발 */}
+      <ellipse cx="33" cy="94" rx="13" ry="6" fill="#f8f8f8" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="67" cy="94" rx="13" ry="6" fill="#f8f8f8" stroke={SC} strokeWidth={SW}/>
     </svg>
   )
 }
 
 function Dog({ s }: { s: number }) {
   return (
-    <svg width={s} height={s} viewBox="0 0 32 32">
-      {/* 귀 (처진 귀) */}
-      <ellipse cx="6"  cy="16" rx="5" ry="8"  fill="#c8a882"/>
-      <ellipse cx="26" cy="16" rx="5" ry="8"  fill="#c8a882"/>
-      {/* 얼굴 */}
-      <ellipse cx="16" cy="17" rx="13" ry="13" fill="#e8c99a"/>
-      {/* 주둥이 */}
-      <ellipse cx="16" cy="22" rx="7" ry="5" fill="#d4a96a"/>
+    <svg width={s} height={s} viewBox="0 0 100 100" strokeLinecap="round" strokeLinejoin="round">
+      {/* 귀 */}
+      <path d="M16 36 Q14 16 28 20 Q36 22 34 38 Z" fill="#c0c0c0" stroke={SC} strokeWidth={SW}/>
+      <path d="M84 36 Q86 16 72 20 Q64 22 66 38 Z" fill="#c0c0c0" stroke={SC} strokeWidth={SW}/>
+      <line x1="20" y1="24" x2="26" y2="34" stroke={SC} strokeWidth="2.5"/>
+      <line x1="80" y1="24" x2="74" y2="34" stroke={SC} strokeWidth="2.5"/>
+      {/* 몸통 */}
+      <circle cx="50" cy="56" r="41" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
+      {/* 왼팔 (튀어나온) */}
+      <path d="M9 58 Q8 72 18 78 Q26 82 30 74 Q22 68 20 58 Z" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
+      <path d="M13 76 Q15 84 11 88" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M18 78 Q21 86 17 90" fill="none" stroke={SC} strokeWidth="2.5"/>
+      {/* 오른팔 (튀어나온) */}
+      <path d="M91 58 Q92 72 82 78 Q74 82 70 74 Q78 68 80 58 Z" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
+      <path d="M87 76 Q85 84 89 88" fill="none" stroke={SC} strokeWidth="2.5"/>
+      <path d="M82 78 Q79 86 83 90" fill="none" stroke={SC} strokeWidth="2.5"/>
       {/* 눈 */}
-      <circle cx="11" cy="14" r="3" fill="#1c1917"/>
-      <circle cx="21" cy="14" r="3" fill="#1c1917"/>
-      <circle cx="12" cy="13" r="1.2" fill="#fff"/>
-      <circle cx="22" cy="13" r="1.2" fill="#fff"/>
+      <circle cx="35" cy="46" r="9" fill={SC}/>
+      <circle cx="65" cy="46" r="9" fill={SC}/>
+      <circle cx="31" cy="42" r="3" fill="#fff"/>
+      <circle cx="61" cy="42" r="3" fill="#fff"/>
       {/* 코 */}
-      <ellipse cx="16" cy="19" rx="3.5" ry="2.5" fill="#1c1917"/>
-      <ellipse cx="15" cy="18.5" rx="1.2" ry="0.8" fill="#44403c" opacity="0.4"/>
-      {/* 혀 */}
-      <ellipse cx="16" cy="25" rx="3.5" ry="2.5" fill="#f43f5e"/>
-      <line x1="16" y1="23" x2="16" y2="27" stroke="#e11d48" strokeWidth="1"/>
+      <path d="M44 58 Q47 55 50 55 Q53 55 56 58 Q53 61 50 61 Q47 61 44 58Z" fill={SC}/>
+      {/* 입 */}
+      <path d="M50 61 Q44 66 40 64" fill="none" stroke={SC} strokeWidth="3"/>
+      <path d="M50 61 Q56 66 60 64" fill="none" stroke={SC} strokeWidth="3"/>
+      {/* 발 (3개) */}
+      <ellipse cx="28" cy="94" rx="12" ry="6" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="50" cy="96" rx="12" ry="6" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
+      <ellipse cx="72" cy="94" rx="12" ry="6" fill="#cccccc" stroke={SC} strokeWidth={SW}/>
     </svg>
   )
 }
 
 function Robot({ s }: { s: number }) {
   return (
-    <svg width={s} height={s} viewBox="0 0 32 32">
-      {/* 안테나 */}
-      <rect x="15" y="1" width="2" height="5" rx="1" fill="#64748b"/>
-      <circle cx="16" cy="1.5" r="2" fill="#ef4444"/>
-      {/* 머리 */}
-      <rect x="4" y="7" width="24" height="20" rx="4" fill="#94a3b8"/>
-      {/* 눈 (LED) */}
-      <rect x="7"  y="12" width="7" height="5" rx="2" fill="#0ea5e9"/>
-      <rect x="18" y="12" width="7" height="5" rx="2" fill="#0ea5e9"/>
-      <rect x="8.5" y="13.5" width="4" height="2" rx="1" fill="#bfdbfe" opacity="0.8"/>
-      <rect x="19.5" y="13.5" width="4" height="2" rx="1" fill="#bfdbfe" opacity="0.8"/>
-      {/* 입 (그리드) */}
-      <rect x="9" y="20" width="14" height="4" rx="1.5" fill="#475569"/>
-      <line x1="12" y1="20" x2="12" y2="24" stroke="#94a3b8" strokeWidth="1"/>
-      <line x1="16" y1="20" x2="16" y2="24" stroke="#94a3b8" strokeWidth="1"/>
-      <line x1="20" y1="20" x2="20" y2="24" stroke="#94a3b8" strokeWidth="1"/>
-      {/* 측면 귀 (볼트) */}
-      <circle cx="4"  cy="17" r="2.5" fill="#64748b"/>
-      <circle cx="28" cy="17" r="2.5" fill="#64748b"/>
-      <circle cx="4"  cy="17" r="1"   fill="#94a3b8"/>
-      <circle cx="28" cy="17" r="1"   fill="#94a3b8"/>
+    <svg width={s} height={s} viewBox="0 0 100 105" strokeLinecap="round" strokeLinejoin="round">
+      {/* 귀 피스 (흰색, 머리 뒤) */}
+      <rect x="2"  y="12" width="16" height="24" rx="6" fill="#e5e7eb" stroke={SC} strokeWidth={SW}/>
+      <rect x="82" y="12" width="16" height="24" rx="6" fill="#e5e7eb" stroke={SC} strokeWidth={SW}/>
+      {/* 머리 (돔) */}
+      <rect x="14" y="6" width="72" height="56" rx="24" fill="#fef3c7" stroke={SC} strokeWidth={SW}/>
+      {/* 바이저 (다크 스크린) */}
+      <rect x="18" y="20" width="64" height="30" rx="13" fill="#4b5563" stroke={SC} strokeWidth={SW}/>
+      {/* 볼 */}
+      <ellipse cx="29" cy="38" rx="7" ry="5" fill="#ffb8c0" opacity="0.85"/>
+      <ellipse cx="71" cy="38" rx="7" ry="5" fill="#ffb8c0" opacity="0.85"/>
+      {/* 미소 */}
+      <path d="M43 42 Q50 48 57 42" fill="none" stroke="#9ca3af" strokeWidth="2.5"/>
+      {/* 눈 */}
+      <rect x="28" y="24" width="8" height="10" rx="3" fill="#1a1a1a"/>
+      <rect x="64" y="24" width="8" height="10" rx="3" fill="#1a1a1a"/>
+      {/* 목 */}
+      <rect x="41" y="62" width="18" height="9" rx="4" fill="#e5e7eb" stroke={SC} strokeWidth="2.5"/>
+      {/* 팔 (보라) */}
+      <rect x="2"  y="70" width="16" height="26" rx="7" fill="#a78bfa" stroke={SC} strokeWidth={SW}/>
+      <rect x="82" y="70" width="16" height="26" rx="7" fill="#a78bfa" stroke={SC} strokeWidth={SW}/>
+      {/* 몸통 */}
+      <rect x="12" y="70" width="76" height="32" rx="16" fill="#fef3c7" stroke={SC} strokeWidth={SW}/>
+      {/* 몸통 패널 */}
+      <rect x="18" y="76" width="64" height="18" rx="8" fill="#374151" stroke={SC} strokeWidth="2.5"/>
+      {/* 핑크 스트립 */}
+      <rect x="22" y="80" width="56" height="9" rx="4.5" fill="#fb7185"/>
     </svg>
   )
 }

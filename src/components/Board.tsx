@@ -40,9 +40,10 @@ interface Props {
   onFactoryClick?: (row: number, col: number) => void
   onProducerClick?: (row: number, col: number) => void
   onFaLiveStateChange?: (states: FALiveStates) => void
+  tutorialHighlight?: 'fa' | 'rs'
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange, tutorialHighlight }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -95,6 +96,10 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
                 progress={progresses[`${rowIdx}-${colIdx}`]}
                 bufferInfo={bufferCounts[`${rowIdx}-${colIdx}`]}
                 placing={!!placingAnimalId && cell.type === 'FA'}
+                tutorialHighlight={
+                  (tutorialHighlight === 'fa' && cell.type === 'FA') ||
+                  (tutorialHighlight === 'rs' && cell.type === 'PR')
+                }
                 onClick={
                   placingAnimalId && cell.type === 'FA' ? () => onPlaceAnimal(rowIdx, colIdx)
                   : !placingAnimalId && cell.type === 'FA' ? () => onFactoryClick?.(rowIdx, colIdx)

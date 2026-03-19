@@ -81,7 +81,7 @@ export default function Tutorial({ step, itemCount, onSkip, onNext, onFactoryTab
         <div className={styles.boardCenterTooltip}>
           <TutorialCharacter step={3} size={52} />
           <p className={styles.tooltipText}>공장 자리를 탭해보세요!</p>
-          <p className={styles.tooltipSub}>보드에서 <strong>FA</strong> 칸을 탭하면<br/>공장을 건설할 수 있어요.</p>
+          <p className={styles.tooltipSub}>보드에서 🏗️ 공장 부지를 탭하면<br/>공장을 건설할 수 있어요.</p>
         </div>
       </div>
     )
@@ -153,7 +153,7 @@ export default function Tutorial({ step, itemCount, onSkip, onNext, onFactoryTab
         <div className={styles.boardCenterTooltip}>
           <TutorialCharacter step={8} size={52} />
           <p className={styles.tooltipText}>생산기 자리를 탭해보세요!</p>
-          <p className={styles.tooltipSub}>보드에서 <strong>▶</strong> 칸을 탭하면<br/>생산기를 건설할 수 있어요.</p>
+          <p className={styles.tooltipSub}>보드에서 🌱 생산기 부지를 탭하면<br/>생산기를 건설할 수 있어요.</p>
         </div>
       </div>
     )
@@ -210,7 +210,7 @@ export default function Tutorial({ step, itemCount, onSkip, onNext, onFactoryTab
         <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
         <div className={styles.buildGuideTooltip}>
           <TutorialCharacter step={12} size={44} />
-          <p className={styles.tooltipText}>▶ 생산기 상세 정보</p>
+          <p className={styles.tooltipText}>🌱 생산기 상세 정보</p>
           <p className={styles.tooltipSub}>레벨·속도·생산량을 확인하고<br/>골드로 업그레이드해요.<br/>확인 후 닫기(×)를 눌러요.</p>
         </div>
       </div>
@@ -316,7 +316,7 @@ export default function Tutorial({ step, itemCount, onSkip, onNext, onFactoryTab
         <div className={styles.boardCenterTooltip}>
           <TutorialCharacter step={19} size={52} />
           <p className={styles.tooltipText}>레일과 골드!</p>
-          <p className={styles.tooltipSub}>재료가 레일을 타고 이동해요.<br/><strong>RE</strong> 지점에 도달하면<br/>골드로 전환돼요!</p>
+          <p className={styles.tooltipSub}>재료가 레일을 타고 이동해요.<br/>출하 지점에 도달하면<br/>골드로 전환돼요!</p>
           <button className={styles.nextBtn} onClick={onNext}>다음 →</button>
         </div>
       </div>

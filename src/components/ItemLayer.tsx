@@ -32,8 +32,7 @@ export default memo(function ItemLayer({ items, cellSize }: Props) {
               width: size,
               height: size,
               borderRadius: size / 2,
-              left: item.x - size / 2,
-              top: item.y - size / 2,
+              transform: `translate(${item.x - size / 2}px, ${item.y - size / 2}px)`,
             }}
           >
             <GradeIcon size={emojiSize} grade={item.grade} packed={isPacked}/>

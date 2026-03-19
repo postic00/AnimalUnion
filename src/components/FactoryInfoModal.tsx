@@ -1,5 +1,6 @@
+import { useEffect, useRef, useState } from 'react'
 import type { Factory } from '../types/factory'
-import type { FALiveState } from '../hooks/useGameLoop'
+import type { FALiveState, FALiveStates } from '../hooks/useGameLoop'
 import { ANIMAL_NAMES } from '../types/animal'
 import { getFactoryBonus, getFactoryLevelUpgradeCost, RECIPES, getMaterialQuantity } from '../balance'
 import { formatQuantity, formatGold } from '../utils/formatGold'
@@ -25,7 +26,8 @@ const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
 
 interface Props {
   factory: Factory
-  live?: FALiveState
+  faLiveStatesRef: React.RefObject<FALiveStates>
+  liveKey: string
   gold: number
   materialQuantityLevels: number[]
   maxGrade: number
@@ -36,7 +38,14 @@ interface Props {
   onUpgradeLevel: () => void
 }
 
-export default function FactoryInfoModal({ factory, live, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel }: Props) {
+export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel }: Props) {
+  const [live, setLive] = useState<FALiveState | undefined>(() => faLiveStatesRef.current?.[liveKey])
+  const liveKeyRef = useRef(liveKey)
+  liveKeyRef.current = liveKey
+  useEffect(() => {
+    const id = setInterval(() => setLive(faLiveStatesRef.current?.[liveKeyRef.current]), 100)
+    return () => clearInterval(id)
+  }, [faLiveStatesRef])
   const qty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
   const bonus = getFactoryBonus(factory.type, factory.grade)
   const recipe = factory.type === 'PA' ? RECIPES[factory.grade] : null

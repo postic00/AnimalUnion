@@ -40,8 +40,8 @@ export function getCell(board: Board, row: number, col: number) {
 }
 
 // 셀 기반 공간 해시 생성 (이동 루프 전 1회 호출)
-export function buildSpatialHash(items: Item[], bucketSize: number): Map<string, Item[]> {
-  const map = new Map<string, Item[]>()
+export function buildSpatialHash(items: Item[], bucketSize: number, map: Map<string, Item[]> = new Map()): Map<string, Item[]> {
+  map.clear()
   if (bucketSize <= 0) return map
   for (const item of items) {
     if (!isFinite(item.x) || !isFinite(item.y)) continue

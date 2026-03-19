@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatGold } from '../utils/formatGold'
 import { soundByAnimalId } from '../utils/sound'
 import type { MutableRefObject } from 'react'
@@ -69,6 +69,15 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
   }
   spawnClickerItemRef.current = spawnClickerItem
 
+  const producersByPos = useMemo(() =>
+    new Map(producers.map(p => [`${p.row}-${p.col}`, p])),
+    [producers]
+  )
+  const factoriesByPos = useMemo(() =>
+    new Map(factories.map(f => [`${f.row}-${f.col}`, f])),
+    [factories]
+  )
+
   if (cellSize === 0) return null
 
   return (
@@ -81,8 +90,8 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
                 key={colIdx}
                 cell={cell}
                 size={cellSize}
-                factory={cell.type === 'FA' ? factories.find(f => f.row === rowIdx && f.col === colIdx) : undefined}
-                producer={cell.type === 'PR' ? producers.find(p => p.row === rowIdx && p.col === colIdx) : undefined}
+                factory={cell.type === 'FA' ? factoriesByPos.get(`${rowIdx}-${colIdx}`) : undefined}
+                producer={cell.type === 'PR' ? producersByPos.get(`${rowIdx}-${colIdx}`) : undefined}
                 progress={progresses[`${rowIdx}-${colIdx}`]}
                 bufferInfo={bufferCounts[`${rowIdx}-${colIdx}`]}
                 placing={!!placingAnimalId && cell.type === 'FA'}

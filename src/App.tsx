@@ -24,7 +24,7 @@ import UpgradeAmountToggle from './components/UpgradeAmountToggle'
 import type { UpgradeAmount } from './components/UpgradeAmountToggle'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates } from './utils/saveLoad'
+import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates, getDeviceId } from './utils/saveLoad'
 import { CONFIG, applyWeekConfig } from './config'
 
 // 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
@@ -109,10 +109,19 @@ export default function App() {
   const [board, setBoard] = useState<BoardType>(initData.board)
   const [resetKey, setResetKey] = useState(0)
   const [gameState, setGameState] = useState<GameState>(initData.gameState)
+  const [gold, setGold] = useState(initData.gameState.gold)
+  const [totalEarned, setTotalEarned] = useState(initData.gameState.totalEarned)
+  const [goldPerSec, setGoldPerSec] = useState(0)
   const [savedAt, setSavedAt] = useState<number | null>(initData.savedAt)
   const gameStateRef = useRef(gameState)
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
+  const goldRef = useRef(gold)
+  goldRef.current = gold
+  const totalEarnedRef = useRef(totalEarned)
+  totalEarnedRef.current = totalEarned
   const earnedInSecRef = useRef(0)
+  const goldBufferRef = useRef(0)
+  const totalEarnedBufferRef = useRef(0)
   const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const boardSaveRef = useRef<() => void>(() => {})
@@ -124,7 +133,7 @@ export default function App() {
   const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
   const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
   const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
-  const [faLiveStates, setFaLiveStates] = useState<import('./hooks/useGameLoop').FALiveStates>({})
+  const faLiveStatesRef = useRef<import('./hooks/useGameLoop').FALiveStates>({})
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
   const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
@@ -175,54 +184,74 @@ export default function App() {
   useEffect(() => { boardRef2.current = board }, [board])
   useEffect(() => { gameStateRef2.current = gameState }, [gameState])
 
+  const lastSavedSnapshotRef = useRef<string>('')
+
+  // 통합 인터벌: 100ms 기준, tick 카운터로 주기별 작업 분기
   useEffect(() => {
-    const save = () => {
-      saveGame(boardRef2.current, gameStateRef2.current, {
+    const WINDOW = 60
+    const getSnapshot = () => JSON.stringify({
+      ...gameStateRef2.current,
+      gold: goldRef.current,
+      totalEarned: totalEarnedRef.current,
+    })
+    const save = (force = false) => {
+      const snapshot = getSnapshot()
+      if (!force && snapshot === lastSavedSnapshotRef.current) return
+      lastSavedSnapshotRef.current = snapshot
+      saveGame(boardRef2.current, { ...gameStateRef2.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
         speedBoostUntil: speedBoostUntilRef.current,
         goldBoostUntil: goldBoostUntilRef.current,
       })
       boardSaveRef.current()
       setSavedAt(Date.now())
     }
-    const onVisibility = () => { if (document.hidden) save() }
-    const interval = setInterval(save, 10_000)
-    window.addEventListener('beforeunload', save)
+    const onVisibility = () => { if (document.hidden) save(true) }
+    const onUnload = () => save()
+    window.addEventListener('beforeunload', onUnload)
     document.addEventListener('visibilitychange', onVisibility)
+
+    let tick = 0
+    const interval = setInterval(() => {
+      tick++
+
+      // 100ms: 골드 버퍼 flush
+      const g = goldBufferRef.current
+      const t = totalEarnedBufferRef.current
+      if (g > 0) {
+        goldBufferRef.current = 0
+        totalEarnedBufferRef.current = 0
+        setGold(prev => prev + g)
+        setTotalEarned(prev => prev + t)
+      }
+
+      // 500ms: 부스트 타이머 갱신
+      if (tick % 5 === 0) setNow(Date.now())
+
+      // 1000ms: 초당 골드 계산
+      if (tick % 10 === 0) {
+        const bucket = earnedInSecRef.current
+        earnedInSecRef.current = 0
+        bucketHistoryRef.current.push(bucket)
+        if (bucketHistoryRef.current.length > WINDOW) bucketHistoryRef.current.shift()
+        const total = bucketHistoryRef.current.reduce((a, b) => a + b, 0)
+        const len = bucketHistoryRef.current.length
+        setGoldPerSec(len > 0 ? Math.round(total / len) : 0)
+      }
+
+      // 60000ms: 저장 + 리더보드 업로드
+      if (tick % 600 === 0) {
+        save()
+        const { playerName } = gameStateRef.current
+        if (playerName) submitGoldScore(getDeviceId(), playerName, totalEarnedRef.current)
+        tick = 0
+      }
+    }, 100)
+
     return () => {
       clearInterval(interval)
-      window.removeEventListener('beforeunload', save)
+      window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), 500)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const { playerName, totalEarned } = gameStateRef.current
-      if (playerName) submitGoldScore(playerName, totalEarned)
-    }, 60_000)
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const WINDOW = 60
-    const interval = setInterval(() => {
-      const bucket = earnedInSecRef.current
-      earnedInSecRef.current = 0
-      bucketHistoryRef.current.push(bucket)
-      if (bucketHistoryRef.current.length > WINDOW) {
-        bucketHistoryRef.current.shift()
-      }
-      const total = bucketHistoryRef.current.reduce((a, b) => a + b, 0)
-      const len = bucketHistoryRef.current.length
-      const perSec = len > 0 ? Math.round(total / len) : 0
-      setGameState(prev => ({ ...prev, goldPerSec: perSec }))
-    }, 1000)
-    return () => clearInterval(interval)
   }, [])
 
   const mutedRef = useRef(muted)
@@ -238,7 +267,8 @@ export default function App() {
     const multiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
     const earned = amount * multiplier
     earnedInSecRef.current += earned
-    setGameState(prev => ({ ...prev, gold: prev.gold + earned, totalEarned: prev.totalEarned + earned }))
+    goldBufferRef.current += earned
+    totalEarnedBufferRef.current += earned
     if (!mutedRef.current) soundCoin()
   }, [])
 
@@ -280,10 +310,10 @@ export default function App() {
   const handleUpgradeClicker = useCallback(() => {
     setGameState(prev => {
       const cost = getClickerUpgradeCost(prev.clicker.level)
-      if (prev.gold < cost) return prev
+      if (goldRef.current < cost) return prev
+      setGold(g => g - cost)
       return {
         ...prev,
-        gold: prev.gold - cost,
         clicker: { ...prev.clicker, level: prev.clicker.level + 1 },
       }
     })
@@ -293,11 +323,12 @@ export default function App() {
     setGameState(prev => {
       const builtCount = prev.producers.filter(p => p.built).length
       const cost = getProducerBuildCost(builtCount)
-      if (prev.gold < cost) return prev
+      if (goldRef.current < cost) return prev
       if (!mutedRef.current) soundBuild()
+      setGold(g => g - cost)
       const producers = [...prev.producers]
       producers[index] = { ...producers[index], built: true, level: 1 }
-      return { ...prev, gold: prev.gold - cost, producers }
+      return { ...prev, producers }
     })
   }, [])
 
@@ -305,43 +336,48 @@ export default function App() {
     setGameState(prev => {
       const producer = prev.producers[index]
       if (!producer) return prev
-      let gold = prev.gold
+      let goldAmt = goldRef.current
       let level = producer.level
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
+      let spent = 0
       while (count < limit) {
         const cost = getProducerUpgradeCost(level)
-        if (gold < cost) break
-        gold -= cost
+        if (goldAmt < cost) break
+        goldAmt -= cost
+        spent += cost
         level++
         count++
       }
       if (count === 0) return prev
       if (!mutedRef.current) soundBuild()
+      setGold(g => g - spent)
       const producers = [...prev.producers]
       producers[index] = { ...producer, level }
-      return { ...prev, gold, producers }
+      return { ...prev, producers }
     })
   }, [])
 
   const handleAddBundle = useCallback(() => {
     setGameState(prev => {
       const cost = getBundleCost(prev.bundleCount)
-      if (prev.gold < cost) return prev
-      return { ...prev, gold: prev.gold - cost, bundleCount: prev.bundleCount + 1 }
+      if (goldRef.current < cost) return prev
+      setGold(g => g - cost)
+      setBoard(b => addBundle(b))
+      return { ...prev, bundleCount: prev.bundleCount + 1 }
     })
-    setBoard(prev => addBundle(prev))
   }, [])
 
   const handleBuildFactory = useCallback((row: number, col: number) => {
     setGameState(prev => {
       const cost = getFactoryBuildCost()
-      if (prev.gold < cost) return prev
+      if (goldRef.current < cost) return prev
       if (!mutedRef.current) soundBuild()
+      setGold(g => g - cost)
       const newFactory: Factory = {
         row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN', animalId: null,
       }
-      return { ...prev, gold: prev.gold - cost, factories: [...prev.factories, newFactory] }
+      return { ...prev, factories: [...prev.factories, newFactory] }
     })
   }, [])
 
@@ -377,29 +413,36 @@ export default function App() {
     setGameState(prev => {
       const factory = prev.factories.find(f => f.row === row && f.col === col)
       if (!factory) return prev
-      let gold = prev.gold
+      let goldAmt = goldRef.current
       let level = factory.level
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
+      let spent = 0
       while (count < limit) {
         const cost = getFactoryLevelUpgradeCost(level)
-        if (gold < cost) break
-        gold -= cost
+        if (goldAmt < cost) break
+        goldAmt -= cost
+        spent += cost
         level++
         count++
       }
       if (count === 0) return prev
       if (!mutedRef.current) soundBuild()
-      return { ...prev, gold, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level } : f) }
+      setGold(g => g - spent)
+      return { ...prev, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level } : f) }
     })
   }, [])
 
   const handleHardReset = useCallback(() => {
+    deleteScores(getDeviceId())
     deleteSave()
     localStorage.removeItem('tutorialDone')
     localStorage.removeItem('animal-union-week-config')
     setBoard(initialBoard)
-    setGameState(initialGameState)
+    setGameState({ ...initialGameState, playerName: `Player${Date.now().toString(36).toUpperCase()}` })
+    setGold(0)
+    setTotalEarned(0)
+    setGoldPerSec(0)
     setResetKey(k => k + 1)
     setSavedAt(null)
     setActiveTab(null)
@@ -413,14 +456,18 @@ export default function App() {
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
   const handleCloudSave = useCallback(async (): Promise<boolean> => {
-    return await saveToCloud(gameStateRef.current.playerName, gameStateRef.current, boardRef.current, platform)
-  }, [platform])
+    const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }
+    return await saveToCloud(gameStateRef.current.playerName, fullState, boardRef.current, platform)
+  }, [platform, goldPerSec])
 
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await loadFromCloud()
     if (!data || !Array.isArray(data.board) || !data.game_state || typeof data.game_state !== 'object') return false
     setBoard(data.board)
     setGameState(data.game_state)
+    setGold(data.game_state.gold ?? 0)
+    setTotalEarned(data.game_state.totalEarned ?? 0)
+    setGoldPerSec(data.game_state.goldPerSec ?? 0)
     setResetKey(k => k + 1)
     return true
   }, [])
@@ -448,12 +495,16 @@ export default function App() {
 
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
 
+    setGold(0)
+    setTotalEarned(0)
+    setGoldPerSec(0)
+
     setGameState(prev => {
-      const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
+      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
       const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
-        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+        submitPrestigeScore(getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
       }
       const resetBase = {
         ...prev,
@@ -509,12 +560,16 @@ export default function App() {
 
     const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
 
+    setGold(0)
+    setTotalEarned(0)
+    setGoldPerSec(0)
+
     setGameState(prev => {
-      const earned = getPrestigePoints(prev.totalEarned) * safeMultiplier
+      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
       const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
-        submitPrestigeScore(prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+        submitPrestigeScore(getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
       }
       const keptPoints = Math.floor(prev.prestigePoints * weekRate) + earned
       return {
@@ -624,7 +679,7 @@ export default function App() {
   }, [])
 
   const handleFaLiveStateChange = useCallback((states: import('./hooks/useGameLoop').FALiveStates) => {
-    setFaLiveStates(states)
+    faLiveStatesRef.current = states
   }, [])
 
   const handleProducerClick = useCallback((row: number, col: number) => {
@@ -660,21 +715,24 @@ export default function App() {
 
   const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let gold = prev.gold
+      let goldAmt = goldRef.current
       let level = prev.materialQuantityLevels[gradeIndex] ?? 1
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
+      let spent = 0
       while (count < limit) {
         const cost = getMaterialQuantityLevelCost(level)
-        if (gold < cost) break
-        gold -= cost
+        if (goldAmt < cost) break
+        goldAmt -= cost
+        spent += cost
         level++
         count++
       }
       if (count === 0) return prev
+      setGold(g => g - spent)
       const materialQuantityLevels = [...prev.materialQuantityLevels]
       materialQuantityLevels[gradeIndex] = level
-      return { ...prev, gold, materialQuantityLevels }
+      return { ...prev, materialQuantityLevels }
     })
   }, [])
 
@@ -774,14 +832,14 @@ export default function App() {
         localStorage.setItem('tutorialDone', '1')
         setShowTutorial(false)
       }} />}
-      {!showSplash && <Navigation gameState={gameState} />}
+      {!showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints} totalPrestigePoints={gameState.totalPrestigePoints} />}
       {!showSplash && <Board
         key={resetKey}
         board={board}
         onAddBundle={handleAddBundle}
         onGoldEarned={handleGoldEarned}
         bundleCost={bundleCost}
-        canAddBundle={gameState.gold >= bundleCost}
+        canAddBundle={gold >= bundleCost}
         producers={gameState.producers}
         factories={gameState.factories}
         animals={gameState.animals}
@@ -807,7 +865,7 @@ export default function App() {
         onClickerClick={handleClickerClick}
         onTabChange={(tab) => {
           setActiveTab(tab)
-          saveGame(board, gameState, { speedBoostUntil, goldBoostUntil })
+          saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostUntil, goldBoostUntil })
           setSavedAt(Date.now())
         }}
         activeTab={activeTab}
@@ -936,7 +994,7 @@ export default function App() {
         {activeTab === 0 && prodSection === 'production' && (
           <ProductionTab
             producers={gameState.producers}
-            gold={gameState.gold}
+            gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             clicker={gameState.clicker}
             onBuild={handleBuildProducer}
@@ -948,7 +1006,7 @@ export default function App() {
           <FactoryTab
             board={board}
             factories={gameState.factories}
-            gold={gameState.gold}
+            gold={gold}
             onBuild={handleBuildFactory}
             onSetType={handleSetFactoryType}
             onSetDir={handleSetFactoryDir}
@@ -995,11 +1053,12 @@ export default function App() {
             mode={lbMode}
             onNameChange={async name => {
               if (!name.trim()) return
-              const { playerName: oldName, prestigePoints, prestigeCount, totalEarned } = gameStateRef.current
+              const { prestigePoints, prestigeCount } = gameStateRef.current
               setGameState(prev => ({ ...prev, playerName: name }))
-              await deleteScores(oldName)
-              await submitPrestigeScore(name, prestigePoints, prestigeCount)
-              await submitGoldScore(name, totalEarned)
+              const deviceId = getDeviceId()
+              await deleteScores(deviceId)
+              await submitPrestigeScore(deviceId, name, prestigePoints, prestigeCount)
+              await submitGoldScore(deviceId, name, totalEarnedRef.current)
             }}
           />
         )}
@@ -1030,7 +1089,7 @@ export default function App() {
         if (!factory?.built) {
           return (
             <FactoryBuildModal
-              gold={gameState.gold}
+              gold={gold}
               onBuild={() => handleBuildFactory(selectedFactory.row, selectedFactory.col)}
               onClose={() => setSelectedFactory(null)}
             />
@@ -1041,8 +1100,9 @@ export default function App() {
         return (
           <FactoryInfoModal
             factory={factory}
-            live={faLiveStates[liveKey]}
-            gold={gameState.gold}
+            faLiveStatesRef={faLiveStatesRef}
+            liveKey={liveKey}
+            gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             maxGrade={20}
             onClose={() => setSelectedFactory(null)}
@@ -1064,7 +1124,7 @@ export default function App() {
           <ProducerInfoModal
             producer={producer}
             producerIndex={producerIndex}
-            gold={gameState.gold}
+            gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             builtCount={builtCount}
             onBuild={() => handleBuildProducer(producerIndex)}
@@ -1077,7 +1137,7 @@ export default function App() {
       {/* 환생 모달 */}
       {showPrestigeModal && (
         <PrestigeAdModal
-          earned={getPrestigePoints(gameState.totalEarned)}
+          earned={getPrestigePoints(totalEarned)}
           currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
           availablePoints={gameState.prestigePoints}
           onPrestige={() => { setShowPrestigeModal(false); doPrestige(1) }}
@@ -1089,7 +1149,7 @@ export default function App() {
       {/* 포인트 유지 환생 모달 */}
       {showPrestigeKeepModal && (
         <PrestigeAdModal
-          earned={getPrestigePoints(gameState.totalEarned)}
+          earned={getPrestigePoints(totalEarned)}
           currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
           availablePoints={gameState.prestigePoints}
           keepPoints

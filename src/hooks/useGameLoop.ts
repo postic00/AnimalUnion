@@ -136,7 +136,13 @@ export function useGameLoop(
   const speedMultiplierRef = useRef(speedMultiplier ?? 1)
   speedMultiplierRef.current = speedMultiplier ?? 1
   const producersRef = useRef(producers)
-  producersRef.current = producers
+  const producersByPosRef = useRef(new Map<string, typeof producers[0]>())
+  if (producersRef.current !== producers) {
+    producersRef.current = producers
+    const m = producersByPosRef.current
+    m.clear()
+    for (const p of producers) m.set(`${p.row}-${p.col}`, p)
+  }
   const factoriesRef = useRef(factories)
   factoriesRef.current = factories
   const animalsRef = useRef(animals)
@@ -145,6 +151,7 @@ export function useGameLoop(
   const pendingClickerSpawnsRef = useRef(0)
   const pendingClickerGradeRef = useRef<number>(1)
   const mountedRef = useRef(false)
+  const spatialHashRef = useRef<Map<string, Item[]>>(new Map())
   const materialQuantityLevelsRef = useRef(materialQuantityLevels)
   materialQuantityLevelsRef.current = materialQuantityLevels
   const itemValueLevelsRef = useRef(itemValueLevels)
@@ -176,7 +183,6 @@ export function useGameLoop(
     const itemSize = cellSize * CONFIG.ITEM_GAP_RATIO
     const pickTime = getFactoryPickTime()
 
-    let tickId: ReturnType<typeof setInterval>
     let tickCount = 0
 
     const tick = () => {
@@ -196,7 +202,7 @@ export function useGameLoop(
           if (produceTimersRef.current[key] === undefined) produceTimersRef.current[key] = 0
           produceTimersRef.current[key] += delta
 
-          const producer = producersRef.current.find(p => p.row === rowIdx && p.col === colIdx)
+          const producer = producersByPosRef.current.get(key)
           if (!producer || !producer.built || producer.level === 0) {
             produceTimersRef.current[key] = 0
             return
@@ -261,53 +267,55 @@ export function useGameLoop(
           if (rsOccupied) return
 
           const item = queue.shift()!
-          items = [...items, item]
+          items.push(item)
         })
       })
 
       // 아이템 이동
-      const spatialHash = buildSpatialHash(items, itemSize)
-      items = items.map(item => {
-        if (isBlocked(item, spatialHash, itemSize)) return item
+      const spatialHash = buildSpatialHash(items, itemSize, spatialHashRef.current)
+      const step = (cellSize / getRailMoveSpeed(railSpeedLevelRef.current)) * delta
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (isBlocked(item, spatialHash, itemSize)) continue
 
-        const distToTarget = Math.sqrt(
-          (item.targetX - item.x) ** 2 + (item.targetY - item.y) ** 2
-        )
-        const step = (cellSize / getRailMoveSpeed(railSpeedLevelRef.current)) * delta
+        const dx = item.targetX - item.x
+        const dy = item.targetY - item.y
+        const distToTarget = Math.sqrt(dx * dx + dy * dy)
 
         if (step >= distToTarget) {
+          item.x = item.targetX
+          item.y = item.targetY
           const next = getNextTarget(board, cellSize, item.targetX, item.targetY)
-          if (!next) return { ...item, x: item.targetX, y: item.targetY }
-          return {
-            ...item,
-            x: item.targetX, y: item.targetY,
-            dx: next.dx, dy: next.dy,
-            targetX: next.targetX, targetY: next.targetY,
+          if (next) {
+            item.dx = next.dx
+            item.dy = next.dy
+            item.targetX = next.targetX
+            item.targetY = next.targetY
           }
+        } else {
+          const ratio = step / distToTarget
+          item.x += dx * ratio
+          item.y += dy * ratio
         }
-
-        const ratio = step / distToTarget
-        return {
-          ...item,
-          x: item.x + (item.targetX - item.x) * ratio,
-          y: item.y + (item.targetY - item.y) * ratio,
-        }
-      })
+      }
 
       // 탈선 방어: 30틱(~1초)마다 유효하지 않은 셀에 있는 아이템 제거
       tickCount++
       if (tickCount % 30 === 0) {
-        items = items.filter(item => {
-          if (!isFinite(item.x) || !isFinite(item.y)) return false
+        for (let i = items.length - 1; i >= 0; i--) {
+          const item = items[i]
+          if (!isFinite(item.x) || !isFinite(item.y)) { items.splice(i, 1); continue }
           const col = Math.floor(item.x / cellSize)
           const row = Math.floor(item.y / cellSize)
           const cell = getCell(board, row, col)
-          if (!cell) return false
+          if (!cell) { items.splice(i, 1); continue }
           const type = cell.type
-          return type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
-          || type === 'RS' || type === 'RE' || type === 'FA' || type === 'PR'
-          || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL'
-        })
+          if (!(type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
+            || type === 'RS' || type === 'RE' || type === 'FA' || type === 'PR'
+            || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL')) {
+            items.splice(i, 1)
+          }
+        }
       }
 
       // FA 처리
@@ -333,7 +341,7 @@ export function useGameLoop(
           items.some(it => Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2) <= cellSize * 0.3)
 
         const placeOutput = () => {
-          items = [...items, placeOnBelt(faStatesRef.current[key].outputItem!, outputCenter, board, cellSize)]
+          items.push(placeOnBelt(faStatesRef.current[key].outputItem!, outputCenter, board, cellSize))
           faStatesRef.current[key] = { ...faStatesRef.current[key], processState: 'IDLE', processTimer: 0, outputItem: null }
         }
 
@@ -363,7 +371,7 @@ export function useGameLoop(
               const idx = items.findIndex(isTargetItem)
               if (idx !== -1) {
                 const grabbed = items[idx]
-                items = items.filter((_, i) => i !== idx)
+                items[idx] = items[items.length - 1]; items.pop()
                 faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'GRABBING', grabTimer: 0, grabbed }
               }
             } else if (fas.grabState === 'GRABBING') {
@@ -441,7 +449,7 @@ export function useGameLoop(
                 })
                 if (idx !== -1) {
                   const grabbed = items[idx]
-                  items = items.filter((_, i) => i !== idx)
+                  items[idx] = items[items.length - 1]; items.pop()
                   faStatesRef.current[key] = { ...faStatesRef.current[key], grabState: 'GRABBING', grabTimer: 0, grabbed }
                 }
               }
@@ -540,36 +548,56 @@ export function useGameLoop(
       }
 
       // RE 도달 → 골드 획득
-      items = items.filter(item => {
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i]
         const col = Math.round(item.x / cellSize - 0.5)
         const row = Math.round(item.y / cellSize - 0.5)
         const cell = getCell(board, row, col)
-        if (cell?.type !== 'RE') return true
+        if (cell?.type !== 'RE') continue
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
-        if (dist > cellSize * 0.3) return true
+        if (dist > cellSize * 0.3) continue
         onGoldEarnedRef.current(getFinalGold(item))
-        return false
-      })
+        items.splice(i, 1)
+      }
 
       itemsRef.current = items
     }
 
-    tickId = setInterval(tick, 33)
+    let tickId: ReturnType<typeof setInterval> | null = null
+    let renderInterval: ReturnType<typeof setInterval> | null = null
+    let progressIntervalId: ReturnType<typeof setInterval> | null = null
 
-    const renderInterval = setInterval(() => {
-      setRenderItems([...itemsRef.current])
-    }, 100)
+    const startIntervals = () => {
+      lastTimeRef.current = 0
+      tickId = setInterval(tick, 33)
+      renderInterval = setInterval(() => {
+        setRenderItems([...itemsRef.current])
+      }, 100)
+      progressIntervalId = setInterval(runProgress, 100)
+    }
 
-    const progressInterval = setInterval(() => {
+    const stopIntervals = () => {
+      if (tickId) { clearInterval(tickId); tickId = null }
+      if (renderInterval) { clearInterval(renderInterval); renderInterval = null }
+      if (progressIntervalId) { clearInterval(progressIntervalId); progressIntervalId = null }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) stopIntervals()
+      else startIntervals()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    const runProgress = () => {
       const p: Progresses = {}
       const fp: FAPhases = {}
       board.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           if (cell.type !== 'PR') return
-          const producer = producersRef.current.find(pr => pr.row === rowIdx && pr.col === colIdx)
-          if (!producer?.built || producer.level === 0) return
           const key = `${rowIdx}-${colIdx}`
+          const producer = producersByPosRef.current.get(key)
+          if (!producer?.built || producer.level === 0) return
           const timer = produceTimersRef.current[key] ?? 0
           const qty = getMaterialQuantity(materialQuantityLevelsRef.current[producer.grade - 1] ?? 1)
           p[key] = Math.min(timer / (getProducerInterval(producer.level) * qty), 1)
@@ -662,12 +690,13 @@ export function useGameLoop(
         })
         onFaLiveStateChangeRef.current(live)
       }
-    }, 100)
+    }
+
+    startIntervals()
 
     return () => {
-      clearInterval(tickId)
-      clearInterval(renderInterval)
-      clearInterval(progressInterval)
+      stopIntervals()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [board, cellSize])
 

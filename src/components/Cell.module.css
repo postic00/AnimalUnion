@@ -66,15 +66,23 @@
 .handPlace { animation: handPlace 800ms linear 1 forwards; }
 
 /* 애니메이션 */
-@keyframes beltH {
-  from { background-position: 0 0; }
-  to   { background-position: 18px 0; }
-}
+@keyframes flowR  { from { transform: translate(0,0); }    to { transform: translate(16px,0); } }
+@keyframes flowL  { from { transform: translate(0,0); }    to { transform: translate(-16px,0); } }
+@keyframes flowD  { from { transform: translate(0,0); }    to { transform: translate(0,16px); } }
+@keyframes flowU  { from { transform: translate(0,0); }    to { transform: translate(0,-16px); } }
+@keyframes flowDR { from { transform: translate(0,0); }    to { transform: translate(10px,10px); } }
+@keyframes flowDL { from { transform: translate(0,0); }    to { transform: translate(-10px,10px); } }
+@keyframes flowUR { from { transform: translate(0,0); }    to { transform: translate(10px,-10px); } }
+@keyframes flowUL { from { transform: translate(0,0); }    to { transform: translate(-10px,-10px); } }
 
-@keyframes beltV {
-  from { background-position: 0 0; }
-  to   { background-position: 0 18px; }
-}
+.flowR  { animation: flowR  0.5s linear infinite; will-change: transform; }
+.flowL  { animation: flowL  0.5s linear infinite; will-change: transform; }
+.flowD  { animation: flowD  0.5s linear infinite; will-change: transform; }
+.flowU  { animation: flowU  0.5s linear infinite; will-change: transform; }
+.flowDR { animation: flowDR 0.5s linear infinite; will-change: transform; }
+.flowDL { animation: flowDL 0.5s linear infinite; will-change: transform; }
+.flowUR { animation: flowUR 0.5s linear infinite; will-change: transform; }
+.flowUL { animation: flowUL 0.5s linear infinite; will-change: transform; }
 
 @keyframes pulse {
   from { opacity: 1; }

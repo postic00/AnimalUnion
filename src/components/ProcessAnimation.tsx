@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
 import type { JSX } from 'react'
 import type { Factory } from '../types/factory'
 import type { AnimalSpecies } from './AnimalSvg'
+import styles from './ProcessAnimation.module.css'
 
 // ── 땀방울 ───────────────────────────────────────────────────────
 function Sweat({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
@@ -180,11 +180,11 @@ const BODY_COLOR: Record<AnimalSpecies, string> = {
 }
 
 // ── WA 세척 프레임 ────────────────────────────────────────────────
-function makeWA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
+function makeWA(species: AnimalSpecies): JSX.Element[] {
   const bc = BODY_COLOR[species]
   return [
     // F0: 스폰지 들고 대기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q8 29 7 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -192,10 +192,10 @@ function makeWA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <rect x="38" y="22" width="8" height="6" rx="2" fill="#86efac"/>
       <rect x="39" y="23" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
       <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
-    </svg>,
+    </>,
 
     // F1: 좌→우 닦기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q10 26 13 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -205,23 +205,23 @@ function makeWA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <path d="M15 42 Q24 40 33 42" stroke="#7dd3fc" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
       <SweatOrSpark species={species} x={35} y={26} s={0.9}/>
-    </svg>,
+    </>,
 
     // F2: 우→좌 닦기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q6 26 4 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q38 26 36 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="-1" y="17" width="8" height="6" rx="2" fill="#86efac"/>
-      <rect x="0" y="18" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
+      <rect x="0"  y="18" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
       <path d="M33 42 Q24 40 15 42" stroke="#7dd3fc" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
       <SweatOrSpark species={species} x={5} y={26} s={0.9}/>
-    </svg>,
+    </>,
 
     // F3: 힘껏 문지르기 (아래)
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="33" rx="10" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 32 Q9 37 11 42" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -233,10 +233,10 @@ function makeWA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <SweatOrSpark species={species} x={5}  y={18} s={1.1}/>
       <SweatOrSpark species={species} x={38} y={16} s={1.1}/>
       <SweatOrSpark species={species} x={2}  y={28} s={0.8}/>
-    </svg>,
+    </>,
 
     // F4: 이마 닦기 (지침)
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 31 Q9 22 14 10" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -248,16 +248,16 @@ function makeWA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <SweatOrSpark species={species} x={40} y={19} s={0.9}/>
       <SweatOrSpark species={species} x={4}  y={22} s={1}/>
       <SweatOrSpark species={species} x={38} y={30} s={0.8}/>
-    </svg>,
+    </>,
   ]
 }
 
 // ── PA 가공 프레임 ─────────────────────────────────────────────────
-function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
+function makePA(species: AnimalSpecies): JSX.Element[] {
   const bc = BODY_COLOR[species]
   return [
     // F0: 팬 들고 대기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q8 30 6 32" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -268,10 +268,10 @@ function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <rect x="29" y="39" width="12" height="3" rx="1.5" fill="#374151"/>
       <ellipse cx="13" cy="39" rx="4" ry="3" fill="#ef4444" opacity="0.85"/>
       <ellipse cx="21" cy="40" rx="3" ry="2.5" fill="#22c55e" opacity="0.85"/>
-    </svg>,
+    </>,
 
     // F1: 좌로 흔들 + 증기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="22" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M12 31 Q6 30 4 32" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -284,13 +284,13 @@ function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
         <ellipse cx="11" cy="38" rx="4" ry="3" fill="#ef4444" opacity="0.9"/>
         <ellipse cx="19" cy="39" rx="3" ry="2.5" fill="#22c55e" opacity="0.9"/>
       </g>
-      <path d="M8 30 Q6 24 8 18" stroke="#e2e8f0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
+      <path d="M8 30 Q6 24 8 18"   stroke="#e2e8f0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <path d="M14 29 Q12 23 14 17" stroke="#e2e8f0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <SweatOrSpark species={species} x={36} y={20} s={0.9}/>
-    </svg>,
+    </>,
 
     // F2: 우로 흔들 + 증기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="26" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M16 31 Q10 26 8 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -306,10 +306,10 @@ function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <path d="M34 29 Q36 23 34 17" stroke="#e2e8f0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <path d="M40 28 Q42 22 40 16" stroke="#e2e8f0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
       <SweatOrSpark species={species} x={8} y={20} s={0.9}/>
-    </svg>,
+    </>,
 
     // F3: 뒤집기!
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="33" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 32 Q8 25 10 18" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -325,10 +325,10 @@ function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <circle cx="37" cy="18" r="2" fill="#22c55e" opacity="0.6"/>
       <SweatOrSpark species={species} x={38} y={10} s={1.2}/>
       <SweatOrSpark species={species} x={4}  y={12} s={1}/>
-    </svg>,
+    </>,
 
     // F4: 지침
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 31 Q9 22 14 10" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -344,27 +344,27 @@ function makePA(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <SweatOrSpark species={species} x={42} y={16} s={0.9}/>
       <SweatOrSpark species={species} x={4}  y={18} s={1.1}/>
       <SweatOrSpark species={species} x={42} y={27} s={0.8}/>
-    </svg>,
+    </>,
   ]
 }
 
 // ── PK 포장 프레임 ─────────────────────────────────────────────────
-function makePK(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
+function makePK(species: AnimalSpecies): JSX.Element[] {
   const bc = BODY_COLOR[species]
   return [
     // F0: 박스 앞 대기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q8 30 7 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 29 Q40 30 41 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="12" y="37" width="24" height="11" rx="2" fill="#fbbf24"/>
-      <rect x="12" y="37" width="24" height="6" rx="2" fill="#f59e0b"/>
+      <rect x="12" y="37" width="24" height="6"  rx="2" fill="#f59e0b"/>
       <line x1="24" y1="37" x2="24" y2="48" stroke="#d97706" strokeWidth="1.5"/>
-    </svg>,
+    </>,
 
     // F1: 박스 힘껏 누르기
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 29 Q8 34 9 39" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -376,10 +376,10 @@ function makePK(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <line x1="24" y1="39" x2="24" y2="48" stroke="#d97706" strokeWidth="1.5"/>
       <SweatOrSpark species={species} x={3}  y={26} s={0.9}/>
       <SweatOrSpark species={species} x={40} y={24} s={0.9}/>
-    </svg>,
+    </>,
 
     // F2: 왼쪽 테이프
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q5 26 3 35" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -393,10 +393,10 @@ function makePK(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <rect x="2"  y="40" width="14" height="3"  rx="1" fill="#7dd3fc" opacity="0.85"/>
       <SweatOrSpark species={species} x={3}  y={20} s={1}/>
       <SweatOrSpark species={species} x={32} y={16} s={0.8}/>
-    </svg>,
+    </>,
 
     // F3: 오른쪽 테이프
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q8 26 6 22" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -411,10 +411,10 @@ function makePK(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <rect x="32" y="40" width="14" height="3"  rx="1" fill="#7dd3fc" opacity="0.85"/>
       <SweatOrSpark species={species} x={40} y={20} s={1}/>
       <SweatOrSpark species={species} x={10} y={16} s={0.8}/>
-    </svg>,
+    </>,
 
     // F4: 완료! 지침
-    (s) => <svg width={s} height={s} viewBox="0 0 48 48">
+    <>
       <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 29 Q9 20 14 8" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -430,14 +430,14 @@ function makePK(species: AnimalSpecies): ((size: number) => JSX.Element)[] {
       <SweatOrSpark species={species} x={3}  y={18} s={1.1}/>
       <SweatOrSpark species={species} x={42} y={26} s={0.8}/>
       <SweatOrSpark species={species} x={2}  y={30} s={0.7}/>
-    </svg>,
+    </>,
   ]
 }
 
 // ── 캐시: 종 × 타입 조합 ────────────────────────────────────────────
-const CACHE: Partial<Record<AnimalSpecies, Partial<Record<Factory['type'], ((size: number) => JSX.Element)[]>>>> = {}
+const CACHE: Partial<Record<AnimalSpecies, Partial<Record<Factory['type'], JSX.Element[]>>>> = {}
 
-function getFrames(species: AnimalSpecies, type: Factory['type']) {
+function getFrames(species: AnimalSpecies, type: Factory['type']): JSX.Element[] {
   if (!CACHE[species]) CACHE[species] = {}
   if (!CACHE[species]![type]) {
     if (type === 'WA') CACHE[species]!.WA = makeWA(species)
@@ -447,8 +447,6 @@ function getFrames(species: AnimalSpecies, type: Factory['type']) {
   return CACHE[species]![type]!
 }
 
-const FRAME_MS = 220
-
 interface Props {
   type: Factory['type']
   species: AnimalSpecies
@@ -456,14 +454,14 @@ interface Props {
 }
 
 export function ProcessAnimation({ type, species, size }: Props) {
-  const [frame, setFrame] = useState(0)
   const frames = getFrames(species, type)
-
-  useEffect(() => {
-    setFrame(0)
-    const id = setInterval(() => setFrame(f => (f + 1) % 5), FRAME_MS)
-    return () => clearInterval(id)
-  }, [type, species])
-
-  return frames[frame](size)
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 48">
+      <g className={styles.f0}>{frames[0]}</g>
+      <g className={styles.f1}>{frames[1]}</g>
+      <g className={styles.f2}>{frames[2]}</g>
+      <g className={styles.f3}>{frames[3]}</g>
+      <g className={styles.f4}>{frames[4]}</g>
+    </svg>
+  )
 }

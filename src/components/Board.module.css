@@ -13,9 +13,7 @@
   justify-content: space-between;
   height: 80px;
   padding: 0 24px;
-  background: rgba(255, 248, 240, 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: #fff8f0;
   border: none;
   border-radius: 28px;
   cursor: pointer;

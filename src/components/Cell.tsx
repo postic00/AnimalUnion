@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import type { CSSProperties } from 'react'
 import type { Cell as CellType } from '../types/board'
 import type { Factory } from '../types/factory'
@@ -169,6 +169,18 @@ const LABEL_STYLE: CSSProperties = {
   pointerEvents: 'none',
 }
 
+const ICON_BOTTOM_LEFT: CSSProperties = { position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
+const ICON_BOTTOM_RIGHT: CSSProperties = { position: 'absolute', bottom: 2, right: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
+const ANIM_CENTER: CSSProperties = { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.1s linear' }
+
+const BUFFER_BASE: CSSProperties = {
+  position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)',
+  fontSize: '7px', fontWeight: 700, color: '#fff', borderRadius: 3, padding: '1px 3px',
+  whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none',
+}
+const BUFFER_NORMAL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(0,0,0,0.5)' }
+const BUFFER_FULL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(220,38,38,0.85)' }
+
 export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, onClick }: Props) {
   const dynamicStyle = getDynamicStyle(cell, factory, producer)
   const label = getLevelLabel(cell, factory, producer)
@@ -176,35 +188,46 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
   const isActivePR = cell.type === 'PR' && producer?.built
   const iconSm = Math.round(size * 0.36)
 
+  const cellStyle = useMemo<CSSProperties>(() => ({
+    width: size, height: size,
+    cursor: placing ? 'pointer' : undefined,
+    position: 'relative',
+    zIndex: isActiveFA ? 7 : undefined,
+    ...dynamicStyle,
+  }), [size, placing, isActiveFA, dynamicStyle])
+
+  const animOpacity = 0.3 + (progress ?? 0) * 0.7
+  const animStyle = useMemo<CSSProperties>(() => ({ ...ANIM_CENTER, opacity: animOpacity }), [animOpacity])
+
   return (
     <div
       className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''}`}
-      style={{ width: size, height: size, cursor: placing ? 'pointer' : undefined, position: 'relative', zIndex: isActiveFA ? 7 : undefined, ...dynamicStyle }}
+      style={cellStyle}
       onClick={onClick}
     >
       {isActivePR ? (
         <>
           {/* 가운데: 판다 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
-          <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 + (progress ?? 0) * 0.7, transition: 'opacity 0.1s linear' }}>
+          <span style={animStyle}>
             <ProducerAnimation grade={producer!.grade ?? 1} size={Math.round(size * 0.85)}/>
           </span>
           {/* 좌측 하단: 생산 아이템 등급 */}
-          <span style={{ position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }}>
+          <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={producer!.grade ?? 1}/>
           </span>
         </>
       ) : isActiveFA ? (
         <>
           {/* 가운데: 처리 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
-          <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3 + (progress ?? 0) * 0.7, transition: 'opacity 0.1s linear' }}>
+          <span style={animStyle}>
             <ProcessAnimation type={factory!.type} species={getSpecies(factory!.animalId ?? null)} size={Math.round(size * 0.7)}/>
           </span>
           {/* 좌측 하단: 아이템 등급 */}
-          <span style={{ position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }}>
+          <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={factory!.grade}/>
           </span>
           {/* 우측 하단: 공장 타입 */}
-          <span style={{ position: 'absolute', bottom: 2, right: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }}>
+          <span style={ICON_BOTTOM_RIGHT}>
             <FactoryTypeIcon type={factory!.type} size={iconSm}/>
           </span>
         </>
@@ -216,13 +239,7 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
 
       {/* 버퍼 표시 (count/capacity) */}
       {bufferInfo && (
-        <span style={{
-          position: 'absolute', bottom: 1, left: '50%', transform: 'translateX(-50%)',
-          fontSize: '7px', fontWeight: 700,
-          background: bufferInfo.count >= bufferInfo.capacity ? 'rgba(220,38,38,0.85)' : 'rgba(0,0,0,0.5)',
-          color: '#fff', borderRadius: 3, padding: '1px 3px',
-          whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none',
-        }}>
+        <span style={bufferInfo.count >= bufferInfo.capacity ? BUFFER_FULL : BUFFER_NORMAL}>
           {formatQuantity(bufferInfo.count)}/{formatQuantity(bufferInfo.capacity)}
         </span>
       )}

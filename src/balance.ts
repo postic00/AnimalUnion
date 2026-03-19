@@ -3,6 +3,23 @@ import type { Factory } from './types/factory'
 import type { Item } from './types/item'
 import type { Animal } from './types/animal'
 
+function memo1(fn: (a: number) => number): (a: number) => number {
+  const cache = new Map<number, number>()
+  return (a: number) => {
+    if (cache.has(a)) return cache.get(a)!
+    const v = fn(a); cache.set(a, v); return v
+  }
+}
+
+function memo2(fn: (a: number, b: number) => number): (a: number, b: number) => number {
+  const cache = new Map<number, number>()
+  return (a: number, b: number) => {
+    const k = a * 10000 + b
+    if (cache.has(k)) return cache.get(k)!
+    const v = fn(a, b); cache.set(k, v); return v
+  }
+}
+
 // 공통 COST 함수: BASE * RATE^(lv*EXP + lv²*ACC)
 export function calcCost(base: number, rate: number, exp: number, acc: number, lv: number): number {
   return Math.floor(base * Math.pow(rate, lv * exp + lv * lv * acc))
@@ -29,10 +46,10 @@ export function getProducerUpgradeCost(level: number): number {
 }
 
 // PR 생산 주기
-export function getProducerInterval(level: number): number {
+export const getProducerInterval = memo1((level: number): number => {
   if (level === 0) return Infinity
   return CONFIG.PR_PROC_BASE / Math.pow(CONFIG.PR_PROC_RATE, level - 1)
-}
+})
 
 // 아이템 가치: 등급 기본값 × 가치레벨 배수
 export function getItemValue(grade: number, itemValueLevel = 1): number {
@@ -72,11 +89,11 @@ export function getFactoryPickTime(): number {
 }
 
 // FA 처리 시간: PROC_BASE × quantity / PROC_RATE^(level-1)
-export function getFactoryProcessTime(level: number, quantity: number): number {
+export const getFactoryProcessTime = memo2((level: number, quantity: number): number => {
   const safeQty = Math.max(1, quantity)
   if (level <= 0) return CONFIG.FA_PROC_BASE * safeQty
   return (CONFIG.FA_PROC_BASE * safeQty) / Math.pow(CONFIG.FA_PROC_RATE, level - 1)
-}
+})
 
 // FA 등급 보너스
 export function getFactoryBonus(type: Factory['type'], grade: number): number {
@@ -150,9 +167,9 @@ export function applyFactoryBonus(item: Item, factory: Factory, animals: Animal[
 }
 
 // 재료 수량: RATE^(level-1)
-export function getMaterialQuantity(level: number): number {
+export const getMaterialQuantity = memo1((level: number): number => {
   return Math.pow(CONFIG.IC_PROC_RATE, Math.max(1, level) - 1)
-}
+})
 
 // 클릭커 1클릭당 기여량
 export function getClickerValue(level: number): number {

@@ -1,4 +1,5 @@
 /** 레일 셀 SVG: 흐르는 물 + 사탕 가드레일 / RS=물레방아 / RE=철가방 */
+import styles from './Cell.module.css'
 
 /** 수평 사탕 가드레일 */
 function HCandy({ y, h = 4 }: { y: number; h?: number }) {
@@ -20,24 +21,25 @@ function VCandy({ x, w = 4 }: { x: number; w?: number }) {
   </>
 }
 
-/** 수평 물결 */
-function HWaves() {
-  return <>
-    <path d="M2 12 Q6 9 10 12 Q14 15 18 12 Q22 9 26 12 Q29 14 30 12"
+/** 수평 물결 — 파도 주기 8px, 뷰박스 밖까지 확장해서 seamless loop */
+/** 수평 물결 — 파도 주기 16px, -22~50 확장해서 seamless loop */
+function HWaves({ dir }: { dir: 'R' | 'L' }) {
+  return <g className={dir === 'R' ? styles.flowR : styles.flowL}>
+    <path d="M-22 12 Q-18 9 -14 12 Q-10 15 -6 12 Q-2 9 2 12 Q6 15 10 12 Q14 9 18 12 Q22 15 26 12 Q30 9 34 12 Q38 15 42 12 Q46 9 50 12"
       stroke="rgba(255,255,255,0.65)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    <path d="M2 19 Q6 16 10 19 Q14 22 18 19 Q22 16 26 19 Q29 21 30 19"
+    <path d="M-22 19 Q-18 16 -14 19 Q-10 22 -6 19 Q-2 16 2 19 Q6 22 10 19 Q14 16 18 19 Q22 22 26 19 Q30 16 34 19 Q38 22 42 19 Q46 16 50 19"
       stroke="rgba(255,255,255,0.65)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-  </>
+  </g>
 }
 
-/** 수직 물결 */
-function VWaves() {
-  return <>
-    <path d="M12 2 Q9 6 12 10 Q15 14 12 18 Q9 22 12 26 Q14 29 12 30"
+/** 수직 물결 — 파도 주기 16px, -22~50 확장해서 seamless loop */
+function VWaves({ dir }: { dir: 'D' | 'U' }) {
+  return <g className={dir === 'D' ? styles.flowD : styles.flowU}>
+    <path d="M12 -22 Q9 -18 12 -14 Q15 -10 12 -6 Q9 -2 12 2 Q15 6 12 10 Q9 14 12 18 Q15 22 12 26 Q9 30 12 34 Q15 38 12 42 Q9 46 12 50"
       stroke="rgba(255,255,255,0.65)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    <path d="M19 2 Q16 6 19 10 Q22 14 19 18 Q16 22 19 26 Q21 29 19 30"
+    <path d="M19 -22 Q16 -18 19 -14 Q22 -10 19 -6 Q16 -2 19 2 Q22 6 19 10 Q16 14 19 18 Q22 22 19 26 Q16 30 19 34 Q22 38 19 42 Q16 46 19 50"
       stroke="rgba(255,255,255,0.65)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-  </>
+  </g>
 }
 
 /** 수평 레일 (RR=오른쪽, RL=왼쪽) */
@@ -46,7 +48,7 @@ function HRailIcon({ s, dir }: { s: number; dir: 'R' | 'L' }) {
     <svg width={s} height={s} viewBox="0 0 32 32">
       {/* 물 배경 */}
       <rect width={32} height={32} fill="#bfdbfe"/>
-      <HWaves/>
+      <HWaves dir={dir}/>
       {/* 사탕 가드레일 */}
       <HCandy y={0}/>
       <HCandy y={28}/>
@@ -65,7 +67,7 @@ function VRailIcon({ s, dir }: { s: number; dir: 'D' | 'U' }) {
     <svg width={s} height={s} viewBox="0 0 32 32">
       {/* 물 배경 */}
       <rect width={32} height={32} fill="#bfdbfe"/>
-      <VWaves/>
+      <VWaves dir={dir}/>
       {/* 사탕 가드레일 */}
       <VCandy x={0}/>
       <VCandy x={28}/>
@@ -120,69 +122,65 @@ function RSIcon({ s }: { s: number }) {
   )
 }
 
-/** 코너 레일: top+right 가드레일 (RDR, RLR) */
+/** 코너 레일: top+right 가드레일 (RDR) — 흐름: 오른쪽→아래 */
 function CornerTRIcon({ s }: { s: number }) {
   return (
     <svg width={s} height={s} viewBox="0 0 32 32">
       <rect width={32} height={32} fill="#bfdbfe"/>
-      {/* 물 곡선 흐름 */}
-      <path d="M0 20 Q12 20 20 28 L20 32 L0 32 Z" fill="#93c5fd" opacity="0.5"/>
-      <path d="M4 18 Q14 18 22 28" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      <path d="M4 24 Q10 24 16 30" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-      {/* top 가드레일 */}
+      {/* ㄱ자 곡선 화살표: 오른쪽→아래 */}
+      <path d="M4 16 Q16 16 16 28"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M11 24 L16 30 L21 24"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       <HCandy y={0}/>
-      {/* right 가드레일 */}
       <VCandy x={28}/>
     </svg>
   )
 }
 
-/** 코너 레일: top+left 가드레일 (RDL) */
+/** 코너 레일: top+left 가드레일 (RDL) — 흐름: 왼쪽→아래 */
 function CornerTLIcon({ s }: { s: number }) {
   return (
     <svg width={s} height={s} viewBox="0 0 32 32">
       <rect width={32} height={32} fill="#bfdbfe"/>
-      {/* 물 곡선 흐름 */}
-      <path d="M32 20 Q20 20 12 28 L12 32 L32 32 Z" fill="#93c5fd" opacity="0.5"/>
-      <path d="M28 18 Q18 18 10 28" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      <path d="M28 24 Q22 24 16 30" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-      {/* top 가드레일 */}
+      {/* ㄱ자 곡선 화살표: 왼쪽→아래 */}
+      <path d="M28 16 Q16 16 16 28"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M11 24 L16 30 L21 24"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       <HCandy y={0}/>
-      {/* left 가드레일 */}
       <VCandy x={0}/>
     </svg>
   )
 }
 
-/** 코너 레일: bottom+left 가드레일 (RRL) */
+/** 코너 레일: bottom+left 가드레일 (RRL) — 흐름: 아래→오른쪽 */
 function CornerBLIcon({ s }: { s: number }) {
   return (
     <svg width={s} height={s} viewBox="0 0 32 32">
       <rect width={32} height={32} fill="#bfdbfe"/>
-      {/* 물 곡선 흐름 */}
-      <path d="M32 12 Q20 12 12 4 L12 0 L32 0 Z" fill="#93c5fd" opacity="0.5"/>
-      <path d="M28 14 Q18 14 10 4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      <path d="M28 8 Q22 8 16 2" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-      {/* bottom 가드레일 */}
+      {/* ㄱ자 곡선 화살표: 아래→오른쪽 */}
+      <path d="M16 4 Q16 16 28 16"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M24 11 L30 16 L24 21"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       <HCandy y={28}/>
-      {/* left 가드레일 */}
       <VCandy x={0}/>
     </svg>
   )
 }
 
-/** 코너 레일: bottom+right 가드레일 (RLR) */
+/** 코너 레일: bottom+right 가드레일 (RLR) — 흐름: 아래→왼쪽 */
 function CornerBRIcon({ s }: { s: number }) {
   return (
     <svg width={s} height={s} viewBox="0 0 32 32">
       <rect width={32} height={32} fill="#bfdbfe"/>
-      {/* 물 곡선 흐름 */}
-      <path d="M0 12 Q12 12 20 4 L20 0 L0 0 Z" fill="#93c5fd" opacity="0.5"/>
-      <path d="M4 14 Q14 14 22 4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-      <path d="M4 8 Q10 8 16 2" stroke="rgba(255,255,255,0.5)" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-      {/* bottom 가드레일 */}
+      {/* ㄱ자 곡선 화살표: 아래→왼쪽 */}
+      <path d="M16 4 Q16 16 4 16"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      <path d="M8 11 L2 16 L8 21"
+        stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
       <HCandy y={28}/>
-      {/* right 가드레일 */}
       <VCandy x={28}/>
     </svg>
   )

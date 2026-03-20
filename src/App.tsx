@@ -63,6 +63,20 @@ function getConsistentBoard(bundleCount: number): BoardType {
 }
 
 function loadInitialState() {
+  // 구버전 감지 - loadGame() 호출 전에 체크 (loadGame은 구버전 시 자동 삭제)
+  const peek = SaveService.peekSave()
+  const hasOldSave = peek !== null && SaveService.isUnsupportedVersion(peek.version)
+  if (hasOldSave) {
+    return {
+      board: initialBoard,
+      gameState: { ...initialGameState },
+      savedAt: null as number | null,
+      speedBoostUntil: 0,
+      goldBoostUntil: 0,
+      hasOldSave: true,
+    }
+  }
+
   const saved = loadGame()
   const savedState = saved?.gameState ?? initialGameState
   if (!savedState.playerName) {
@@ -77,11 +91,13 @@ function loadInitialState() {
     savedAt: saved?.savedAt ?? null,
     speedBoostUntil: saved?.boosts?.speedBoostUntil ?? 0,
     goldBoostUntil: saved?.boosts?.goldBoostUntil ?? 0,
+    hasOldSave: false,
   }
 }
 
 export default function App() {
   const [initData] = useState(loadInitialState)
+  const [showOldSaveAlert, setShowOldSaveAlert] = useState(initData.hasOldSave)
   const [board, setBoard] = useState<BoardType>(initData.board)
   const [resetKey, setResetKey] = useState(0)
   const [gameState, setGameState] = useState<GameState>(initData.gameState)
@@ -113,7 +129,7 @@ export default function App() {
   const BOOST_MS = 10 * 60 * 1000
   const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
   const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
 
   const goldBoostUntilRef = useRef(goldBoostUntil)
   goldBoostUntilRef.current = goldBoostUntil
@@ -152,13 +168,13 @@ export default function App() {
   // ── 튜토리얼 사이드이펙트 ─────────────────────────────────────────────────
   useEffect(() => {
     if (ui.tutorialStep === 3 && ui.tutorialItemCount >= 20) ui.setTutorialStep(4)
-  }, [ui.tutorialItemCount, ui.tutorialStep])
+  }, [ui.tutorialItemCount, ui.tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const s = ui.tutorialStep
     if (s === null) return
     if ([3, 4, 5, 6].includes(s)) ui.setActiveTab(null)
-  }, [ui.tutorialStep])
+  }, [ui.tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── AdMob / Toss ──────────────────────────────────────────────────────────
   useEffect(() => { initAdMob() }, [])
@@ -170,7 +186,7 @@ export default function App() {
       else closeView()
     }).then(fn => { cleanup = fn })
     return () => cleanup()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     return initTossVisibility(
@@ -191,11 +207,12 @@ export default function App() {
     const save = (force = false) => {
       const snapshot = getSnapshot()
       if (!force && snapshot === lastSavedSnapshotRef.current) return
-      lastSavedSnapshotRef.current = snapshot
-      saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
+      const ok = saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
         speedBoostUntil: speedBoostUntilRef.current,
         goldBoostUntil: goldBoostUntilRef.current,
       })
+      if (!ok) return // 원자저장: 메인 저장 실패 시 엔진 상태 저장 생략
+      lastSavedSnapshotRef.current = snapshot
       boardSaveRef.current()
       setSavedAt(Date.now())
     }
@@ -204,25 +221,34 @@ export default function App() {
     window.addEventListener('beforeunload', onUnload)
     document.addEventListener('visibilitychange', onVisibility)
 
-    let tick = 0
-    const interval = setInterval(() => {
-      tick++
+    let rafId: number
+    let lastGold = 0
+    let lastBoost = 0
+    let lastPerSec = 0
 
-      // 100ms: 골드 버퍼 flush
-      const g = goldBufferRef.current
-      const t = totalEarnedBufferRef.current
-      if (g > 0) {
-        goldBufferRef.current = 0
-        totalEarnedBufferRef.current = 0
-        setGold(prev => prev + g)
-        setTotalEarned(prev => prev + t)
+    const loop = (now: number) => {
+      // ~100ms: 골드 버퍼 flush
+      if (now - lastGold >= 100) {
+        lastGold = now
+        const g = goldBufferRef.current
+        const t = totalEarnedBufferRef.current
+        if (g > 0) {
+          goldBufferRef.current = 0
+          totalEarnedBufferRef.current = 0
+          setGold(prev => prev + g)
+          setTotalEarned(prev => prev + t)
+        }
       }
 
-      // 500ms: 부스트 타이머 갱신
-      if (tick % 5 === 0) setNow(Date.now())
+      // ~500ms: 부스트 타이머 갱신
+      if (now - lastBoost >= 500) {
+        lastBoost = now
+        setNow(Date.now())
+      }
 
-      // 1000ms: 초당 골드 계산
-      if (tick % 10 === 0) {
+      // ~1000ms: 초당 골드 계산
+      if (now - lastPerSec >= 1000) {
+        lastPerSec = now
         const bucket = earnedInSecRef.current
         earnedInSecRef.current = 0
         bucketHistoryRef.current.push(bucket)
@@ -232,17 +258,20 @@ export default function App() {
         setGoldPerSec(len > 0 ? Math.round(total / len) : 0)
       }
 
-      // 60000ms: 저장 + 리더보드 업로드
-      if (tick % 600 === 0) {
-        save()
-        const { playerName } = gameStateRef.current
-        if (playerName) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
-        tick = 0
-      }
-    }, 100)
+      rafId = requestAnimationFrame(loop)
+    }
+    rafId = requestAnimationFrame(loop)
+
+    // 60s: 저장 + 리더보드 업로드
+    const saveInterval = setInterval(() => {
+      save()
+      const { playerName } = gameStateRef.current
+      if (playerName) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+    }, 60000)
 
     return () => {
-      clearInterval(interval)
+      cancelAnimationFrame(rafId)
+      clearInterval(saveInterval)
       window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('visibilitychange', onVisibility)
     }
@@ -347,7 +376,7 @@ export default function App() {
         spawnClickerItemRef={spawnClickerItemRef}
         onSaveRef={boardSaveRef}
         muted={muted}
-        speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
+        speedMultiplier={now < speedBoostUntil ? 2 : 1}
         onFactoryClick={handleFactoryClick}
         onProducerClick={ui.handleProducerClick}
         onRsClick={ui.handleRsClick}
@@ -550,7 +579,7 @@ export default function App() {
         )}
         {ui.activeTab === 3 && (
           <PrestigeTab
-            gameState={gameState}
+            gameState={{ ...gameState, totalEarned }}
             section={ui.prestigeSection}
             onPrestige={actions.handlePrestige}
             onPrestigeKeepPoints={actions.handlePrestigeKeepPoints}
@@ -686,6 +715,17 @@ export default function App() {
           rsQueuesRef={ui.selectedRs.rsQueuesRef}
           capacity={getRsBufferCapacity(gameState.rsBufferLevel)}
           onClose={() => ui.setSelectedRs(null)}
+        />
+      )}
+
+      {/* 구버전 저장 데이터 경고 */}
+      {showOldSaveAlert && (
+        <ConfirmModal
+          title="저장 데이터 호환 불가"
+          message={'이전 버전의 저장 데이터가 발견되었습니다.\n삭제하고 새로 시작합니다.'}
+          confirmLabel="확인"
+          onConfirm={() => { SaveService.deleteSave(); setShowOldSaveAlert(false) }}
+          onClose={() => { SaveService.deleteSave(); setShowOldSaveAlert(false) }}
         />
       )}
 

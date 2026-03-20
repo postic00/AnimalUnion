@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Board } from '../types/board'
 import type { Producer } from '../types/producer'
 import type { Factory } from '../types/factory'
@@ -7,7 +7,6 @@ import { GameEngine } from '../engine/GameEngine'
 import type { FAState, PRState, FALiveStates, Progresses, FAPhases } from '../engine/types'
 
 // ── 상수 ───────────────────────────────────────────────────────────────────
-const TICK_INTERVAL_MS = 33        // 게임 루프 틱 주기 (~30fps)
 const RENDER_INTERVAL_MS = 100     // 렌더/진행도 갱신 주기
 
 // ── re-export (하위 호환) ───────────────────────────────────────────────────
@@ -47,17 +46,26 @@ export function useGameLoop(
   const engineRef = useRef<GameEngine | null>(null)
   const mountedRef = useRef(false)
 
+  // Board.tsx에서 저장 시 엔진 상태를 읽을 수 있도록 ref 노출
+  const faStatesRef = useRef<Record<string, FAState>>({})
+  const itemsRef = useRef<import('../types/item').Item[]>([])
+  const rsQueuesRef = useRef<Record<string, import('../types/item').Item[]>>({})
+  const produceTimersRef = useRef<Record<string, number>>({})
+  const prStatesRef = useRef<Record<string, PRState>>({})
+
   // 최신 콜백을 항상 참조하도록 ref로 래핑
   const onGoldEarnedRef = useRef(onGoldEarned)
-  onGoldEarnedRef.current = onGoldEarned
   const onFactoryProcessRef = useRef(onFactoryProcess)
-  onFactoryProcessRef.current = onFactoryProcess
   const onFaLiveStateChangeRef = useRef(onFaLiveStateChange)
-  onFaLiveStateChangeRef.current = onFaLiveStateChange
   const onProducerProgressChangeRef = useRef(onProducerProgressChange)
-  onProducerProgressChangeRef.current = onProducerProgressChange
   const speedMultiplierRef = useRef(speedMultiplier ?? 1)
-  speedMultiplierRef.current = speedMultiplier ?? 1
+  useLayoutEffect(() => {
+    onGoldEarnedRef.current = onGoldEarned
+    onFactoryProcessRef.current = onFactoryProcess
+    onFaLiveStateChangeRef.current = onFaLiveStateChange
+    onProducerProgressChangeRef.current = onProducerProgressChange
+    speedMultiplierRef.current = speedMultiplier ?? 1
+  })
 
   // 엔진 생성 (board/cellSize 변경 시 재구성)
   useEffect(() => {
@@ -99,50 +107,51 @@ export function useGameLoop(
 
     engineRef.current = engine
 
-    let tickId: ReturnType<typeof setInterval> | null = null
-    let renderIntervalId: ReturnType<typeof setInterval> | null = null
-    let progressIntervalId: ReturnType<typeof setInterval> | null = null
+    let rafId: number | null = null
+    let lastRenderTime = 0
 
-    const startIntervals = () => {
-      engine.resetLastTime()
-
-      tickId = setInterval(() => {
-        engine.updateConfig({ speedMultiplier: speedMultiplierRef.current })
-        engine.tick()
-      }, TICK_INTERVAL_MS)
-
-      renderIntervalId = setInterval(() => {
+    const loop = (now: number) => {
+      engine.updateConfig({ speedMultiplier: speedMultiplierRef.current })
+      engine.tick()
+      if (now - lastRenderTime >= RENDER_INTERVAL_MS) {
+        lastRenderTime = now
         setRenderItems(engine.getRenderItems())
         const snap = engine.computeSnapshot(true)
         if (snap.hasDerailed) setHasDerailed(true)
-      }, RENDER_INTERVAL_MS)
-
-      progressIntervalId = setInterval(() => {
-        const snap = engine.computeSnapshot()
         setProgresses(snap.progresses)
         setFaPhases(snap.faPhases)
         setBufferCounts(snap.bufferCounts)
         onFaLiveStateChangeRef.current?.(snap.faLiveStates)
         onProducerProgressChangeRef.current?.(snap.producerProgresses)
-      }, RENDER_INTERVAL_MS)
+        faStatesRef.current = engine.faStates
+        itemsRef.current = engine.items
+        rsQueuesRef.current = engine.rsQueues
+        produceTimersRef.current = engine.produceTimers
+        prStatesRef.current = engine.prStates
+      }
+      rafId = requestAnimationFrame(loop)
     }
 
-    const stopIntervals = () => {
-      if (tickId) { clearInterval(tickId); tickId = null }
-      if (renderIntervalId) { clearInterval(renderIntervalId); renderIntervalId = null }
-      if (progressIntervalId) { clearInterval(progressIntervalId); progressIntervalId = null }
+    const start = () => {
+      engine.resetLastTime()
+      lastRenderTime = performance.now()
+      rafId = requestAnimationFrame(loop)
+    }
+
+    const stop = () => {
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null }
     }
 
     const handleVisibilityChange = () => {
-      if (document.hidden) stopIntervals()
-      else startIntervals()
+      if (document.hidden) stop()
+      else start()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    startIntervals()
+    start()
 
     return () => {
-      stopIntervals()
+      stop()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [board, cellSize]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -183,26 +192,6 @@ export function useGameLoop(
     setHasDerailed(false)
   }, [])
 
-  // Board.tsx에서 저장 시 엔진 상태를 읽을 수 있도록 ref 노출
-  const faStatesRef = useRef<Record<string, FAState>>({})
-  const itemsRef = useRef<import('../types/item').Item[]>([])
-  const rsQueuesRef = useRef<Record<string, import('../types/item').Item[]>>({})
-  const produceTimersRef = useRef<Record<string, number>>({})
-  const prStatesRef = useRef<Record<string, PRState>>({})
-
-  // 렌더 주기마다 저장용 refs를 엔진 내부 상태와 동기화
-  useEffect(() => {
-    const id = setInterval(() => {
-      const e = engineRef.current
-      if (!e) return
-      faStatesRef.current = e.faStates
-      itemsRef.current = e.items
-      rsQueuesRef.current = e.rsQueues
-      produceTimersRef.current = e.produceTimers
-      prStatesRef.current = e.prStates
-    }, RENDER_INTERVAL_MS)
-    return () => clearInterval(id)
-  }, [])
 
   return {
     items: renderItems,

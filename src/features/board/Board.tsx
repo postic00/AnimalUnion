@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { formatGold } from '../../utils/formatGold'
 import { soundByAnimalId } from '../../utils/sound'
 import type { MutableRefObject } from 'react'
@@ -43,7 +43,7 @@ interface Props {
   speedMultiplier: number
   onFactoryClick?: (row: number, col: number) => void
   onProducerClick?: (row: number, col: number) => void
-  onRsClick?: (row: number, col: number, rsKey: string, rsQueuesRef: MutableRefObject<Record<string, import('../types/item').Item[]>>) => void
+  onRsClick?: (row: number, col: number, rsKey: string, rsQueuesRef: MutableRefObject<Record<string, import('../../types/item').Item[]>>) => void
   onFaLiveStateChange?: (states: FALiveStates) => void
   onProducerProgressChange?: (progresses: Record<string, number>) => void
   tutorialHighlight?: 'fa' | 'rs'
@@ -63,12 +63,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const savedEngineStateRef = useRef(SaveService.loadEngineState())
-  const savedItemsRef = { current: savedEngineStateRef.current.items }
-  const savedFaStatesRef = { current: savedEngineStateRef.current.faStates }
-  const savedRsQueuesRef = { current: savedEngineStateRef.current.rsQueues }
-  const savedProduceTimersRef = { current: savedEngineStateRef.current.produceTimers }
-  const savedPrStatesRef = { current: savedEngineStateRef.current.prStates }
+  const { items: initialItems, faStates: initialFaStates, rsQueues: initialRsQueues, produceTimers: initialProduceTimers, prStates: initialPrStates } = useRef(SaveService.loadEngineState()).current
 
   const [goldFloats, setGoldFloats] = useState<{ id: number; x: number; y: number; amount: number }[]>([])
   const floatIdRef = useRef(0)
@@ -84,18 +79,20 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, savedRsQueuesRef.current as Record<string, import('../types/item').Item[]> ?? undefined, savedProduceTimersRef.current ?? undefined, savedPrStatesRef.current as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange)
+  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, initialItems as never, initialFaStates as Record<string, FAState> ?? undefined, initialRsQueues as Record<string, import('../../types/item').Item[]> ?? undefined, initialProduceTimers ?? undefined, initialPrStates as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange)
 
-  onSaveRef.current = () => {
-    SaveService.saveEngineState({
-      items: itemsRef.current,
-      faStates: faStatesRef.current,
-      rsQueues: rsQueuesRef.current,
-      produceTimers: produceTimersRef.current,
-      prStates: prStatesRef.current,
-    })
-  }
-  spawnClickerItemRef.current = spawnClickerItem
+  useLayoutEffect(() => {
+    onSaveRef.current = () => {
+      SaveService.saveEngineState({
+        items: itemsRef.current,
+        faStates: faStatesRef.current,
+        rsQueues: rsQueuesRef.current,
+        produceTimers: produceTimersRef.current,
+        prStates: prStatesRef.current,
+      })
+    }
+    spawnClickerItemRef.current = spawnClickerItem
+  })
 
   const producersByPos = useMemo(() =>
     new Map(producers.map(p => [`${p.row}-${p.col}`, p])),

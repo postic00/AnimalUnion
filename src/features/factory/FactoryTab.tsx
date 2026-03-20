@@ -129,6 +129,7 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
     // 해당 floor가 닫혀있으면 열기
     const floorIdx = floors.findIndex(cells => cells.some(c => c.row === focusFactory.row && c.col === focusFactory.col))
     if (floorIdx !== -1 && closedFloors[floorIdx]) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setClosedFloors(prev => ({ ...prev, [floorIdx]: false }))
     }
     // 다음 렌더 후 스크롤

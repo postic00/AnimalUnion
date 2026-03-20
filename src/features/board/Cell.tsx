@@ -10,8 +10,10 @@ import { ProcessAnimation } from '../factory/ProcessAnimation'
 import { FactoryTypeIcon } from '../factory/FactoryTypeIcon'
 import styles from './Cell.module.css'
 
+// eslint-disable-next-line react-refresh/only-export-components
 export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getSpecies(animalId: AnimalId | null): AnimalSpecies {
   if (!animalId) return 'robot'
   if (animalId.startsWith('hamster')) return 'hamster'

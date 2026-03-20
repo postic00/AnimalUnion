@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Item } from '../../types/item'
 import { GradeIcon } from '../common/GradeIcon'
 import { formatQuantity } from '../../utils/formatGold'
@@ -12,9 +12,9 @@ interface Props {
 }
 
 export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: Props) {
-  const [items, setItems] = useState<Item[]>(() => [...(rsQueuesRef.current?.[rsKey] ?? [])])
+  const [items, setItems] = useState<Item[]>([])
   const rsKeyRef = useRef(rsKey)
-  rsKeyRef.current = rsKey
+  useLayoutEffect(() => { rsKeyRef.current = rsKey })
 
   useEffect(() => {
     const handler = () => {

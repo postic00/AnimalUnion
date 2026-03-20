@@ -10,7 +10,7 @@ export type { LeaderboardEntry } from '../lib/supabase'
 export const ScoreService = {
   // ── 점수 제출 ─────────────────────────────────────────────────────────────
   deleteAll(deviceId: string): Promise<void> {
-    return _deleteScores(deviceId)
+    return _deleteScores(deviceId).catch(e => console.warn('[ScoreService] deleteAll 실패:', e))
   },
 
   submitPrestige(deviceId: string, playerName: string, score: number, prestigeCount: number): Promise<boolean> {

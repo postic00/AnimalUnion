@@ -165,6 +165,7 @@ export function AnimalSvg({ species, size }: { species: AnimalSpecies; size: num
   return SPECIES_COMPONENTS[species]?.(size) ?? <Robot s={size}/>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getSpeciesFromId(animalId: string | null): AnimalSpecies {
   if (!animalId) return 'robot'
   if (animalId.startsWith('hamster')) return 'hamster'

@@ -16,6 +16,22 @@ import {
   getDeviceId as _getDeviceId,
 } from '../utils/saveLoad'
 
+// saveLoad.ts의 MIN_SAVE_VERSION과 동기화 필요
+const MIN_SUPPORTED_VERSION = '1.1.0'
+const _PEEK_KEY = 'animal-union-save'
+
+function _parseVer(v: string): number[] {
+  return v.split('.').map(n => parseInt(n, 10) || 0)
+}
+function _versionLt(a: string, b: string): boolean {
+  const av = _parseVer(a), bv = _parseVer(b)
+  for (let i = 0; i < Math.max(av.length, bv.length); i++) {
+    const d = (av[i] ?? 0) - (bv[i] ?? 0)
+    if (d !== 0) return d < 0
+  }
+  return false
+}
+
 export interface EngineState {
   items: unknown[]
   faStates: Record<string, unknown>
@@ -94,5 +110,19 @@ export const SaveService = {
   // ── 디바이스 ─────────────────────────────────────────────────────────────
   getDeviceId(): string {
     return _getDeviceId()
+  },
+
+  // ── 구버전 감지 ───────────────────────────────────────────────────────────
+  peekSave(): { version: string } | null {
+    try {
+      const raw = localStorage.getItem(_PEEK_KEY)
+      if (!raw) return null
+      const data = JSON.parse(raw)
+      return data.version ? { version: data.version } : null
+    } catch { return null }
+  },
+
+  isUnsupportedVersion(version: string): boolean {
+    return _versionLt(version, MIN_SUPPORTED_VERSION)
   },
 }

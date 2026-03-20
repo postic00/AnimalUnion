@@ -23,12 +23,24 @@ export default function LeaderboardTab({ playerName, mode, onNameChange }: Props
   const [nameInput, setNameInput] = useState(playerName)
 
   const refresh = () => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
-    fetch().then(data => { setEntries(data); setLoading(false) })
+    fetch()
+      .then(data => { setEntries(data) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }
 
-  useEffect(() => { refresh() }, [mode])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true)
+    const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
+    fetch()
+      .then(data => { setEntries(data) })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameSave = () => {
     const trimmed = nameInput.trim()

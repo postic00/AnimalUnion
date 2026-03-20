@@ -13,7 +13,8 @@ export async function closeView(): Promise<void> {
   if (!isTossEnvironment()) return
   try {
     _closeView()
-  } catch {}
+  } catch { // no-op
+  }
 }
 
 export async function initTossBackEvent(onBack: () => void): Promise<() => void> {

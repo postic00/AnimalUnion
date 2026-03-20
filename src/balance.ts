@@ -36,6 +36,7 @@ export function getBundleCost(bundleCount: number): number {
 }
 
 // PR 건설 비용
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getProducerBuildCost(_builtCount: number = 0): number {
   return CONFIG.PR_BUILD_COST_BASE
 }

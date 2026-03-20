@@ -169,7 +169,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       producers[index] = { ...producers[index], grade }
       return { ...prev, producers }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeProducer = useCallback((index: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -247,21 +247,21 @@ export function useGameActions(ctx: GameActionsCtx) {
         return { ...f, type, grade }
       }),
     }))
-  }, [])
+  }, [setGameState])
 
   const handleSetFactoryDir = useCallback((row: number, col: number, dir: Factory['dir']) => {
     setGameState(prev => ({
       ...prev,
       factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, dir } : f),
     }))
-  }, [])
+  }, [setGameState])
 
   const handleSetFactoryGrade = useCallback((row: number, col: number, grade: number) => {
     setGameState(prev => ({
       ...prev,
       factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, grade } : f),
     }))
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeFactoryLevel = useCallback((row: number, col: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -294,7 +294,7 @@ export function useGameActions(ctx: GameActionsCtx) {
         animals: prev.animals.map(a => a.id === id ? { ...a, unlocked: true } : a),
       }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeAnimal = useCallback((id: AnimalId, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -316,14 +316,14 @@ export function useGameActions(ctx: GameActionsCtx) {
         animals: prev.animals.map(a => a.id === id ? { ...a, level } : a),
       }
     })
-  }, [])
+  }, [setGameState])
 
   const handleSetFactoryAnimal = useCallback((row: number, col: number, animalId: AnimalId | null) => {
     setGameState(prev => ({
       ...prev,
       factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId } : f),
     }))
-  }, [])
+  }, [setGameState])
 
   const handlePlaceAnimal = useCallback((row: number, col: number, placingAnimalId: AnimalId | null) => {
     if (!placingAnimalId) return
@@ -331,14 +331,14 @@ export function useGameActions(ctx: GameActionsCtx) {
       ...prev,
       factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId: placingAnimalId } : f),
     }))
-  }, [])
+  }, [setGameState])
 
   const handleRecallAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => ({
       ...prev,
       factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
     }))
-  }, [])
+  }, [setGameState])
 
   // ── 재료 / 아이템 가치 ────────────────────────────────────────────────────
   const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
@@ -357,7 +357,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       itemValueLevels[gradeIndex] = level
       return { ...prev, prestigePoints: points, itemValueLevels }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {

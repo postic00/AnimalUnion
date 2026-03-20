@@ -20,6 +20,8 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
   const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [loading, setLoading] = useState<'save' | 'load' | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saveCooldownRef = useRef(0)
+  const SAVE_COOLDOWN_MS = 30_000
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
@@ -30,17 +32,29 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
   }, [])
 
   const handleSave = useCallback(async () => {
+    if (loading || Date.now() < saveCooldownRef.current) return
     setLoading('save')
-    const ok = await onCloudSave()
-    setLoading(null)
-    showMsg(ok ? '클라우드에 저장했어요' : '저장에 실패했어요', ok)
-  }, [onCloudSave, showMsg])
+    try {
+      const ok = await onCloudSave()
+      if (ok) saveCooldownRef.current = Date.now() + SAVE_COOLDOWN_MS
+      showMsg(ok ? '클라우드에 저장했어요' : '저장에 실패했어요', ok)
+    } catch {
+      showMsg('저장에 실패했어요', false)
+    } finally {
+      setLoading(null)
+    }
+  }, [onCloudSave, showMsg, loading])
 
   const handleLoad = useCallback(async () => {
     setLoading('load')
-    const ok = await onCloudLoad()
-    setLoading(null)
-    showMsg(ok ? '불러오기 완료!' : '불러올 데이터가 없어요', ok)
+    try {
+      const ok = await onCloudLoad()
+      showMsg(ok ? '불러오기 완료!' : '불러올 데이터가 없어요', ok)
+    } catch {
+      showMsg('불러오기에 실패했어요', false)
+    } finally {
+      setLoading(null)
+    }
   }, [onCloudLoad, showMsg])
 
   return (

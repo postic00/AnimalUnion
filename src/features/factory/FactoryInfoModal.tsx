@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Factory } from '../../types/factory'
 import type { FALiveState, FALiveStates } from '../../hooks/useGameLoop'
 import { ANIMAL_NAMES } from '../../types/animal'
@@ -39,12 +39,21 @@ interface Props {
 }
 
 export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
-  const [live, setLive] = useState<FALiveState | undefined>(() => faLiveStatesRef.current?.[liveKey])
+  const [live, setLive] = useState<FALiveState | undefined>(undefined)
   const liveKeyRef = useRef(liveKey)
-  liveKeyRef.current = liveKey
+  useLayoutEffect(() => { liveKeyRef.current = liveKey })
   useEffect(() => {
-    const id = setInterval(() => setLive(faLiveStatesRef.current?.[liveKeyRef.current]), 100)
-    return () => clearInterval(id)
+    let rafId: number
+    let last = 0
+    const loop = (now: number) => {
+      if (now - last >= 100) {
+        last = now
+        setLive(faLiveStatesRef.current?.[liveKeyRef.current])
+      }
+      rafId = requestAnimationFrame(loop)
+    }
+    rafId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(rafId)
   }, [faLiveStatesRef])
   const qty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
   const bonus = getFactoryBonus(factory.type, factory.grade)

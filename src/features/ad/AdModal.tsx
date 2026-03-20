@@ -9,13 +9,13 @@ interface Props {
 }
 
 export default function AdModal({ onComplete, onClose }: Props) {
+  const isNative = Capacitor.isNativePlatform()
   const [count, setCount] = useState(5)
-  const [loading, setLoading] = useState(false)
+  const loading = isNative
 
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
+    if (isNative) {
       // 네이티브: 바로 AdMob 호출
-      setLoading(true)
       showRewardedAd().then(rewarded => {
         if (rewarded) onComplete()
         else onClose()
@@ -30,9 +30,13 @@ export default function AdModal({ onComplete, onClose }: Props) {
     }
     const t = setTimeout(() => setCount(c => c - 1), 1000)
     return () => clearTimeout(t)
-  }, [count, Capacitor.isNativePlatform()])
+  }, [count, isNative]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) return null  // 네이티브에서는 AdMob UI가 직접 표시됨
+  if (loading) return (
+    <div className="modal-overlay">
+      <div className={styles.spinner} />
+    </div>
+  )
 
   return (
     <div className="modal-overlay">

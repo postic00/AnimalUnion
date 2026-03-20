@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Producer } from '../../types/producer'
 import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../../balance'
 import { formatGold, formatQuantity } from '../../utils/formatGold'
@@ -34,13 +34,20 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [progress, setProgress] = useState(0)
   const progressKeyRef = useRef(progressKey)
-  progressKeyRef.current = progressKey
+  useLayoutEffect(() => { progressKeyRef.current = progressKey })
   useEffect(() => {
     if (!producerProgressesRef || !progressKey) return
-    const id = setInterval(() => {
-      setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
-    }, 100)
-    return () => clearInterval(id)
+    let rafId: number
+    let last = 0
+    const loop = (now: number) => {
+      if (now - last >= 100) {
+        last = now
+        setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
+      }
+      rafId = requestAnimationFrame(loop)
+    }
+    rafId = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(rafId)
   }, [producerProgressesRef, progressKey])
   const buildCost = getProducerBuildCost(builtCount)
   const upgradeCost = getProducerUpgradeCost(producer.level)

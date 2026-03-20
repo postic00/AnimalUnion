@@ -64,10 +64,14 @@ export function deleteSave(): void {
   localStorage.removeItem(SAVE_KEY)
   localStorage.removeItem(ITEMS_KEY)
   localStorage.removeItem(FA_STATES_KEY)
+  localStorage.removeItem(RS_QUEUES_KEY)
+  localStorage.removeItem(PRODUCE_TIMERS_KEY)
 }
 
 const ITEMS_KEY = 'animal-union-items'
 const FA_STATES_KEY = 'animal-union-fa-states'
+const RS_QUEUES_KEY = 'animal-union-rs-queues'
+const PRODUCE_TIMERS_KEY = 'animal-union-produce-timers'
 
 export function saveItems(items: unknown): void {
   try { localStorage.setItem(ITEMS_KEY, JSON.stringify(items)) } catch { /* ignore */ }
@@ -87,6 +91,28 @@ export function saveFaStates(faStates: unknown): void {
 export function loadFaStates(): Record<string, unknown> | null {
   try {
     const raw = localStorage.getItem(FA_STATES_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function saveRsQueues(rsQueues: unknown): void {
+  try { localStorage.setItem(RS_QUEUES_KEY, JSON.stringify(rsQueues)) } catch { /* ignore */ }
+}
+
+export function loadRsQueues(): Record<string, unknown[]> | null {
+  try {
+    const raw = localStorage.getItem(RS_QUEUES_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function saveProduceTimers(timers: unknown): void {
+  try { localStorage.setItem(PRODUCE_TIMERS_KEY, JSON.stringify(timers)) } catch { /* ignore */ }
+}
+
+export function loadProduceTimers(): Record<string, number> | null {
+  try {
+    const raw = localStorage.getItem(PRODUCE_TIMERS_KEY)
     return raw ? JSON.parse(raw) : null
   } catch { return null }
 }

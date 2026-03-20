@@ -18,34 +18,32 @@ function Sweat({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
 function HamsterHead({ tired }: { tired?: boolean }) {
   return (
     <>
-      {/* 귀 (크고 둥글게) */}
+      {/* 귀 — scale 없이 원본 크기 유지 */}
       <circle cx="11" cy="8" r="7" fill="#fde9b8" stroke="#1a1a1a" strokeWidth="1.5"/>
       <circle cx="11" cy="9" r="4.5" fill="#ffb8c0"/>
       <circle cx="37" cy="8" r="7" fill="#fde9b8" stroke="#1a1a1a" strokeWidth="1.5"/>
       <circle cx="37" cy="9" r="4.5" fill="#ffb8c0"/>
-      {/* 얼굴 */}
-      <circle cx="24" cy="19" r="13" fill="#fde9b8" stroke="#1a1a1a" strokeWidth="1.5"/>
-      {/* 볼 주머니 (햄스터 특징! 크고 볼록하게) */}
-      <ellipse cx="9"  cy="23" rx="7.5" ry="6" fill="#ffb8c0" opacity="0.85"/>
-      <ellipse cx="39" cy="23" rx="7.5" ry="6" fill="#ffb8c0" opacity="0.85"/>
-      {/* 눈 (작고 가깝게) */}
-      {tired
-        ? <>
-            <path d="M19 17 Q21.5 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-            <path d="M24 17 Q26.5 19.5 29 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-          </>
-        : <>
-            <circle cx="21" cy="16" r="3" fill="#1a1a1a"/>
-            <circle cx="27" cy="16" r="3" fill="#1a1a1a"/>
-            <circle cx="19.8" cy="14.5" r="1" fill="#fff"/>
-            <circle cx="25.8" cy="14.5" r="1" fill="#fff"/>
-          </>
-      }
-      {/* 코 */}
-      <ellipse cx="24" cy="21" rx="2" ry="1.5" fill="#1a1a1a"/>
-      {/* 입 */}
-      <path d="M24 22.5 Q21 25.5 19 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
-      <path d="M24 22.5 Q27 25.5 29 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
+      {/* 얼굴 + 특징 — 1.25배 확대 */}
+      <g transform="translate(24,19) scale(1.25) translate(-24,-19)">
+        <circle cx="24" cy="19" r="13" fill="#fde9b8" stroke="#1a1a1a" strokeWidth="1.5"/>
+        <ellipse cx="14" cy="22" rx="4.5" ry="3" fill="#ffb8c0" opacity="0.7"/>
+        <ellipse cx="34" cy="22" rx="4.5" ry="3" fill="#ffb8c0" opacity="0.7"/>
+        {tired
+          ? <>
+              <path d="M18 17 Q21 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M24 17 Q27 19.5 30 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            </>
+          : <>
+              <circle cx="20" cy="16" r="3" fill="#1a1a1a"/>
+              <circle cx="28" cy="16" r="3" fill="#1a1a1a"/>
+              <circle cx="18.8" cy="14.5" r="1" fill="#fff"/>
+              <circle cx="26.8" cy="14.5" r="1" fill="#fff"/>
+            </>
+        }
+        <ellipse cx="24" cy="21" rx="2" ry="1.5" fill="#1a1a1a"/>
+        <path d="M24 22.5 Q21 25.5 19 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M24 22.5 Q27 25.5 29 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
+      </g>
     </>
   )
 }
@@ -53,40 +51,39 @@ function HamsterHead({ tired }: { tired?: boolean }) {
 function CatHead({ tired }: { tired?: boolean }) {
   return (
     <>
-      {/* 귀 (길고 날카롭게!) */}
+      {/* 귀 — scale 없이 원본 크기 유지 */}
       <path d="M9 19 L6 3 L21 14 Z" fill="#f0f0f0" stroke="#1a1a1a" strokeWidth="1.5" strokeLinejoin="round"/>
       <path d="M39 19 L42 3 L27 14 Z" fill="#f0f0f0" stroke="#1a1a1a" strokeWidth="1.5" strokeLinejoin="round"/>
       <path d="M10 18 L8 6 L19 14 Z" fill="#ffb8c0"/>
       <path d="M38 18 L40 6 L29 14 Z" fill="#ffb8c0"/>
-      {/* 얼굴 */}
-      <circle cx="24" cy="19" r="13" fill="#f8f8f8" stroke="#1a1a1a" strokeWidth="1.5"/>
-      {/* 볼 */}
-      <ellipse cx="14" cy="22" rx="4" ry="2.8" fill="#ffb8c0" opacity="0.65"/>
-      <ellipse cx="34" cy="22" rx="4" ry="2.8" fill="#ffb8c0" opacity="0.65"/>
-      {/* 수염 3줄 (고양이 특징!) */}
+      {/* 수염 — scale 없이 */}
       <line x1="1"  y1="19" x2="15" y2="21" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
       <line x1="1"  y1="22.5" x2="15" y2="23" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
       <line x1="1"  y1="26" x2="15" y2="25" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
       <line x1="47" y1="19" x2="33" y2="21" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
       <line x1="47" y1="22.5" x2="33" y2="23" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
       <line x1="47" y1="26" x2="33" y2="25" stroke="#1a1a1a" strokeWidth="1.1" strokeLinecap="round"/>
-      {/* 눈 (고양이 세로 동공!) */}
-      {tired
-        ? <>
-            <path d="M19 17 Q21.5 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-            <path d="M24 17 Q26.5 19.5 29 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-          </>
-        : <>
-            <circle cx="20" cy="16" r="3.5" fill="#1a1a1a"/>
-            <circle cx="28" cy="16" r="3.5" fill="#1a1a1a"/>
-            <ellipse cx="20" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
-            <ellipse cx="28" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
-            <circle cx="21.3" cy="14.5" r="1" fill="#fff"/>
-            <circle cx="29.3" cy="14.5" r="1" fill="#fff"/>
-          </>
-      }
-      {/* 코 (삼각형) */}
-      <path d="M22 21 L24 19.5 L26 21 Q24 23 22 21Z" fill="#f43f5e"/>
+      {/* 얼굴 + 특징 — 1.25배 확대 */}
+      <g transform="translate(24,19) scale(1.25) translate(-24,-19)">
+        <circle cx="24" cy="19" r="13" fill="#f8f8f8" stroke="#1a1a1a" strokeWidth="1.5"/>
+        <ellipse cx="14" cy="22" rx="4" ry="2.8" fill="#ffb8c0" opacity="0.65"/>
+        <ellipse cx="34" cy="22" rx="4" ry="2.8" fill="#ffb8c0" opacity="0.65"/>
+        {tired
+          ? <>
+              <path d="M19 17 Q21.5 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M24 17 Q26.5 19.5 29 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            </>
+          : <>
+              <circle cx="20" cy="16" r="3.5" fill="#1a1a1a"/>
+              <circle cx="28" cy="16" r="3.5" fill="#1a1a1a"/>
+              <ellipse cx="20" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
+              <ellipse cx="28" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
+              <circle cx="21.3" cy="14.5" r="1" fill="#fff"/>
+              <circle cx="29.3" cy="14.5" r="1" fill="#fff"/>
+            </>
+        }
+        <path d="M22 21 L24 19.5 L26 21 Q24 23 22 21Z" fill="#f43f5e"/>
+      </g>
     </>
   )
 }
@@ -94,45 +91,39 @@ function CatHead({ tired }: { tired?: boolean }) {
 function DogHead({ tired }: { tired?: boolean }) {
   return (
     <>
-      {/* 귀 (크고 축 처진 플랩!) */}
+      {/* 귀 — scale 없이 원본 크기 유지 */}
       <ellipse cx="10" cy="21" rx="7" ry="11" fill="#b8b8b8" stroke="#1a1a1a" strokeWidth="1.5"/>
       <ellipse cx="38" cy="21" rx="7" ry="11" fill="#b8b8b8" stroke="#1a1a1a" strokeWidth="1.5"/>
-      {/* 얼굴 */}
-      <circle cx="24" cy="16" r="13" fill="#cccccc" stroke="#1a1a1a" strokeWidth="1.5"/>
-      {/* 주둥이 (크고 튀어나오게!) */}
-      <ellipse cx="24" cy="24" rx="9" ry="6.5" fill="#b4b4b4" stroke="#1a1a1a" strokeWidth="1.2"/>
-      {/* 볼 */}
-      <ellipse cx="13" cy="18" rx="3.5" ry="2.5" fill="#ffb8c0" opacity="0.7"/>
-      <ellipse cx="35" cy="18" rx="3.5" ry="2.5" fill="#ffb8c0" opacity="0.7"/>
-      {/* 눈 */}
-      {tired
-        ? <>
-            <path d="M19 13 Q21.5 15.5 24 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-            <path d="M24 13 Q26.5 15.5 29 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-          </>
-        : <>
-            <circle cx="20" cy="12" r="3.5" fill="#1a1a1a"/>
-            <circle cx="28" cy="12" r="3.5" fill="#1a1a1a"/>
-            <circle cx="18.5" cy="10.5" r="1.2" fill="#fff"/>
-            <circle cx="26.5" cy="10.5" r="1.2" fill="#fff"/>
-          </>
-      }
-      {/* 코 (크고 반짝) */}
-      <ellipse cx="24" cy="21" rx="4" ry="2.8" fill="#1a1a1a"/>
-      <ellipse cx="22.5" cy="20.2" rx="1.3" ry="0.9" fill="#444" opacity="0.4"/>
-      {/* 혀 (강아지 특징!) */}
-      {!tired && <ellipse cx="24" cy="28.5" rx="3.5" ry="3" fill="#f43f5e"/>}
-      {tired  && <path d="M20 27 Q24 31 28 27" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>}
+      {/* 얼굴 + 특징 — 1.25배 확대 */}
+      <g transform="translate(24,16) scale(1.25) translate(-24,-16)">
+        <circle cx="24" cy="16" r="13" fill="#cccccc" stroke="#1a1a1a" strokeWidth="1.5"/>
+        <ellipse cx="13" cy="18" rx="3.5" ry="2.5" fill="#ffb8c0" opacity="0.7"/>
+        <ellipse cx="35" cy="18" rx="3.5" ry="2.5" fill="#ffb8c0" opacity="0.7"/>
+        {tired
+          ? <>
+              <path d="M18 13 Q21 15.5 24 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M24 13 Q27 15.5 30 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            </>
+          : <>
+              <circle cx="19" cy="12" r="3.5" fill="#1a1a1a"/>
+              <circle cx="29" cy="12" r="3.5" fill="#1a1a1a"/>
+              <circle cx="17.5" cy="10.5" r="1.2" fill="#fff"/>
+              <circle cx="27.5" cy="10.5" r="1.2" fill="#fff"/>
+            </>
+        }
+        <path d="M20 20 Q22 18 24 18 Q26 18 28 20 Q26 22 24 22 Q22 22 20 20Z" fill="#1a1a1a"/>
+        <path d="M24 22 Q20 26 18 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M24 22 Q28 26 30 24" fill="none" stroke="#1a1a1a" strokeWidth="1.2" strokeLinecap="round"/>
+        {!tired && <ellipse cx="24" cy="26" rx="3" ry="2.5" fill="#f43f5e"/>}
+        {tired  && <path d="M21 25 Q24 28 27 25" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round"/>}
+      </g>
     </>
   )
 }
 
 function RobotHead({ tired }: { tired?: boolean }) {
   return (
-    <>
-      {/* 귀 피스 */}
-      <rect x="1"  y="7" width="7" height="12" rx="3" fill="#e5e7eb" stroke="#1a1a1a" strokeWidth="1.5"/>
-      <rect x="40" y="7" width="7" height="12" rx="3" fill="#e5e7eb" stroke="#1a1a1a" strokeWidth="1.5"/>
+    <g transform="translate(24,17) scale(1.25) translate(-24,-17)">
       {/* 머리 돔 */}
       <rect x="8" y="4" width="32" height="28" rx="12" fill="#fef3c7" stroke="#1a1a1a" strokeWidth="1.5"/>
       {/* 바이저 */}
@@ -152,7 +143,7 @@ function RobotHead({ tired }: { tired?: boolean }) {
       }
       {/* 미소 */}
       {!tired && <path d="M19 22 Q24 26 29 22" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>}
-    </>
+    </g>
   )
 }
 
@@ -176,12 +167,12 @@ function SweatOrSpark({ species, x, y, s = 1 }: { species: AnimalSpecies; x: num
   return <Sweat x={x} y={y} s={s}/>
 }
 
-// 몸통 (종별 색상)
+// 몸통 (종별 색상) — AnimalSvg 색상과 통일
 const BODY_COLOR: Record<AnimalSpecies, string> = {
-  hamster: '#fcd5b0',
-  cat:     '#d4a96a',
-  dog:     '#e8c99a',
-  robot:   '#94a3b8',
+  hamster: '#fde9b8',
+  cat:     '#f8f8f8',
+  dog:     '#cccccc',
+  robot:   '#fef3c7',
 }
 
 // ── WA 세척 프레임 ────────────────────────────────────────────────

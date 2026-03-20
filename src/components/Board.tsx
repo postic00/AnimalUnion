@@ -11,7 +11,7 @@ import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
 import { useGameLoop } from '../hooks/useGameLoop'
-import { saveItems, loadItems, saveFaStates, loadFaStates } from '../utils/saveLoad'
+import { saveItems, loadItems, saveFaStates, loadFaStates, saveRsQueues, loadRsQueues, saveProduceTimers, loadProduceTimers } from '../utils/saveLoad'
 import type { FAState, FALiveStates } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
@@ -40,10 +40,11 @@ interface Props {
   onFactoryClick?: (row: number, col: number) => void
   onProducerClick?: (row: number, col: number) => void
   onFaLiveStateChange?: (states: FALiveStates) => void
+  onProducerProgressChange?: (progresses: Record<string, number>) => void
   tutorialHighlight?: 'fa' | 'rs'
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange, tutorialHighlight }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onFaLiveStateChange, onProducerProgressChange, tutorialHighlight }: Props) {
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {
@@ -57,16 +58,20 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
 
   const savedItemsRef = useRef(loadItems())
   const savedFaStatesRef = useRef(loadFaStates())
+  const savedRsQueuesRef = useRef(loadRsQueues())
+  const savedProduceTimersRef = useRef(loadProduceTimers())
 
   const handleFactoryProcess = useCallback((animalId: string | null) => {
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, onFaLiveStateChange)
+  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef } = useGameLoop(board, cellSize, onGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, savedRsQueuesRef.current as Record<string, import('../types/item').Item[]> ?? undefined, savedProduceTimersRef.current ?? undefined, onFaLiveStateChange, onProducerProgressChange)
 
   onSaveRef.current = () => {
     saveItems(itemsRef.current)
     saveFaStates(faStatesRef.current)
+    saveRsQueues(rsQueuesRef.current)
+    saveProduceTimers(produceTimersRef.current)
   }
   spawnClickerItemRef.current = spawnClickerItem
 

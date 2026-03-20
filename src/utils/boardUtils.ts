@@ -1,6 +1,11 @@
 import type { Board, CellType } from '../types/board'
 import type { Item } from '../types/item'
 
+export function dist(ax: number, ay: number, bx: number, by: number): number {
+  const dx = ax - bx, dy = ay - by
+  return Math.sqrt(dx * dx + dy * dy)
+}
+
 export function getCellCenter(row: number, col: number, cellSize: number) {
   return {
     x: col * cellSize + cellSize / 2,
@@ -71,8 +76,7 @@ export function isBlocked(item: Item, spatialHash: Map<string, Item[]>, itemSize
         if (other.id === item.id) continue
         const ox = other.x - item.x
         const oy = other.y - item.y
-        const dist = Math.sqrt(ox * ox + oy * oy)
-        if (dist >= itemSize) continue
+        if (dist(other.x, other.y, item.x, item.y) >= itemSize) continue
         const dot = ox * (tdx / tlen) + oy * (tdy / tlen)
         if (dot > 0) return true
       }

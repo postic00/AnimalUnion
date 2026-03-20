@@ -76,6 +76,18 @@ export async function saveToCloud(
   return !error
 }
 
+function isValidCloudSave(raw: unknown): raw is CloudSaveData {
+  if (!raw || typeof raw !== 'object') return false
+  const r = raw as Record<string, unknown>
+  if (!r.gameState || typeof r.gameState !== 'object') return false
+  if (!r.board || !Array.isArray(r.board)) return false
+  const gs = r.gameState as Record<string, unknown>
+  if (typeof gs.gold !== 'number' || !isFinite(gs.gold) || gs.gold < 0) return false
+  if (typeof gs.totalEarned !== 'number' || !isFinite(gs.totalEarned) || gs.totalEarned < 0) return false
+  if (!Array.isArray(gs.producers)) return false
+  return true
+}
+
 export async function loadFromCloud(): Promise<CloudSaveData | null> {
   const deviceId = getDeviceId()
   const { data, error } = await supabase
@@ -86,7 +98,11 @@ export async function loadFromCloud(): Promise<CloudSaveData | null> {
 
   if (error || !data) return null
 
-  const raw = data.game_state as CloudSaveData
+  const raw = data.game_state
+  if (!isValidCloudSave(raw)) {
+    console.error('[loadFromCloud] 데이터 검증 실패', raw)
+    return null
+  }
   return {
     gameState: raw.gameState,
     board: raw.board,

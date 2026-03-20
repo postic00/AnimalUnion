@@ -27,7 +27,7 @@ export default function PrestigeAdModal({ earned, currentPoints, availablePoints
     : Math.floor((currentPoints + earned * 2) * weekRate)
 
   return (
-    <div className={styles.overlay}>
+    <div className="modal-overlay">
       <div className={styles.modal}>
         <div className={styles.header}>
           <span className={styles.icon}>⭐</span>

@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL as string
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const url = import.meta.env.VITE_SUPABASE_URL
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(url, key)
+if (!url || typeof url !== 'string' || !url.startsWith('https://')) {
+  console.error('[supabase] VITE_SUPABASE_URL이 올바르지 않습니다:', url)
+}
+if (!key || typeof key !== 'string' || key.length < 20) {
+  console.error('[supabase] VITE_SUPABASE_ANON_KEY가 올바르지 않습니다')
+}
+
+export const supabase = createClient(url as string, key as string)
 
 export interface LeaderboardEntry {
   id: string

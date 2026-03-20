@@ -12,9 +12,9 @@ function memo1(fn: (a: number) => number): (a: number) => number {
 }
 
 function memo2(fn: (a: number, b: number) => number): (a: number, b: number) => number {
-  const cache = new Map<number, number>()
+  const cache = new Map<string, number>()
   return (a: number, b: number) => {
-    const k = a * 10000 + b
+    const k = `${a},${b}`
     if (cache.has(k)) return cache.get(k)!
     const v = fn(a, b); cache.set(k, v); return v
   }

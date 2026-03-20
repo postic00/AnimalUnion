@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import styles from './SettingsTab.module.css'
 
 interface Props {
@@ -19,10 +19,14 @@ function formatDate(ts: number): string {
 export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onHardReset }: Props) {
   const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [loading, setLoading] = useState<'save' | 'load' | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
   const showMsg = useCallback((text: string, ok: boolean) => {
+    if (timerRef.current) clearTimeout(timerRef.current)
     setCloudMsg({ text, ok })
-    setTimeout(() => setCloudMsg(null), 3000)
+    timerRef.current = setTimeout(() => setCloudMsg(null), 3000)
   }, [])
 
   const handleSave = useCallback(async () => {

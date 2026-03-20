@@ -6,9 +6,9 @@
 }
 
 .title {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 800;
-  color: #191f28;
+  color: var(--c-bg-dark);
   margin: 0;
   letter-spacing: -0.5px;
 }
@@ -37,28 +37,28 @@
 }
 
 .floorBadge {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
-  color: #374151;
+  color: var(--c-gray-700);
   letter-spacing: -0.3px;
 }
 
 .floorDivider {
   flex: 1;
   height: 1px;
-  background: #e5e7eb;
+  background: var(--c-gray-200);
   margin: 0 8px;
 }
 
 .floorCount {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--c-gray-400);
 }
 
 .floorArrow {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--c-gray-400);
   margin-left: 6px;
 }
 
@@ -69,20 +69,20 @@
   justify-content: space-between;
   padding: 8px 12px;
   background: #fafafa;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--c-gray-200);
   border-radius: 10px;
 }
 
 .emptyLabel {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--c-gray-400);
 }
 
 /* 건설된 카드 */
 .card {
   border: 1.5px solid;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
@@ -124,10 +124,10 @@
 }
 
 .noAnimal {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 800;
   color: #fff;
-  background: #d1d5db;
+  background: var(--c-gray-300);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -149,7 +149,7 @@
 }
 
 .cardName {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 800;
   letter-spacing: -0.3px;
 }
@@ -163,14 +163,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   flex-shrink: 0;
 }
 
 .animalLabel {
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-gray-500);
 }
 
 .cardRight {
@@ -189,12 +189,12 @@
 
 .chip {
   padding: 3px 8px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 20px;
+  border: 1.5px solid var(--c-gray-200);
+  border-radius: var(--radius-xl);
   background: #fff;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-gray-500);
   cursor: pointer;
   line-height: 1.2;
 }
@@ -206,19 +206,19 @@
 .sep {
   width: 1px;
   height: 16px;
-  background: #e5e7eb;
+  background: var(--c-gray-200);
   flex-shrink: 0;
 }
 
 .gradeBtn {
   width: 28px;
   height: 28px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 8px;
+  border: 1.5px solid var(--c-gray-200);
+  border-radius: var(--radius-sm);
   background: #fff;
   font-size: 16px;
   font-weight: 700;
-  color: #374151;
+  color: var(--c-gray-700);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -228,7 +228,7 @@
 }
 
 .gradeBtn:disabled {
-  color: #d1d5db;
+  color: var(--c-gray-300);
   cursor: default;
 }
 
@@ -249,12 +249,12 @@
 .segBtn {
   flex: 1;
   padding: 6px 0;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--c-gray-200);
   border-radius: 10px;
   background: #fff;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: #6b7280;
+  color: var(--c-gray-500);
   cursor: pointer;
   text-align: center;
 }
@@ -273,7 +273,7 @@
 .gradeLabel {
   font-size: 10px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--c-gray-400);
 }
 
 /* 콤보박스 */
@@ -289,9 +289,9 @@
   width: 90px;
   height: 36px;
   border: 2px solid;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: #fff;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
@@ -307,11 +307,11 @@
 .comboPopup {
   position: fixed;
   background: #fff;
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--c-gray-200);
   border-radius: 14px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.14);
   overflow: hidden;
-  z-index: 50;
+  z-index: var(--z-tooltip);
   min-width: 120px;
   padding: 4px;
 }
@@ -325,9 +325,9 @@
   background: none;
   border: none;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #374151;
+  color: var(--c-gray-700);
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
@@ -335,7 +335,7 @@
 }
 
 .comboOption:hover {
-  background: #f3f4f6;
+  background: var(--c-gray-100);
 }
 
 .comboOptionSelected {
@@ -349,7 +349,7 @@
 
 .comboCheck {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 /* 등급 컨트롤 */
@@ -370,7 +370,7 @@
   height: 36px;
   border: none;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
   cursor: pointer;
   color: #fff;
@@ -378,7 +378,7 @@
 }
 
 .buildBtn {
-  background: #6b7280;
+  background: var(--c-gray-500);
 }
 
 .buildBtn:disabled,

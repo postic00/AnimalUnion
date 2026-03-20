@@ -1,16 +1,6 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .modal {
   background: #fff;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 2px solid #bfdbfe;
   padding: 16px;
   width: calc(100% - 64px);
@@ -43,7 +33,7 @@
   border: none;
   background: none;
   font-size: 16px;
-  color: #9ca3af;
+  color: var(--c-gray-400);
   cursor: pointer;
   padding: 2px 4px;
   line-height: 1;
@@ -58,7 +48,7 @@
 .fillTrack {
   flex: 1;
   height: 8px;
-  background: #f3f4f6;
+  background: var(--c-gray-100);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -70,7 +60,7 @@
 }
 
 .fillLabel {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
   min-width: 40px;
   text-align: right;
@@ -78,8 +68,8 @@
 
 .empty {
   text-align: center;
-  font-size: 13px;
-  color: #9ca3af;
+  font-size: var(--text-base);
+  color: var(--c-gray-400);
   font-weight: 600;
   padding: 8px 0;
 }
@@ -100,23 +90,23 @@
 }
 
 .gradeLabel {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #374151;
+  color: var(--c-gray-700);
   flex: 1;
 }
 
 .countBadge {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 800;
   background: #dbeafe;
   color: #1d4ed8;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
 }
 
 .qty {
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--c-gray-400);
 }

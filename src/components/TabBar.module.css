@@ -3,7 +3,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 10;
+  z-index: var(--z-nav);
   background: #fffcf5;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
@@ -34,14 +34,14 @@
 }
 
 .tabIcon {
-  font-size: 20px;
+  font-size: var(--text-xl);
   line-height: 1;
   transition: transform 0.15s ease;
   opacity: 0.5;
 }
 
 .tabLabel {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 800;
   color: #adb5bd;
   letter-spacing: -0.3px;
@@ -75,7 +75,7 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: #3182f6;
+  background: var(--c-blue);
   border: none;
   cursor: pointer;
   display: flex;
@@ -83,7 +83,7 @@
   justify-content: center;
   box-shadow: 0 4px 16px rgba(49, 130, 246, 0.45);
   padding: 0;
-  z-index: 22;
+  z-index: var(--z-tab-bar);
   transition: bottom 0.25s ease;
 }
 
@@ -128,7 +128,7 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: #374151;
+  background: var(--c-gray-700);
   border: none;
   cursor: pointer;
   display: flex;
@@ -136,7 +136,7 @@
   justify-content: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   padding: 0;
-  z-index: 22;
+  z-index: var(--z-tab-bar);
   transition: bottom 0.25s ease;
 }
 

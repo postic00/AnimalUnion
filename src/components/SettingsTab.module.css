@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 14px 14px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   border: 1.5px solid;
 }
 
@@ -36,13 +36,13 @@
 }
 
 .cardName {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
   letter-spacing: -0.3px;
 }
 
 .cardSub {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -64,7 +64,7 @@
 }
 
 .toggleOff {
-  background: #d1d5db;
+  background: var(--c-gray-300);
 }
 
 .toggleThumb {
@@ -92,8 +92,8 @@
   background: #e11d48;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
@@ -106,10 +106,10 @@
 .cancelBtn {
   width: 100%;
   padding: 12px;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--c-gray-100);
+  color: var(--c-gray-500);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;

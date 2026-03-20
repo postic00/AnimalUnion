@@ -1,16 +1,6 @@
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
 .modal {
   background: #fff;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 28px 24px 20px;
   display: flex;
   flex-direction: column;
@@ -20,9 +10,9 @@
 
 .title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 900;
-  color: #111827;
+  color: var(--c-gray-900);
   text-align: center;
 }
 
@@ -30,7 +20,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-gray-500);
   text-align: center;
   line-height: 1.5;
 }
@@ -44,22 +34,22 @@
 .cancelBtn {
   flex: 1;
   padding: 12px;
-  background: #f3f4f6;
+  background: var(--c-gray-100);
   border: none;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
   font-weight: 700;
-  color: #374151;
+  color: var(--c-gray-700);
   cursor: pointer;
 }
 
 .confirmBtn {
   flex: 1;
   padding: 12px;
-  background: #ef4444;
+  background: var(--c-red);
   border: none;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
   font-weight: 700;
   color: #fff;
   cursor: pointer;

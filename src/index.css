@@ -1,5 +1,86 @@
 @import "tailwindcss";
 
+:root {
+  /* Colors - Gray */
+  --c-gray-100: #f3f4f6;
+  --c-gray-200: #e5e7eb;
+  --c-gray-300: #d1d5db;
+  --c-gray-400: #9ca3af;
+  --c-gray-500: #6b7280;
+  --c-gray-700: #374151;
+  --c-gray-900: #111827;
+  --c-bg-dark: #191f28;
+
+  /* Colors - Accent */
+  --c-blue: #3182f6;
+  --c-indigo: #6366f1;
+  --c-amber: #f59e0b;
+  --c-red: #ef4444;
+  --c-green: #22c55e;
+
+  /* Overlay */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+  --overlay-medium: rgba(0, 0, 0, 0.35);
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Box shadow */
+  --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  /* Font sizes */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+
+  /* Spacing / Gap */
+  --gap-xs: 6px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 16px;
+
+  /* Z-index layers */
+  --z-cell: 1;
+  --z-nav: 10;
+  --z-item-layer: 20;
+  --z-bottom-sheet: 21;
+  --z-tab-bar: 22;
+  --z-hand-layer: 30;
+  --z-tooltip: 50;
+  --z-tutorial: 25;
+  --z-tutorial-top: 26;
+  --z-modal-soft: 500;
+  --z-modal: 1000;
+  --z-splash: 9999;
+}
+
+/* 공통 모달 오버레이 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: var(--overlay-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay-soft {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-soft);
+  background: var(--overlay-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @keyframes tutorialBtnPulse {
   0%, 100% { box-shadow: 0 0 0 2px rgba(49, 130, 246, 0.7), 0 0 10px 2px rgba(49, 130, 246, 0.4); }
   50%       { box-shadow: 0 0 0 4px rgba(49, 130, 246, 1),   0 0 18px 5px rgba(49, 130, 246, 0.7); }

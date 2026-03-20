@@ -1,7 +1,7 @@
 .tutorialOverlay {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: var(--z-tutorial);
   pointer-events: none;
 }
 
@@ -11,14 +11,14 @@
   right: 16px;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
   padding: 6px 14px;
   cursor: pointer;
   pointer-events: all;
-  z-index: 26;
+  z-index: var(--z-tutorial-top);
 }
 
 /* ── 슬라이드 ── */
@@ -43,7 +43,7 @@
 
 .slideImg {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   display: block;
   max-height: 30vh;
   object-fit: cover;
@@ -51,9 +51,9 @@
 }
 
 .slideTitle {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 900;
-  color: #111827;
+  color: var(--c-gray-900);
   margin: 0;
   text-align: center;
   letter-spacing: -0.3px;
@@ -76,7 +76,7 @@
   background: #f9fafb;
   border-radius: 10px;
   padding: 8px 12px;
-  border-left: 3px solid #3182f6;
+  border-left: 3px solid var(--c-blue);
 }
 
 .dots {
@@ -130,13 +130,13 @@
 .doneTitle {
   font-size: 22px;
   font-weight: 900;
-  color: #111827;
+  color: var(--c-gray-900);
   margin: 0;
 }
 
 .doneSub {
   font-size: 14px;
-  color: #374151;
+  color: var(--c-gray-700);
   margin: 0;
   white-space: pre-line;
   line-height: 1.6;
@@ -159,7 +159,7 @@
   right: 92px;
   bottom: calc(72px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 12px 16px;
   width: 200px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
@@ -177,16 +177,16 @@
 }
 
 .tooltipText {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #111827;
+  color: var(--c-gray-900);
   margin: 0 0 10px;
   line-height: 1.4;
 }
 
 .tooltipSub {
-  font-size: 12px;
-  color: #374151;
+  font-size: var(--text-sm);
+  color: var(--c-gray-700);
   margin: 0;
   line-height: 1.5;
   text-align: center;
@@ -195,7 +195,7 @@
 
 .progressBar {
   height: 6px;
-  background: #e5e7eb;
+  background: var(--c-gray-200);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -203,15 +203,15 @@
 
 .progressFill {
   height: 100%;
-  background: #3182f6;
+  background: var(--c-blue);
   border-radius: 3px;
   transition: width 0.2s ease;
 }
 
 .progressLabel {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 800;
-  color: #3182f6;
+  color: var(--c-blue);
   margin: 0;
   text-align: right;
 }
@@ -233,7 +233,7 @@
   left: 92px;
   bottom: calc(76px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 12px 14px;
   width: 190px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
@@ -271,7 +271,7 @@
   left: 92px;
   bottom: calc(144px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 12px 14px;
   width: 190px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
@@ -299,7 +299,7 @@
   left: 50%;
   transform: translate(-50%, -50%);
   background: #fff;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 16px 20px;
   width: 240px;
   text-align: center;
@@ -318,7 +318,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 12px 16px;
   width: 220px;
   text-align: center;
@@ -331,12 +331,12 @@
 }
 
 .nextBtn {
-  background: #3182f6;
+  background: var(--c-blue);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 11px 24px;
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
   cursor: pointer;
   width: 100%;

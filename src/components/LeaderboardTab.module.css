@@ -14,18 +14,18 @@
 .modeBtn {
   flex: 1;
   padding: 7px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 12px;
+  border: 1.5px solid var(--c-gray-200);
+  border-radius: var(--radius-md);
   background: #fff;
   font-size: 14px;
   font-weight: 800;
-  color: #9ca3af;
+  color: var(--c-gray-400);
   cursor: pointer;
 }
 
 .modeBtnActive {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: var(--c-indigo);
+  color: var(--c-indigo);
   background: #eef2ff;
 }
 
@@ -34,8 +34,8 @@
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 12px;
-  border: 1.5px solid #e5e7eb;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--c-gray-200);
   background: #fff;
   gap: 8px;
 }
@@ -70,10 +70,10 @@
 }
 
 .myName {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
   letter-spacing: -0.3px;
-  color: #111827;
+  color: var(--c-gray-900);
 }
 
 .nameEditBtn {
@@ -92,10 +92,10 @@
 }
 
 .nameInput {
-  border: 1.5px solid #d1d5db;
-  border-radius: 8px;
+  border: 1.5px solid var(--c-gray-300);
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 700;
   flex: 1;
   min-width: 0;
@@ -106,16 +106,16 @@
 }
 
 .nameInput:focus {
-  border-color: #6366f1;
+  border-color: var(--c-indigo);
 }
 
 .nameSaveBtn {
-  background: #6366f1;
+  background: var(--c-indigo);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
@@ -132,26 +132,26 @@
 .myRankNum {
   font-size: 16px;
   font-weight: 900;
-  color: #111827;
+  color: var(--c-gray-900);
 }
 
 .myRankScore {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: #f59e0b;
+  color: var(--c-amber);
 }
 
 .myRankNone {
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--c-gray-400);
   flex-shrink: 0;
 }
 
 .myPoints {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #6b7280;
+  color: var(--c-gray-500);
 }
 
 /* 리더보드 목록 */
@@ -165,12 +165,12 @@
   display: block;
   margin: 0 auto 10px;
   padding: 6px 16px;
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--c-gray-500);
+  background: var(--c-gray-100);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
 }
 .refreshBtn:disabled {
@@ -180,14 +180,14 @@
 
 .loading {
   text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
+  color: var(--c-gray-400);
+  font-size: var(--text-base);
   padding: 20px 0;
 }
 
 .noPrestige {
   text-align: center;
-  color: #9ca3af;
+  color: var(--c-gray-400);
   font-size: 14px;
   font-weight: 600;
   line-height: 2;
@@ -196,9 +196,9 @@
 
 .newSeason {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: #6366f1;
+  color: var(--c-indigo);
 }
 
 .row {
@@ -206,41 +206,41 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: 16px;
-  border: 1.5px solid #f3f4f6;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--c-gray-100);
   background: #fff;
 }
 
 .myRow {
-  border-color: #6366f1;
+  border-color: var(--c-indigo);
   background: #eef2ff;
 }
 
 .rank {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 900;
   min-width: 28px;
-  color: #374151;
+  color: var(--c-gray-700);
 }
 
 .name {
   flex: 1;
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--c-gray-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .score {
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 800;
-  color: #f59e0b;
+  color: var(--c-amber);
 }
 
 .prestige {
-  font-size: 11px;
-  color: #9ca3af;
+  font-size: var(--text-xs);
+  color: var(--c-gray-400);
   white-space: nowrap;
 }

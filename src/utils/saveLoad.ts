@@ -40,7 +40,7 @@ export function saveGame(
   board: Board,
   gameState: GameState,
   boosts?: { speedBoostUntil: number; goldBoostUntil: number }
-): void {
+): boolean {
   try {
     const data: SaveData = {
       version: SAVE_VERSION,
@@ -50,8 +50,10 @@ export function saveGame(
       boosts,
     }
     localStorage.setItem(SAVE_KEY, JSON.stringify(data))
+    return true
   } catch (e) {
     console.warn('저장 실패:', e)
+    return false
   }
 }
 
@@ -87,8 +89,8 @@ const RS_QUEUES_KEY = 'animal-union-rs-queues'
 const PRODUCE_TIMERS_KEY = 'animal-union-produce-timers'
 const PR_STATES_KEY = 'animal-union-pr-states'
 
-export function saveItems(items: unknown): void {
-  try { localStorage.setItem(ITEMS_KEY, JSON.stringify(items)) } catch { /* ignore */ }
+export function saveItems(items: unknown): boolean {
+  try { localStorage.setItem(ITEMS_KEY, JSON.stringify(items)); return true } catch { return false }
 }
 
 export function loadItems(): unknown[] | null {
@@ -98,8 +100,8 @@ export function loadItems(): unknown[] | null {
   } catch { return null }
 }
 
-export function saveFaStates(faStates: unknown): void {
-  try { localStorage.setItem(FA_STATES_KEY, JSON.stringify(faStates)) } catch { /* ignore */ }
+export function saveFaStates(faStates: unknown): boolean {
+  try { localStorage.setItem(FA_STATES_KEY, JSON.stringify(faStates)); return true } catch { return false }
 }
 
 export function loadFaStates(): Record<string, unknown> | null {
@@ -109,8 +111,8 @@ export function loadFaStates(): Record<string, unknown> | null {
   } catch { return null }
 }
 
-export function saveRsQueues(rsQueues: unknown): void {
-  try { localStorage.setItem(RS_QUEUES_KEY, JSON.stringify(rsQueues)) } catch { /* ignore */ }
+export function saveRsQueues(rsQueues: unknown): boolean {
+  try { localStorage.setItem(RS_QUEUES_KEY, JSON.stringify(rsQueues)); return true } catch { return false }
 }
 
 export function loadRsQueues(): Record<string, unknown[]> | null {
@@ -120,8 +122,8 @@ export function loadRsQueues(): Record<string, unknown[]> | null {
   } catch { return null }
 }
 
-export function saveProduceTimers(timers: unknown): void {
-  try { localStorage.setItem(PRODUCE_TIMERS_KEY, JSON.stringify(timers)) } catch { /* ignore */ }
+export function saveProduceTimers(timers: unknown): boolean {
+  try { localStorage.setItem(PRODUCE_TIMERS_KEY, JSON.stringify(timers)); return true } catch { return false }
 }
 
 export function loadProduceTimers(): Record<string, number> | null {
@@ -131,8 +133,8 @@ export function loadProduceTimers(): Record<string, number> | null {
   } catch { return null }
 }
 
-export function savePrStates(prStates: unknown): void {
-  try { localStorage.setItem(PR_STATES_KEY, JSON.stringify(prStates)) } catch { /* ignore */ }
+export function savePrStates(prStates: unknown): boolean {
+  try { localStorage.setItem(PR_STATES_KEY, JSON.stringify(prStates)); return true } catch { return false }
 }
 
 export function loadPrStates(): Record<string, unknown> | null {
@@ -144,11 +146,13 @@ export function loadPrStates(): Record<string, unknown> | null {
 
 const WEEK_CONFIG_KEY = 'animal-union-week-config'
 
-export function saveWeekConfig(config: Record<string, unknown>): void {
+export function saveWeekConfig(config: Record<string, unknown>): boolean {
   try {
     localStorage.setItem(WEEK_CONFIG_KEY, JSON.stringify(config))
+    return true
   } catch (e) {
     console.warn('week config 저장 실패:', e)
+    return false
   }
 }
 

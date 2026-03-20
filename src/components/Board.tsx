@@ -16,6 +16,14 @@ import type { FAState, FALiveStates, PRState } from '../hooks/useGameLoop'
 import coinIcon from '../assets/coin.svg'
 import styles from './Board.module.css'
 
+export interface LevelConfig {
+  materialQuantityLevels: number[]
+  itemValueLevels: number[]
+  faBufferLevel: number
+  rsBufferLevel: number
+  railSpeedLevel: number
+}
+
 interface Props {
   board: BoardType
   onAddBundle: () => void
@@ -25,11 +33,7 @@ interface Props {
   producers: Producer[]
   factories: Factory[]
   animals: Animal[]
-  materialQuantityLevels: number[]
-  itemValueLevels: number[]
-  faBufferLevel: number
-  rsBufferLevel: number
-  railSpeedLevel: number
+  levelConfig: LevelConfig
   placingAnimalId: AnimalId | null
   onPlaceAnimal: (row: number, col: number) => void
   onCancelPlacing: () => void
@@ -46,7 +50,8 @@ interface Props {
   disableDerail?: boolean
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onRsClick, onFaLiveStateChange, onProducerProgressChange, tutorialHighlight, disableDerail }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, levelConfig, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onRsClick, onFaLiveStateChange, onProducerProgressChange, tutorialHighlight, disableDerail }: Props) {
+  const { materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel } = levelConfig
   const [cellSize, setCellSize] = useState(0)
 
   useEffect(() => {

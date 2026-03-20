@@ -35,7 +35,7 @@ export default function AdModal({ onComplete, onClose }: Props) {
   if (loading) return null  // 네이티브에서는 AdMob UI가 직접 표시됨
 
   return (
-    <div className={styles.overlay}>
+    <div className="modal-overlay">
       <div className={styles.modal}>
         <div className={styles.adBox}>
           <span className={styles.adIcon}>📺</span>

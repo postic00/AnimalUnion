@@ -15,7 +15,7 @@ export default function FactoryBuildModal({ gold, onBuild, onClose, tutorialHigh
   const canAfford = gold >= cost
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className="modal-overlay-soft" onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <span className={styles.title}>공장 건설</span>

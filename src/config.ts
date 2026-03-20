@@ -90,8 +90,25 @@ export type ConfigKey = keyof typeof CONFIG
 
 export function applyWeekConfig(weekConfig: Partial<Record<string, unknown>>): void {
   for (const key of Object.keys(weekConfig)) {
-    if (key in CONFIG) {
-      (CONFIG as Record<string, unknown>)[key] = weekConfig[key]
+    if (!(key in CONFIG)) continue
+
+    const current = (CONFIG as Record<string, unknown>)[key]
+    const incoming = weekConfig[key]
+
+    // 1. 타입 검증
+    if (typeof incoming !== typeof current) continue
+
+    // 2. 배열 길이 검증
+    if (Array.isArray(current)) {
+      if (!Array.isArray(incoming) || incoming.length !== current.length) continue
+      if (incoming.some(v => typeof v !== typeof current[0])) continue
     }
+
+    // 3. 숫자 범위 검증
+    if (typeof incoming === 'number') {
+      if (!isFinite(incoming) || incoming < 0) continue
+    }
+
+    (CONFIG as Record<string, unknown>)[key] = incoming
   }
 }

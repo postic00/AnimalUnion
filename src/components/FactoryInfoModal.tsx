@@ -66,7 +66,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
   const gradeMin = factory.type === 'PA' ? PA_MIN_GRADE : 1
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className="modal-overlay-soft" onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
 
         {/* 헤더 */}

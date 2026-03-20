@@ -954,11 +954,13 @@ export default function App() {
         producers={gameState.producers}
         factories={gameState.factories}
         animals={gameState.animals}
-        materialQuantityLevels={gameState.materialQuantityLevels}
-        itemValueLevels={gameState.itemValueLevels}
-        faBufferLevel={gameState.faBufferLevel}
-        rsBufferLevel={gameState.rsBufferLevel}
-        railSpeedLevel={gameState.railSpeedLevel ?? 1}
+        levelConfig={{
+          materialQuantityLevels: gameState.materialQuantityLevels,
+          itemValueLevels: gameState.itemValueLevels,
+          faBufferLevel: gameState.faBufferLevel,
+          rsBufferLevel: gameState.rsBufferLevel,
+          railSpeedLevel: gameState.railSpeedLevel ?? 1,
+        }}
         placingAnimalId={placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={handleCancelPlacing}

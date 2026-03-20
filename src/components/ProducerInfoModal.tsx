@@ -49,7 +49,7 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
   const perSec = interval > 0 && isFinite(interval) ? quantity * 1000 / interval : 0
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className="modal-overlay-soft" onClick={onClose}>
       <div className={styles.modal} style={{ borderColor: grade.border }} onClick={e => e.stopPropagation()}>
 
         {/* 헤더 */}

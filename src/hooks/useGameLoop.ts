@@ -21,6 +21,13 @@ import {
   RECIPES,
 } from '../balance'
 
+// ── 상수 ───────────────────────────────────────────────────────────────────
+const TICK_INTERVAL_MS = 33        // 게임 루프 틱 주기 (~30fps)
+const RENDER_INTERVAL_MS = 100     // 렌더/진행도 갱신 주기
+const MAX_DELTA_MS = 50            // 틱당 최대 경과시간 (탭 복귀 등 스파이크 방지)
+const SNAP_RADIUS = 0.3            // FA/RE 감지 반경 (cellSize 비율)
+const RS_OCCUPY_RADIUS = 1.0       // RS 투입 차단 반경 (itemSize 비율)
+
 export type Progresses = Record<string, number>
 import {
   getCellCenter,
@@ -28,6 +35,7 @@ import {
   getCell,
   isBlocked,
   buildSpatialHash,
+  dist,
 } from '../utils/boardUtils'
 
 export type FAPhase = 'IDLE' | 'GRABBING' | 'PROCESSING' | 'PLACING' | 'WAITING'
@@ -226,18 +234,9 @@ export function useGameLoop(
       })
     })
 
-    let tickCount = 0
+    // ── 서브 함수들 (useEffect 클로저로 refs/board/cellSize 공유) ──────────
 
-    const tick = () => {
-      const time = performance.now()
-      if (lastTimeRef.current === 0) lastTimeRef.current = time
-      const rawDelta = Math.min(time - lastTimeRef.current, 50)
-      const delta = rawDelta * (speedMultiplierRef.current ?? 1)
-      lastTimeRef.current = time
-
-      let items = itemsRef.current
-
-      // PR 생산 → RS 큐에 추가
+    const tickProducers = (delta: number) => {
       board.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           if (cell.type !== 'PR') return
@@ -254,32 +253,27 @@ export function useGameLoop(
           const grade = producer.grade
           const quantity = getMaterialQuantity(materialQuantityLevelsRef.current[grade - 1] ?? 1)
           const fullInterval = getProducerInterval(producer.level) * quantity
+          if (produceTimersRef.current[key] < fullInterval) return
 
-          if (produceTimersRef.current[key] >= fullInterval) {
-            if (!prStatesRef.current[key]) prStatesRef.current[key] = { outputBuffer: [] }
-            const prBuf = prStatesRef.current[key].outputBuffer
-            const capacity = getRsBufferCapacity(rsBufferLevelRef.current)
-            if (prBuf.length >= capacity) return
+          if (!prStatesRef.current[key]) prStatesRef.current[key] = { outputBuffer: [] }
+          const prBuf = prStatesRef.current[key].outputBuffer
+          if (prBuf.length >= getRsBufferCapacity(rsBufferLevelRef.current)) return
 
-            produceTimersRef.current[key] = 0
-
-            const newItem: Item = {
-              id: crypto.randomUUID(),
-              x: 0, y: 0,
-              dx: 0, dy: 0,
-              targetX: 0, targetY: 0,
-              grade,
-              value: getProducerValue(grade, itemValueLevelsRef.current[grade - 1] ?? 1),
-              quantity,
-              waBonus: 0, paBonus: 0, pkBonus: 0,
-              waGrades: [], paGrades: [], pkGrades: [],
-            }
-            prBuf.push(newItem)
-          }
+          produceTimersRef.current[key] = 0
+          prBuf.push({
+            id: crypto.randomUUID(),
+            x: 0, y: 0, dx: 0, dy: 0, targetX: 0, targetY: 0,
+            grade,
+            value: getProducerValue(grade, itemValueLevelsRef.current[grade - 1] ?? 1),
+            quantity,
+            waBonus: 0, paBonus: 0, pkBonus: 0,
+            waGrades: [], paGrades: [], pkGrades: [],
+          })
         })
       })
+    }
 
-      // PR 출고 버퍼 → RS 큐 (round-robin)
+    const tickRsDispatch = () => {
       board.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           if (cell.type !== 'RS') return
@@ -303,61 +297,53 @@ export function useGameLoop(
               const next = getNextTarget(board, cellSize, center.x, center.y)
               if (!next) continue
               const proto = prState.outputBuffer.shift()!
-              const item: Item = {
+              rsQueuesRef.current[rsKey].push({
                 ...proto,
                 x: center.x, y: center.y,
                 dx: dir.dx, dy: dir.dy,
                 targetX: next.targetX, targetY: next.targetY,
-              }
-              rsQueuesRef.current[rsKey].push(item)
+              })
               prRoundRobinRef.current[rsKey] = (prIdx + 1) % prs.length
+              window.dispatchEvent(new CustomEvent('rs-queue-change'))
               break
             }
           }
         })
       })
+    }
 
-      // RS 큐 → 벨트 투입
+    const tickRsRelease = (items: Item[]) => {
       board.forEach((row, rowIdx) => {
         row.forEach((cell, colIdx) => {
           if (cell.type !== 'RS') return
           const rsKey = `rs-${rowIdx}-${colIdx}`
           const queue = rsQueuesRef.current[rsKey]
           if (!queue || queue.length === 0) return
-
           const center = getCellCenter(rowIdx, colIdx, cellSize)
-          const rsOccupied = items.some(it =>
-            Math.sqrt((it.x - center.x) ** 2 + (it.y - center.y) ** 2) < itemSize
-          )
-          if (rsOccupied) return
-
-          const item = queue.shift()!
-          items.push(item)
+          if (items.some(it => dist(it.x, it.y, center.x, center.y) < itemSize * RS_OCCUPY_RADIUS)) return
+          items.push(queue.shift()!)
+          window.dispatchEvent(new CustomEvent('rs-queue-change'))
         })
       })
+    }
 
-      // 아이템 이동
+    const tickItemMove = (items: Item[], delta: number) => {
       const spatialHash = buildSpatialHash(items, itemSize, spatialHashRef.current)
       const step = (cellSize / getRailMoveSpeed(railSpeedLevelRef.current)) * delta
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i]
         if (isBlocked(item, spatialHash, itemSize)) continue
-
         const dx = item.targetX - item.x
         const dy = item.targetY - item.y
         const distToTarget = Math.sqrt(dx * dx + dy * dy)
-
         if (step >= distToTarget) {
           item.x = item.targetX
           item.y = item.targetY
           const next = getNextTarget(board, cellSize, item.targetX, item.targetY)
           if (next) {
-            item.dx = next.dx
-            item.dy = next.dy
-            item.targetX = next.targetX
-            item.targetY = next.targetY
+            item.dx = next.dx; item.dy = next.dy
+            item.targetX = next.targetX; item.targetY = next.targetY
           } else {
-            // 다음 목적지 없음 → RE가 아니면 즉시 제거 (탈선 복구)
             const fcol = Math.round(item.targetX / cellSize - 0.5)
             const frow = Math.round(item.targetY / cellSize - 0.5)
             const fcell = getCell(board, frow, fcol)
@@ -372,9 +358,9 @@ export function useGameLoop(
           item.y += dy * ratio
         }
       }
+    }
 
-      tickCount++
-      // 탈선 방어: 매 틱마다 유효하지 않은 셀에 있는 아이템 제거
+    const tickDerailCheck = (items: Item[]) => {
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i]
         if (!isFinite(item.x) || !isFinite(item.y)) { items.splice(i, 1); hasDerailedRef.current = true; continue }
@@ -390,11 +376,278 @@ export function useGameLoop(
           hasDerailedRef.current = true
         }
       }
+    }
 
-      // FA 처리
+    const tickWaPkFactory = (
+      factory: Factory, items: Item[], delta: number, key: string,
+      inputCenter: { x: number; y: number }, _outputCenter: { x: number; y: number },
+      isOutputOccupied: () => boolean, placeOutput: () => void,
+    ) => {
+      const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
+      const isTargetItem = (it: Item): boolean => {
+        if (it.grade !== factory.grade) return false
+        if (factory.type === 'WA') {
+          if (it.waGrades.includes(factory.grade)) return false
+          if (it.pkGrades.length > 0) return false
+        } else {
+          if (it.pkGrades.includes(factory.grade)) return false
+        }
+        return dist(it.x, it.y, inputCenter.x, inputCenter.y) <= cellSize * SNAP_RADIUS
+      }
+      const applyBonus = (item: Item) => factory.type === 'WA'
+        ? applyWaBonus(item, factory, animalsRef.current)
+        : applyPkBonus(item, factory, animalsRef.current)
+
+      // GRAB
+      {
+        const fas = faStatesRef.current[key]
+        const inputQty = (fas.inputBuffer ?? []).reduce((s, it) => s + it.quantity, 0)
+        if (fas.grabState === 'IDLE') {
+          if (inputQty < bufferCapacity) {
+            const idx = items.findIndex(isTargetItem)
+            if (idx !== -1) {
+              const grabbed = items[idx]
+              items[idx] = items[items.length - 1]; items.pop()
+              faStatesRef.current[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
+            }
+          } else {
+            faStatesRef.current[key] = { ...fas, grabState: 'WAITING' }
+          }
+        } else if (fas.grabState === 'WAITING') {
+          if (inputQty < bufferCapacity) faStatesRef.current[key] = { ...fas, grabState: 'IDLE' }
+        } else if (fas.grabState === 'GRABBING') {
+          const newTimer = fas.grabTimer + delta
+          if (newTimer >= pickTime) {
+            const pending = applyBonus(fas.grabbed!)
+            faStatesRef.current[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, inputBuffer: [...(fas.inputBuffer ?? []), pending] }
+          } else {
+            faStatesRef.current[key] = { ...fas, grabTimer: newTimer }
+          }
+        }
+      }
+
+      // PROCESS
+      {
+        const fas = faStatesRef.current[key]
+        const queue = fas.inputBuffer ?? []
+        if (fas.processState === 'IDLE') {
+          if (queue.length > 0) {
+            const [next, ...rest] = queue
+            faStatesRef.current[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: next, inputBuffer: rest }
+          }
+        } else if (fas.processState === 'PROCESSING') {
+          const outputQty = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
+          const processTime = getFactoryProcessTime(factory.level, outputQty)
+          const newTimer = fas.processTimer + delta
+          if (newTimer >= processTime) {
+            onFactoryProcessRef.current?.(factory.animalId ?? null)
+            const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
+            if (safeOutBuf.length < bufferCapacity) {
+              const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
+              const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
+              faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
+            } else {
+              faStatesRef.current[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
+            }
+          } else {
+            faStatesRef.current[key] = { ...fas, processTimer: newTimer }
+          }
+        }
+      }
+
+      // OUTPUT
+      {
+        const fas = faStatesRef.current[key]
+        if (fas.outputState === 'PLACING') {
+          const newTimer = fas.outputTimer + delta
+          if (newTimer >= pickTime) {
+            if (!isOutputOccupied()) placeOutput()
+            else faStatesRef.current[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
+          } else {
+            faStatesRef.current[key] = { ...fas, outputTimer: newTimer }
+          }
+        } else if (fas.outputState === 'WAITING') {
+          if (!isOutputOccupied()) placeOutput()
+        }
+      }
+    }
+
+    /**
+     * PA (조합 공장) 틱 처리
+     *
+     * PA는 레시피에 정의된 여러 등급의 재료를 수집해 고등급 아이템 하나를 합성한다.
+     * 상태 머신은 GRAB → PROCESS → OUTPUT 3채널이 독립적으로 동작한다.
+     *
+     * [buffer]          : GRAB 채널이 벨트에서 수집한 재료 저장소 (등급별 count)
+     * [processingBuffer]: PROCESS 채널로 이관된 재료 (레시피 충족 판정용)
+     * [processBuffer]   : 조합 완료된 출력 아이템 (PROCESSING 중 또는 WAITING)
+     * [outputBuffer]    : 벨트에 내보낼 아이템 대기열
+     *
+     * waBonus는 weighted average로 누적되어 최종 아이템까지 전달된다.
+     */
+    const tickPaFactory = (
+      factory: Factory, items: Item[], delta: number, key: string,
+      inputCenter: { x: number; y: number }, outputCenter: { x: number; y: number },
+      isOutputOccupied: () => boolean, placeOutput: () => void,
+    ) => {
+      const recipe = RECIPES[factory.grade]
+      if (!recipe) return
+      const outputQuantity = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
+      const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
+
+      // 레시피 재료 중 아직 buffer가 꽉 차지 않은 첫 번째 등급 반환
+      const getNeededGrade = (buf: { grade: number; count: number }[]): number | null => {
+        for (const req of recipe) {
+          if ((buf.find(b => b.grade === req.grade)?.count ?? 0) < bufferCapacity) return req.grade
+        }
+        return null
+      }
+
+      // GRAB: 벨트에서 재료 흡수 → buffer에 적재
+      // 레시피에 없는 등급이 buffer에 있으면 먼저 배출(eject)한다
+      {
+        const fas = faStatesRef.current[key]
+        if (fas.grabState === 'IDLE') {
+          const recipeGrades = new Set(recipe.map(r => r.grade))
+          // 레시피에 없는 재료가 있으면 벨트로 배출
+          const ejectEntry = fas.buffer.find(b => !recipeGrades.has(b.grade))
+            ?? (fas.processingBuffer ?? []).find(b => !recipeGrades.has(b.grade))
+          if (ejectEntry && !isOutputOccupied()) {
+            items.push(placeOnBelt({
+              id: crypto.randomUUID(), grade: ejectEntry.grade, quantity: ejectEntry.count, value: 0,
+              x: outputCenter.x, y: outputCenter.y,
+              waBonus: ejectEntry.waBonus ?? 0, paBonus: 0, pkBonus: 0,
+              waGrades: [], paGrades: [], pkGrades: [],
+              dx: 0, dy: 0, targetX: outputCenter.x, targetY: outputCenter.y,
+            }, outputCenter, board, cellSize))
+            const fromBuffer = fas.buffer.some(b => b.grade === ejectEntry.grade)
+            faStatesRef.current[key] = fromBuffer
+              ? { ...fas, buffer: fas.buffer.filter(b => b.grade !== ejectEntry.grade) }
+              : { ...fas, processingBuffer: (fas.processingBuffer ?? []).filter(b => b.grade !== ejectEntry.grade) }
+          } else {
+            // 부족한 등급의 재료를 벨트에서 집어 올림
+            const neededGrade = getNeededGrade(fas.buffer)
+            if (neededGrade !== null) {
+              const idx = items.findIndex(it =>
+                it.grade === neededGrade && it.pkGrades.length === 0 &&
+                dist(it.x, it.y, inputCenter.x, inputCenter.y) <= cellSize * SNAP_RADIUS
+              )
+              if (idx !== -1) {
+                const grabbed = items[idx]
+                items[idx] = items[items.length - 1]; items.pop()
+                faStatesRef.current[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
+              }
+            } else {
+              // 모든 재료 버퍼가 꽉 참 → 대기
+              faStatesRef.current[key] = { ...fas, grabState: 'WAITING' }
+            }
+          }
+        } else if (fas.grabState === 'WAITING') {
+          if (getNeededGrade(fas.buffer) !== null) faStatesRef.current[key] = { ...fas, grabState: 'IDLE' }
+        } else if (fas.grabState === 'GRABBING') {
+          // pickTime 경과 후 grabbed 아이템을 buffer에 합산 (waBonus 가중평균)
+          const newTimer = fas.grabTimer + delta
+          if (newTimer >= pickTime) {
+            const { grade, quantity: qty, waBonus: grabbedWaBonus } = fas.grabbed!
+            const existingEntry = fas.buffer.find(b => b.grade === grade)
+            const newBuffer = existingEntry
+              ? fas.buffer.map(b => b.grade === grade
+                  ? { ...b, count: b.count + qty, waBonus: (b.waBonus * b.count + grabbedWaBonus * qty) / (b.count + qty) }
+                  : b)
+              : [...fas.buffer, { grade, count: qty, waBonus: grabbedWaBonus }]
+            faStatesRef.current[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, buffer: newBuffer }
+          } else {
+            faStatesRef.current[key] = { ...fas, grabTimer: newTimer }
+          }
+        }
+      }
+
+      // PROCESS: buffer → processingBuffer 이관 후 레시피 충족 시 조합 시작
+      // 레시피의 각 재료 필요량(req.count × outputQuantity)을 processingBuffer에 채운다
+      {
+        const fas = faStatesRef.current[key]
+        if (fas.processState === 'IDLE') {
+          let newBuffer = [...fas.buffer]
+          const newProcBuf = [...(fas.processingBuffer ?? [])]
+          let transferred = false
+          for (const req of recipe) {
+            const need = req.count * outputQuantity
+            const have = newProcBuf.find(b => b.grade === req.grade)?.count ?? 0
+            const remaining = need - have
+            if (remaining <= 0) continue  // 이미 충족
+            const bufEntry = newBuffer.find(b => b.grade === req.grade)
+            const inBuffer = bufEntry?.count ?? 0
+            if (inBuffer <= 0) continue   // 아직 재료 없음
+            // 필요량만큼 buffer에서 processingBuffer로 이동 (waBonus 가중평균)
+            const movedWaBonus = bufEntry?.waBonus ?? 0
+            const move = Math.min(inBuffer, remaining)
+            newBuffer = newBuffer.map(b => b.grade === req.grade ? { ...b, count: b.count - move } : b).filter(b => b.count > 0)
+            const existing = newProcBuf.find(b => b.grade === req.grade)
+            if (existing) {
+              const totalCount = existing.count + move
+              existing.waBonus = (existing.waBonus * existing.count + movedWaBonus * move) / totalCount
+              existing.count = totalCount
+            } else {
+              newProcBuf.push({ grade: req.grade, count: move, waBonus: movedWaBonus })
+            }
+            transferred = true
+          }
+          // 모든 레시피 재료가 processingBuffer에 충족되면 조합 시작
+          const isReady = recipe.every(req =>
+            (newProcBuf.find(b => b.grade === req.grade)?.count ?? 0) >= req.count * outputQuantity
+          )
+          if (isReady) {
+            const totalProcCount = newProcBuf.reduce((s, b) => s + b.count, 0)
+            const avgWaBonus = totalProcCount > 0
+              ? newProcBuf.reduce((s, b) => s + b.waBonus * b.count, 0) / totalProcCount : 0
+            const base = createRecipeOutput(
+              factory.grade, factory, animalsRef.current,
+              itemValueLevelsRef.current[factory.grade - 1] ?? 1,
+              materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
+            )
+            faStatesRef.current[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }, buffer: newBuffer, processingBuffer: [] }
+          } else if (transferred) {
+            faStatesRef.current[key] = { ...fas, buffer: newBuffer, processingBuffer: newProcBuf }
+          }
+        } else if (fas.processState === 'PROCESSING') {
+          const processTime = getFactoryProcessTime(factory.level, outputQuantity)
+          const newTimer = fas.processTimer + delta
+          if (newTimer >= processTime) {
+            onFactoryProcessRef.current?.(factory.animalId ?? null)
+            const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
+            if (safeOutBuf.length < bufferCapacity) {
+              const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
+              const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
+              faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
+            } else {
+              faStatesRef.current[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
+            }
+          } else {
+            faStatesRef.current[key] = { ...fas, processTimer: newTimer }
+          }
+        }
+      }
+
+      // OUTPUT
+      {
+        const fas = faStatesRef.current[key]
+        if (fas.outputState === 'PLACING') {
+          const newTimer = fas.outputTimer + delta
+          if (newTimer >= pickTime) {
+            if (!isOutputOccupied()) placeOutput()
+            else faStatesRef.current[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
+          } else {
+            faStatesRef.current[key] = { ...fas, outputTimer: newTimer }
+          }
+        } else if (fas.outputState === 'WAITING') {
+          if (!isOutputOccupied()) placeOutput()
+        }
+      }
+    }
+
+    const tickFactories = (items: Item[], delta: number) => {
       factoriesRef.current.forEach(factory => {
         if (!factory.built || factory.level < 1) return
-
         const key = `fa-${factory.row}-${factory.col}`
         if (!faStatesRef.current[key] || !('outputState' in faStatesRef.current[key])) {
           faStatesRef.current[key] = { ...DEFAULT_FA_STATE }
@@ -404,17 +657,13 @@ export function useGameLoop(
         }
 
         const inputRow = factory.dir === 'UP_TO_DOWN' ? factory.row - 1 : factory.row + 1
-        const inputCol = factory.col
         const outputRow = factory.dir === 'UP_TO_DOWN' ? factory.row + 1 : factory.row - 1
-        const outputCol = factory.col
+        if (!getCell(board, inputRow, factory.col) || !getCell(board, outputRow, factory.col)) return
 
-        if (!getCell(board, inputRow, inputCol) || !getCell(board, outputRow, outputCol)) return
-
-        const inputCenter = getCellCenter(inputRow, inputCol, cellSize)
-        const outputCenter = getCellCenter(outputRow, outputCol, cellSize)
-
+        const inputCenter = getCellCenter(inputRow, factory.col, cellSize)
+        const outputCenter = getCellCenter(outputRow, factory.col, cellSize)
         const isOutputOccupied = () =>
-          items.some(it => Math.sqrt((it.x - outputCenter.x) ** 2 + (it.y - outputCenter.y) ** 2) <= cellSize * 0.3)
+          items.some(it => dist(it.x, it.y, outputCenter.x, outputCenter.y) <= cellSize * SNAP_RADIUS)
 
         const placeOutput = () => {
           const fas = faStatesRef.current[key]
@@ -422,280 +671,28 @@ export function useGameLoop(
           const capacity = getFaBufferCapacity(faBufferLevelRef.current)
           const newOutputBuffer = fas.outputBuffer.slice(1)
           items.push(placeOnBelt(fas.outputBuffer[0], outputCenter, board, cellSize))
-          let nextOutputBuffer = newOutputBuffer
           let nextOutputState: FAState['outputState'] = newOutputBuffer.length > 0 ? 'PLACING' : 'IDLE'
-          let nextOutputTimer = 0
           let nextProcessState = fas.processState
           let nextProcessBuffer = fas.processBuffer
+          let nextOutputBuffer = newOutputBuffer
           if (fas.processState === 'WAITING' && fas.processBuffer !== null && newOutputBuffer.length < capacity) {
             nextOutputBuffer = [...newOutputBuffer, fas.processBuffer]
             if (nextOutputState === 'IDLE') nextOutputState = 'PLACING'
-            nextOutputTimer = 0
             nextProcessState = 'IDLE'
             nextProcessBuffer = null
           }
-          faStatesRef.current[key] = { ...fas, outputState: nextOutputState, outputTimer: nextOutputTimer, outputBuffer: nextOutputBuffer, processState: nextProcessState, processBuffer: nextProcessBuffer }
+          faStatesRef.current[key] = { ...fas, outputState: nextOutputState, outputTimer: 0, outputBuffer: nextOutputBuffer, processState: nextProcessState, processBuffer: nextProcessBuffer }
         }
 
         if (factory.type === 'WA' || factory.type === 'PK') {
-          const isTargetItem = (it: Item): boolean => {
-            if (it.grade !== factory.grade) return false
-            if (factory.type === 'WA') {
-              if (it.waGrades.includes(factory.grade)) return false
-              if (it.pkGrades.length > 0) return false
-            } else {
-              if (it.pkGrades.includes(factory.grade)) return false
-            }
-            return Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2) <= cellSize * 0.3
-          }
-          const applyBonus = (item: Item) => factory.type === 'WA'
-            ? applyWaBonus(item, factory, animalsRef.current)
-            : applyPkBonus(item, factory, animalsRef.current)
-
-          const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
-
-          // GRAB 채널
-          {
-            const fas = faStatesRef.current[key]
-            const inputQty = (fas.inputBuffer ?? []).reduce((s, it) => s + it.quantity, 0)
-            if (fas.grabState === 'IDLE') {
-              if (inputQty < bufferCapacity) {
-                const idx = items.findIndex(isTargetItem)
-                if (idx !== -1) {
-                  const grabbed = items[idx]
-                  items[idx] = items[items.length - 1]; items.pop()
-                  faStatesRef.current[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
-                }
-              } else {
-                faStatesRef.current[key] = { ...fas, grabState: 'WAITING' }
-              }
-            } else if (fas.grabState === 'WAITING') {
-              if (inputQty < bufferCapacity) faStatesRef.current[key] = { ...fas, grabState: 'IDLE' }
-            } else if (fas.grabState === 'GRABBING') {
-              const newTimer = fas.grabTimer + delta
-              if (newTimer >= pickTime) {
-                const pending = applyBonus(fas.grabbed!)
-                faStatesRef.current[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, inputBuffer: [...(fas.inputBuffer ?? []), pending] }
-              } else {
-                faStatesRef.current[key] = { ...fas, grabTimer: newTimer }
-              }
-            }
-          }
-
-          // PROCESS 채널
-          {
-            const fas = faStatesRef.current[key]
-            const queue = fas.inputBuffer ?? []
-            if (fas.processState === 'IDLE') {
-              if (queue.length > 0) {
-                const [next, ...rest] = queue
-                faStatesRef.current[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: next, inputBuffer: rest }
-              }
-            } else if (fas.processState === 'PROCESSING') {
-              const outputQty = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
-              const processTime = getFactoryProcessTime(factory.level, outputQty)
-              const newTimer = fas.processTimer + delta
-              if (newTimer >= processTime) {
-                onFactoryProcessRef.current?.(factory.animalId ?? null)
-                const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
-                if (safeOutBuf.length < bufferCapacity) {
-                  const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
-                  const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
-                  faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
-                } else {
-                  faStatesRef.current[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
-                }
-              } else {
-                faStatesRef.current[key] = { ...fas, processTimer: newTimer }
-              }
-            }
-            // WAITING → placeOutput에서 처리
-          }
-
-          // OUTPUT 채널
-          {
-            const fas = faStatesRef.current[key]
-            if (fas.outputState === 'PLACING') {
-              const newTimer = fas.outputTimer + delta
-              if (newTimer >= pickTime) {
-                if (!isOutputOccupied()) placeOutput()
-                else faStatesRef.current[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
-              } else {
-                faStatesRef.current[key] = { ...fas, outputTimer: newTimer }
-              }
-            } else if (fas.outputState === 'WAITING') {
-              if (!isOutputOccupied()) placeOutput()
-            }
-          }
-
+          tickWaPkFactory(factory, items, delta, key, inputCenter, outputCenter, isOutputOccupied, placeOutput)
         } else {
-          // PA: 레시피 기반 조합
-          const recipe = RECIPES[factory.grade]
-          if (!recipe) return
-
-          const outputQuantity = getMaterialQuantity(materialQuantityLevelsRef.current[factory.grade - 1] ?? 1)
-          const bufferCapacity = getFaBufferCapacity(faBufferLevelRef.current)
-
-          // 재료별 독립 용량: 각 grade마다 bufferCapacity개씩
-          const getNeededGrade = (buf: { grade: number; count: number }[]): number | null => {
-            for (const req of recipe) {
-              const have = buf.find(b => b.grade === req.grade)?.count ?? 0
-              if (have < bufferCapacity) return req.grade
-            }
-            return null
-          }
-
-          // GRAB 채널
-          {
-            const fas = faStatesRef.current[key]
-            if (fas.grabState === 'IDLE') {
-              const recipeGrades = new Set(recipe.map(r => r.grade))
-              const ejectFromBuffer = fas.buffer.find(b => !recipeGrades.has(b.grade))
-              const ejectFromProc = (fas.processingBuffer ?? []).find(b => !recipeGrades.has(b.grade))
-              const ejectEntry = ejectFromBuffer ?? ejectFromProc
-              if (ejectEntry && !isOutputOccupied()) {
-                const ejectItem: Item = {
-                  id: crypto.randomUUID(), grade: ejectEntry.grade, quantity: ejectEntry.count, value: 0,
-                  x: outputCenter.x, y: outputCenter.y,
-                  waBonus: ejectEntry.waBonus ?? 0, paBonus: 0, pkBonus: 0,
-                  waGrades: [], paGrades: [], pkGrades: [],
-                  dx: 0, dy: 0, targetX: outputCenter.x, targetY: outputCenter.y,
-                }
-                items.push(placeOnBelt(ejectItem, outputCenter, board, cellSize))
-                if (ejectFromBuffer) {
-                  faStatesRef.current[key] = { ...fas, buffer: fas.buffer.filter(b => b.grade !== ejectEntry.grade) }
-                } else {
-                  faStatesRef.current[key] = { ...fas, processingBuffer: (fas.processingBuffer ?? []).filter(b => b.grade !== ejectEntry.grade) }
-                }
-              } else {
-                const neededGrade = getNeededGrade(fas.buffer)
-                if (neededGrade !== null) {
-                  const idx = items.findIndex(it => {
-                    if (it.grade !== neededGrade) return false
-                    if (it.pkGrades.length > 0) return false
-                    return Math.sqrt((it.x - inputCenter.x) ** 2 + (it.y - inputCenter.y) ** 2) <= cellSize * 0.3
-                  })
-                  if (idx !== -1) {
-                    const grabbed = items[idx]
-                    items[idx] = items[items.length - 1]; items.pop()
-                    faStatesRef.current[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
-                  }
-                } else {
-                  faStatesRef.current[key] = { ...fas, grabState: 'WAITING' }
-                }
-              }
-            } else if (fas.grabState === 'WAITING') {
-              const neededGrade = getNeededGrade(fas.buffer)
-              if (neededGrade !== null) faStatesRef.current[key] = { ...fas, grabState: 'IDLE' }
-            } else if (fas.grabState === 'GRABBING') {
-              const newTimer = fas.grabTimer + delta
-              if (newTimer >= pickTime) {
-                const grade = fas.grabbed!.grade
-                const qty = fas.grabbed!.quantity
-                const grabbedWaBonus = fas.grabbed!.waBonus
-                const existingEntry = fas.buffer.find(b => b.grade === grade)
-                const newBuffer = existingEntry
-                  ? fas.buffer.map(b => b.grade === grade
-                      ? { ...b, count: b.count + qty, waBonus: (b.waBonus * b.count + grabbedWaBonus * qty) / (b.count + qty) }
-                      : b)
-                  : [...fas.buffer, { grade, count: qty, waBonus: grabbedWaBonus }]
-                faStatesRef.current[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, buffer: newBuffer }
-              } else {
-                faStatesRef.current[key] = { ...fas, grabTimer: newTimer }
-              }
-            }
-          }
-
-          // PROCESS 채널 (PA)
-          {
-            const fas = faStatesRef.current[key]
-            if (fas.processState === 'IDLE') {
-              const procBuf = fas.processingBuffer ?? []
-              let newBuffer = [...fas.buffer]
-              const newProcBuf = [...procBuf]
-              let transferred = false
-              for (const req of recipe) {
-                const need = req.count * outputQuantity
-                const have = newProcBuf.find(b => b.grade === req.grade)?.count ?? 0
-                const remaining = need - have
-                if (remaining <= 0) continue
-                const bufEntry = newBuffer.find(b => b.grade === req.grade)
-                const inBuffer = bufEntry?.count ?? 0
-                if (inBuffer <= 0) continue
-                const movedWaBonus = bufEntry?.waBonus ?? 0
-                const move = Math.min(inBuffer, remaining)
-                newBuffer = newBuffer.map(b => b.grade === req.grade ? { ...b, count: b.count - move } : b).filter(b => b.count > 0)
-                const exists = newProcBuf.some(b => b.grade === req.grade)
-                if (exists) {
-                  newProcBuf.forEach(b => {
-                    if (b.grade === req.grade) {
-                      const totalCount = b.count + move
-                      b.waBonus = (b.waBonus * b.count + movedWaBonus * move) / totalCount
-                      b.count = totalCount
-                    }
-                  })
-                } else {
-                  newProcBuf.push({ grade: req.grade, count: move, waBonus: movedWaBonus })
-                }
-                transferred = true
-              }
-              const isReady = recipe.every(req =>
-                (newProcBuf.find(b => b.grade === req.grade)?.count ?? 0) >= req.count * outputQuantity
-              )
-              if (isReady) {
-                const totalProcCount = newProcBuf.reduce((s, b) => s + b.count, 0)
-                const avgWaBonus = totalProcCount > 0
-                  ? newProcBuf.reduce((s, b) => s + b.waBonus * b.count, 0) / totalProcCount
-                  : 0
-                const base = createRecipeOutput(
-                  factory.grade, factory, animalsRef.current,
-                  itemValueLevelsRef.current[factory.grade - 1] ?? 1,
-                  materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
-                )
-                const processBuffer = { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }
-                faStatesRef.current[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer, buffer: newBuffer, processingBuffer: [] }
-              } else if (transferred) {
-                faStatesRef.current[key] = { ...fas, buffer: newBuffer, processingBuffer: newProcBuf }
-              }
-            } else if (fas.processState === 'PROCESSING') {
-              const processTime = getFactoryProcessTime(factory.level, outputQuantity)
-              const newTimer = fas.processTimer + delta
-              if (newTimer >= processTime) {
-                onFactoryProcessRef.current?.(factory.animalId ?? null)
-                const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
-                if (safeOutBuf.length < bufferCapacity) {
-                  const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
-                  const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
-                  faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
-                } else {
-                  faStatesRef.current[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
-                }
-              } else {
-                faStatesRef.current[key] = { ...fas, processTimer: newTimer }
-              }
-            }
-            // WAITING → placeOutput에서 처리
-          }
-
-          // OUTPUT 채널 (PA)
-          {
-            const fas = faStatesRef.current[key]
-            if (fas.outputState === 'PLACING') {
-              const newTimer = fas.outputTimer + delta
-              if (newTimer >= pickTime) {
-                if (!isOutputOccupied()) placeOutput()
-                else faStatesRef.current[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
-              } else {
-                faStatesRef.current[key] = { ...fas, outputTimer: newTimer }
-              }
-            } else if (fas.outputState === 'WAITING') {
-              if (!isOutputOccupied()) placeOutput()
-            }
-          }
+          tickPaFactory(factory, items, delta, key, inputCenter, outputCenter, isOutputOccupied, placeOutput)
         }
       })
+    }
 
-      // 클릭커 스폰 → RS 버퍼 큐에 추가
+    const tickClicker = (_items: Item[]) => {
       while (pendingClickerSpawnsRef.current > 0) {
         pendingClickerSpawnsRef.current -= 1
         let rsRow = -1, rsCol = -1
@@ -706,18 +703,14 @@ export function useGameLoop(
           if (rsRow !== -1) break
         }
         if (rsRow === -1) break
-
         const rsKey = `rs-${rsRow}-${rsCol}`
         if (!rsQueuesRef.current[rsKey]) rsQueuesRef.current[rsKey] = []
-        const capacity = getRsBufferCapacity(rsBufferLevelRef.current)
-        if (rsQueuesRef.current[rsKey].length >= capacity) break
-
+        if (rsQueuesRef.current[rsKey].length >= getRsBufferCapacity(rsBufferLevelRef.current)) break
         const center = getCellCenter(rsRow, rsCol, cellSize)
-        const dir = getCellDirection('RS')
         const next = getNextTarget(board, cellSize, center.x, center.y)
         if (!next) break
-
         const grade = pendingClickerGradeRef.current
+        const dir = getCellDirection('RS')
         rsQueuesRef.current[rsKey].push({
           id: crypto.randomUUID(),
           x: center.x, y: center.y,
@@ -730,8 +723,9 @@ export function useGameLoop(
           waGrades: [], paGrades: [], pkGrades: [],
         })
       }
+    }
 
-      // RE 도달 → 골드 획득
+    const tickGoldCollect = (items: Item[]) => {
       for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i]
         const col = Math.round(item.x / cellSize - 0.5)
@@ -739,13 +733,30 @@ export function useGameLoop(
         const cell = getCell(board, row, col)
         if (cell?.type !== 'RE') continue
         const center = getCellCenter(row, col, cellSize)
-        const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
-        if (dist > cellSize * 0.3) continue
+        if (dist(item.x, item.y, center.x, center.y) > cellSize * SNAP_RADIUS) continue
         onGoldEarnedRef.current(getFinalGold(item), center.x, center.y)
         lastGoldTimeRef.current = Date.now()
         items.splice(i, 1)
       }
+    }
 
+    // ── tick ───────────────────────────────────────────────────────────────
+
+    const tick = () => {
+      const time = performance.now()
+      if (lastTimeRef.current === 0) lastTimeRef.current = time
+      const delta = Math.min(time - lastTimeRef.current, MAX_DELTA_MS) * (speedMultiplierRef.current ?? 1)
+      lastTimeRef.current = time
+
+      const items = itemsRef.current
+      tickProducers(delta)
+      tickRsDispatch()
+      tickRsRelease(items)
+      tickItemMove(items, delta)
+      tickDerailCheck(items)
+      tickFactories(items, delta)
+      tickClicker(items)
+      tickGoldCollect(items)
       itemsRef.current = items
     }
 
@@ -756,7 +767,7 @@ export function useGameLoop(
     const startIntervals = () => {
       lastTimeRef.current = 0
       lastGoldTimeRef.current = Date.now()
-      tickId = setInterval(tick, 33)
+      tickId = setInterval(tick, TICK_INTERVAL_MS)
       renderInterval = setInterval(() => {
         setRenderItems([...itemsRef.current])
         // 잼 감지: 활성 생산자가 있고, 벨트에 아이템이 있는데 일정 시간 이상 골드가 안 들어오면
@@ -773,7 +784,7 @@ export function useGameLoop(
         }
         if (hasDerailedRef.current) setHasDerailed(true)
       }, 100)
-      progressIntervalId = setInterval(runProgress, 100)
+      progressIntervalId = setInterval(runProgress, RENDER_INTERVAL_MS)
     }
 
     const stopIntervals = () => {

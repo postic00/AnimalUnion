@@ -17,7 +17,7 @@
 }
 .tutorialHighlight {
   animation: tutorialPulse 1s ease-in-out infinite;
-  z-index: 1;
+  z-index: var(--z-cell);
 }
 
 /* 빈 셀 */

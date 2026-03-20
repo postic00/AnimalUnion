@@ -35,7 +35,7 @@
 }
 
 .addButtonText {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 800;
   color: #7c2d12;
   letter-spacing: -0.5px;
@@ -51,12 +51,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
   color: #0c4a6e;
   background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
   border: 2.5px solid #0ea5e9;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 6px 16px;
   box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
 }
@@ -73,13 +73,13 @@
 .goldFloat {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 900;
   color: #DAA520;
   text-shadow: 0 1px 3px rgba(0,0,0,0.25);
   pointer-events: none;
   white-space: nowrap;
-  z-index: 20;
+  z-index: var(--z-item-layer);
   animation: goldFloatUp 1s ease-out forwards;
 }
 
@@ -95,8 +95,8 @@
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.45);
-  z-index: 30;
-  border-radius: 8px;
+  z-index: var(--z-hand-layer);
+  border-radius: var(--radius-sm);
 }
 
 .derailBox {
@@ -105,20 +105,20 @@
   align-items: center;
   gap: 8px;
   background: #fff;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 20px 24px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-modal);
 }
 
 .derailTitle {
-  font-size: 15px;
+  font-size: var(--text-md);
   font-weight: 800;
   color: #dc2626;
 }
 
 .derailDesc {
-  font-size: 13px;
-  color: #6b7280;
+  font-size: var(--text-base);
+  color: var(--c-gray-500);
 }
 
 .derailActions {
@@ -132,7 +132,7 @@
   background: #dc2626;
   color: #fff;
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -140,10 +140,10 @@
 
 .derailBtnCancel {
   padding: 8px 24px;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--c-gray-100);
+  color: var(--c-gray-700);
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -155,12 +155,12 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 8px 20px;
-  background: #ef4444;
+  background: var(--c-red);
   color: #ffffff;
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  z-index: 10;
+  z-index: var(--z-nav);
 }

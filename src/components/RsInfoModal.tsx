@@ -17,10 +17,11 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
   rsKeyRef.current = rsKey
 
   useEffect(() => {
-    const id = setInterval(() => {
+    const handler = () => {
       setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
-    }, 100)
-    return () => clearInterval(id)
+    }
+    window.addEventListener('rs-queue-change', handler)
+    return () => window.removeEventListener('rs-queue-change', handler)
   }, [rsQueuesRef])
 
   const grouped = items.reduce<Record<number, { count: number; totalQty: number }>>((acc, it) => {
@@ -35,7 +36,7 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
   const isFull = items.length >= capacity
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className="modal-overlay-soft" onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <span className={styles.icon}>🚉</span>

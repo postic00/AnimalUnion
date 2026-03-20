@@ -6,7 +6,6 @@ import type { GameState } from '../types/gameState'
 
 export async function fetchAndSaveWeekConfig(): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
-  console.log('[fetchAndSaveWeekConfig] today:', today)
 
   const { data, error } = await supabase
     .from('game_config')
@@ -15,10 +14,7 @@ export async function fetchAndSaveWeekConfig(): Promise<void> {
     .gte('end_date', today)
     .maybeSingle()
 
-  console.log('[fetchAndSaveWeekConfig] data:', data, 'error:', error)
-
-  if (error) { console.warn('[fetchAndSaveWeekConfig] error:', error); return }
-  if (!data) { console.warn('[fetchAndSaveWeekConfig] no config for today'); return }
+  if (error || !data) return
 
   const weekConfig = {
     ...(data.config ?? {}),
@@ -26,7 +22,6 @@ export async function fetchAndSaveWeekConfig(): Promise<void> {
     WEEK_START_DATE: data.start_date,
     WEEK_END_DATE: data.end_date,
   }
-  console.log('[fetchAndSaveWeekConfig] weekConfig:', weekConfig)
   saveWeekConfig(weekConfig)
 }
 

@@ -1,5 +1,5 @@
-import { formatGold } from '../utils/formatGold'
-import coinIcon from '../assets/coin.svg'
+import { formatGold } from '../../utils/formatGold'
+import coinIcon from '../../assets/coin.svg'
 import styles from './Navigation.module.css'
 
 interface Props {

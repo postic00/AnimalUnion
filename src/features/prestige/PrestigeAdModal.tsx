@@ -1,5 +1,5 @@
-import { CONFIG } from '../config'
-import { formatGold } from '../utils/formatGold'
+import { CONFIG } from '../../config'
+import { formatGold } from '../../utils/formatGold'
 import styles from './PrestigeAdModal.module.css'
 
 interface Props {

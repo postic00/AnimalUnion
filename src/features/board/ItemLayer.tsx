@@ -1,8 +1,8 @@
 import { memo } from 'react'
-import type { Item } from '../types/item'
-import { CONFIG } from '../config'
-import { formatQuantity } from '../utils/formatGold'
-import { GradeIcon } from './GradeIcon'
+import type { Item } from '../../types/item'
+import { CONFIG } from '../../config'
+import { formatQuantity } from '../../utils/formatGold'
+import { GradeIcon } from '../common/GradeIcon'
 import styles from './ItemLayer.module.css'
 
 interface Props {

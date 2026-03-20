@@ -1,9 +1,9 @@
-import type { Producer } from '../types/producer'
-import type { Clicker } from '../types/clicker'
-import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost } from '../balance'
-import { formatGold, formatQuantity } from '../utils/formatGold'
-import { GradeIcon } from './GradeIcon'
-import coinIcon from '../assets/coin.svg'
+import type { Producer } from '../../types/producer'
+import type { Clicker } from '../../types/clicker'
+import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost } from '../../balance'
+import { formatGold, formatQuantity } from '../../utils/formatGold'
+import { GradeIcon } from '../common/GradeIcon'
+import coinIcon from '../../assets/coin.svg'
 import styles from './ProductionTab.module.css'
 
 interface Props {

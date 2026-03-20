@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Item } from '../types/item'
-import { GradeIcon } from './GradeIcon'
-import { formatQuantity } from '../utils/formatGold'
+import type { Item } from '../../types/item'
+import { GradeIcon } from '../common/GradeIcon'
+import { formatQuantity } from '../../utils/formatGold'
 import styles from './RsInfoModal.module.css'
 
 interface Props {

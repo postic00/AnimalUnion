@@ -1,19 +1,19 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { formatGold } from '../utils/formatGold'
-import { soundByAnimalId } from '../utils/sound'
+import { formatGold } from '../../utils/formatGold'
+import { soundByAnimalId } from '../../utils/sound'
 import type { MutableRefObject } from 'react'
-import type { Board as BoardType } from '../types/board'
-import type { Producer } from '../types/producer'
-import type { Factory } from '../types/factory'
-import type { Animal } from '../types/animal'
-import type { AnimalId } from '../types/animal'
+import type { Board as BoardType } from '../../types/board'
+import type { Producer } from '../../types/producer'
+import type { Factory } from '../../types/factory'
+import type { Animal } from '../../types/animal'
+import type { AnimalId } from '../../types/animal'
 import Cell from './Cell'
 import ItemLayer from './ItemLayer'
 import HandLayer from './HandLayer'
-import { useGameLoop } from '../hooks/useGameLoop'
-import { saveItems, loadItems, saveFaStates, loadFaStates, saveRsQueues, loadRsQueues, saveProduceTimers, loadProduceTimers, savePrStates, loadPrStates } from '../utils/saveLoad'
-import type { FAState, FALiveStates, PRState } from '../hooks/useGameLoop'
-import coinIcon from '../assets/coin.svg'
+import { useGameLoop } from '../../hooks/useGameLoop'
+import { SaveService } from '../../services/SaveService'
+import type { FAState, FALiveStates, PRState } from '../../hooks/useGameLoop'
+import coinIcon from '../../assets/coin.svg'
 import styles from './Board.module.css'
 
 export interface LevelConfig {
@@ -63,11 +63,12 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const savedItemsRef = useRef(loadItems())
-  const savedFaStatesRef = useRef(loadFaStates())
-  const savedRsQueuesRef = useRef(loadRsQueues())
-  const savedProduceTimersRef = useRef(loadProduceTimers())
-  const savedPrStatesRef = useRef(loadPrStates())
+  const savedEngineStateRef = useRef(SaveService.loadEngineState())
+  const savedItemsRef = { current: savedEngineStateRef.current.items }
+  const savedFaStatesRef = { current: savedEngineStateRef.current.faStates }
+  const savedRsQueuesRef = { current: savedEngineStateRef.current.rsQueues }
+  const savedProduceTimersRef = { current: savedEngineStateRef.current.produceTimers }
+  const savedPrStatesRef = { current: savedEngineStateRef.current.prStates }
 
   const [goldFloats, setGoldFloats] = useState<{ id: number; x: number; y: number; amount: number }[]>([])
   const floatIdRef = useRef(0)
@@ -86,11 +87,13 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
   const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, savedItemsRef.current as never, savedFaStatesRef.current as Record<string, FAState> ?? undefined, savedRsQueuesRef.current as Record<string, import('../types/item').Item[]> ?? undefined, savedProduceTimersRef.current ?? undefined, savedPrStatesRef.current as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange)
 
   onSaveRef.current = () => {
-    saveItems(itemsRef.current)
-    saveFaStates(faStatesRef.current)
-    saveRsQueues(rsQueuesRef.current)
-    saveProduceTimers(produceTimersRef.current)
-    savePrStates(prStatesRef.current)
+    SaveService.saveEngineState({
+      items: itemsRef.current,
+      faStates: faStatesRef.current,
+      rsQueues: rsQueuesRef.current,
+      produceTimers: produceTimersRef.current,
+      prStates: prStatesRef.current,
+    })
   }
   spawnClickerItemRef.current = spawnClickerItem
 

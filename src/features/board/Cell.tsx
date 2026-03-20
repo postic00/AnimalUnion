@@ -1,13 +1,13 @@
 import { memo, useMemo } from 'react'
 import type { CSSProperties } from 'react'
-import type { Cell as CellType } from '../types/board'
-import type { Factory } from '../types/factory'
-import type { Producer } from '../types/producer'
-import type { AnimalId } from '../types/animal'
-import { formatQuantity } from '../utils/formatGold'
+import type { Cell as CellType } from '../../types/board'
+import type { Factory } from '../../types/factory'
+import type { Producer } from '../../types/producer'
+import type { AnimalId } from '../../types/animal'
+import { formatQuantity } from '../../utils/formatGold'
 
-import { ProcessAnimation } from './ProcessAnimation'
-import { FactoryTypeIcon } from './FactoryTypeIcon'
+import { ProcessAnimation } from '../factory/ProcessAnimation'
+import { FactoryTypeIcon } from '../factory/FactoryTypeIcon'
 import styles from './Cell.module.css'
 
 export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
@@ -83,8 +83,8 @@ interface Props {
   onClick?: () => void
 }
 
-import { GradeIcon } from './GradeIcon'
-import { ProducerAnimation } from './ProducerIcon'
+import { GradeIcon } from '../common/GradeIcon'
+import { ProducerAnimation } from '../production/ProducerIcon'
 import { RailIcon } from './RailIcon'
 
 const FA_STYLE: Record<string, CSSProperties> = {

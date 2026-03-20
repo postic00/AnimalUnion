@@ -1,11 +1,11 @@
-import type { GameState } from '../types/gameState'
-import type { AnimalId } from '../types/animal'
-import { ANIMAL_IDS } from '../types/animal'
-import { getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat } from '../balance'
-import { formatGold, formatNumber } from '../utils/formatGold'
+import type { GameState } from '../../types/gameState'
+import type { AnimalId } from '../../types/animal'
+import { ANIMAL_IDS } from '../../types/animal'
+import { getAnimalUnlockCost, getAnimalUpgradeCost, getAnimalStat } from '../../balance'
+import { formatGold, formatNumber } from '../../utils/formatGold'
 import { AnimalSvg } from './AnimalSvg'
 import type { AnimalSpecies } from './AnimalSvg'
-import styles from './PrestigeTab.module.css'
+import styles from '../prestige/PrestigeTab.module.css'
 
 const ANIMAL_TYPE_NAME: Record<string, string> = { hamster: '햄스터', cat: '고양이', dog: '강아지' }
 

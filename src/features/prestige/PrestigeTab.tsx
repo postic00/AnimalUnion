@@ -1,11 +1,11 @@
-import type { GameState } from '../types/gameState'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost } from '../balance'
-import { formatGold } from '../utils/formatGold'
-import { CONFIG } from '../config'
-import coinIcon from '../assets/coin.svg'
+import type { GameState } from '../../types/gameState'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost } from '../../balance'
+import { formatGold } from '../../utils/formatGold'
+import { CONFIG } from '../../config'
+import coinIcon from '../../assets/coin.svg'
 import styles from './PrestigeTab.module.css'
 
-import { getGradeData } from '../data/grades'
+import { getGradeData } from '../../data/grades'
 
 interface Props {
   gameState: GameState

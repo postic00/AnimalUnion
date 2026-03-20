@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import type { Factory } from '../types/factory'
-import type { FAPhases } from '../hooks/useGameLoop'
+import type { Factory } from '../../types/factory'
+import type { FAPhases } from '../../hooks/useGameLoop'
 import { getSpecies, HandSvg } from './Cell'
 import styles from './Cell.module.css'
 

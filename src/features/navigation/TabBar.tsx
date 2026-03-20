@@ -1,5 +1,5 @@
-import type { Clicker } from '../types/clicker'
-import { GradeIcon } from './GradeIcon'
+import type { Clicker } from '../../types/clicker'
+import { GradeIcon } from '../common/GradeIcon'
 import styles from './TabBar.module.css'
 
 const BOOST_DURATION = 10 * 60 * 1000 // 10분

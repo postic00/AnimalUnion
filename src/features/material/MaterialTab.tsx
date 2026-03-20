@@ -1,9 +1,9 @@
-import type { GameState } from '../types/gameState'
-import { getMaterialQuantity, getMaterialQuantityLevelCost, RECIPES } from '../balance'
-import { formatGold, formatQuantity } from '../utils/formatGold'
-import { GradeIcon } from './GradeIcon'
-import { getGradeData } from '../data/grades'
-import coinIcon from '../assets/coin.svg'
+import type { GameState } from '../../types/gameState'
+import { getMaterialQuantity, getMaterialQuantityLevelCost, RECIPES } from '../../balance'
+import { formatGold, formatQuantity } from '../../utils/formatGold'
+import { GradeIcon } from '../common/GradeIcon'
+import { getGradeData } from '../../data/grades'
+import coinIcon from '../../assets/coin.svg'
 import styles from './MaterialTab.module.css'
 
 interface Props {

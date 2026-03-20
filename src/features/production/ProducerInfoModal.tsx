@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Producer } from '../types/producer'
-import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../balance'
-import { formatGold, formatQuantity } from '../utils/formatGold'
-import { GradeIcon } from './GradeIcon'
-import coinIcon from '../assets/coin.svg'
+import type { Producer } from '../../types/producer'
+import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../../balance'
+import { formatGold, formatQuantity } from '../../utils/formatGold'
+import { GradeIcon } from '../common/GradeIcon'
+import coinIcon from '../../assets/coin.svg'
 import styles from './ProducerInfoModal.module.css'
 
 const GRADE_NAMES: Record<number, string> = { 1: '고추', 2: '설탕', 3: '딸기' }

@@ -180,7 +180,7 @@ export class GameEngine {
   // ── 스냅샷 계산 (runProgress에 해당) ────────────────────────────────────
   computeSnapshot(checkDerailJam = false): GameEngineSnapshot {
     const p: Record<string, number> = {}
-    const fp: Record<string, string> = {}
+    const fp: import('./types').FAPhases = {}
     const { board, materialQuantityLevels, faBufferLevel, rsBufferLevel } = this.config
 
     board.forEach((row, rowIdx) => {

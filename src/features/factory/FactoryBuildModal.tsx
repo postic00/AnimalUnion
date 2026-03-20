@@ -1,6 +1,6 @@
-import { getFactoryBuildCost } from '../balance'
-import { formatGold } from '../utils/formatGold'
-import coinIcon from '../assets/coin.svg'
+import { getFactoryBuildCost } from '../../balance'
+import { formatGold } from '../../utils/formatGold'
+import coinIcon from '../../assets/coin.svg'
 import styles from './FactoryBuildModal.module.css'
 
 interface Props {

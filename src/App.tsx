@@ -1,92 +1,58 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Board from './components/Board'
-import Navigation from './components/Navigation'
-import TabBar from './components/TabBar'
-import BottomSheet from './components/BottomSheet'
-import ProductionTab from './components/ProductionTab'
-import FactoryTab from './components/FactoryTab'
-import AnimalTab from './components/AnimalTab'
-import PrestigeTab from './components/PrestigeTab'
-import MaterialTab from './components/MaterialTab'
-import SettingsTab from './components/SettingsTab'
-import LeaderboardTab from './components/LeaderboardTab'
-import Tutorial from './components/Tutorial'
-import AdModal from './components/AdModal'
-import PrestigeAdModal from './components/PrestigeAdModal'
-import ConfirmModal from './components/ConfirmModal'
-import { submitPrestigeScore, submitGoldScore, deleteScores } from './lib/supabase'
-import { saveToCloud, loadFromCloud, fetchAndSaveWeekConfig } from './lib/userProfile'
-import SplashScreen from './components/SplashScreen'
-import FactoryInfoModal from './components/FactoryInfoModal'
-import FactoryBuildModal from './components/FactoryBuildModal'
-import ProducerInfoModal from './components/ProducerInfoModal'
-import RsInfoModal from './components/RsInfoModal'
-import UpgradeAmountToggle from './components/UpgradeAmountToggle'
-import type { UpgradeAmount } from './components/UpgradeAmountToggle'
+import Board from './features/board/Board'
+import Navigation from './features/navigation/Navigation'
+import TabBar from './features/navigation/TabBar'
+import BottomSheet from './features/navigation/BottomSheet'
+import ProductionTab from './features/production/ProductionTab'
+import FactoryTab from './features/factory/FactoryTab'
+import AnimalTab from './features/animal/AnimalTab'
+import PrestigeTab from './features/prestige/PrestigeTab'
+import MaterialTab from './features/material/MaterialTab'
+import SettingsTab from './features/settings/SettingsTab'
+import LeaderboardTab from './features/leaderboard/LeaderboardTab'
+import Tutorial from './features/tutorial/Tutorial'
+import AdModal from './features/ad/AdModal'
+import PrestigeAdModal from './features/prestige/PrestigeAdModal'
+import ConfirmModal from './features/common/ConfirmModal'
+import { SaveService } from './services/SaveService'
+import { ScoreService } from './services/ScoreService'
+import SplashScreen from './features/tutorial/SplashScreen'
+import FactoryInfoModal from './features/factory/FactoryInfoModal'
+import FactoryBuildModal from './features/factory/FactoryBuildModal'
+import ProducerInfoModal from './features/production/ProducerInfoModal'
+import RsInfoModal from './features/rs/RsInfoModal'
+import UpgradeAmountToggle from './features/navigation/UpgradeAmountToggle'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates, saveRsQueues, saveProduceTimers, savePrStates, loadItems, loadFaStates, loadRsQueues, loadProduceTimers, loadPrStates, getDeviceId } from './utils/saveLoad'
+import { saveGame, loadGame } from './utils/saveLoad'
 import { CONFIG, applyWeekConfig } from './config'
-
-// 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
-const cachedWeekConfig = loadWeekConfig()
-if (cachedWeekConfig) applyWeekConfig(cachedWeekConfig)
-import { soundHamster, soundCat, soundCoin, soundBuild } from './utils/sound'
 import { initAdMob } from './utils/admob'
 import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
-import type { Factory } from './types/factory'
-import { AnimalSvg } from './components/AnimalSvg'
-import { RECIPES } from './balance'
-import {
-  getBundleCost,
-  getProducerBuildCost,
-  getProducerUpgradeCost,
-  getFactoryBuildCost,
-  getFactoryLevelUpgradeCost,
-  getPrestigePoints,
-  getItemValueLevelCost,
-  getAnimalUnlockCost,
-  getAnimalUpgradeCost,
-  getMaterialQuantityLevelCost,
-  getMaterialQuantity,
-  getClickerThreshold,
-  getClickerUpgradeCost,
-  getBufferUpgradeCost,
-  getRailSpeedUpgradeCost,
-  getRsBufferCapacity,
-  getBuildCostDiscount,
-  getBundleCostDiscount,
-  getGoldMultiplierBonus,
-  getProducerStartLevel,
-  getBuildDiscountCost,
-  getBundleDiscountCost,
-  getProducerStartCost,
-  getGoldMultiplierCost,
-} from './balance'
-import type { AnimalId } from './types/animal'
+import { AnimalSvg } from './features/animal/AnimalSvg'
+import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity } from './balance'
+import { useUIState } from './hooks/useUIState'
+import { useGameActions } from './hooks/useGameActions'
+
+// 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
+const cachedWeekConfig = SaveService.loadWeekConfig()
+if (cachedWeekConfig) applyWeekConfig(cachedWeekConfig)
 
 function addBundle(board: BoardType): BoardType {
   const newBoard = board.map(row => [...row])
-
   const lastRow = newBoard[newBoard.length - 1]
   const reIndex = lastRow.findIndex(cell => cell.type === 'RE')
   if (reIndex !== -1) {
-    // RE → RDL (왼쪽에서 와서 아래로) or RDR (오른쪽에서 와서 아래로)
     lastRow[reIndex] = { type: reIndex === 0 ? 'RDL' : 'RDR' }
   }
-
   const goRight = reIndex === 0
-
   const rowA: Cell[] = goRight
     ? [{ type: 'RDN' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }]
     : [{ type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'EM' }, { type: 'FA' }, { type: 'RDN' }]
-
   const rowB: Cell[] = goRight
     ? [{ type: 'RRL' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RRN' }, { type: 'RE' }]
     : [{ type: 'RE' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLN' }, { type: 'RLR' }]
-
   return [...newBoard, rowA, rowB]
 }
 
@@ -123,6 +89,8 @@ export default function App() {
   const [totalEarned, setTotalEarned] = useState(initData.gameState.totalEarned)
   const [goldPerSec, setGoldPerSec] = useState(0)
   const [savedAt, setSavedAt] = useState<number | null>(initData.savedAt)
+  const [muted, setMuted] = useState<boolean>(SaveService.loadMuted())
+
   const gameStateRef = useRef(gameState)
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
   const goldRef = useRef(gold)
@@ -135,56 +103,75 @@ export default function App() {
   const bucketHistoryRef = useRef<number[]>([])
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const boardSaveRef = useRef<() => void>(() => {})
-  const [placingAnimalId, setPlacingAnimalId] = useState<AnimalId | null>(null)
-  const [activeTab, setActiveTab] = useState<number | null>(null)
-  const activeTabRef = useRef(activeTab)
-  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
-  const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
-  const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
-  const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
-  const [selectedRs, setSelectedRs] = useState<{ rsKey: string; rsQueuesRef: React.MutableRefObject<Record<string, import('./types/item').Item[]>> } | null>(null)
-  const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
-  const faLiveStatesRef = useRef<import('./hooks/useGameLoop').FALiveStates>({})
-  const producerProgressesRef = useRef<Record<string, number>>({})
-  const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
-  const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
-  const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
-  const [prestigeSection, setPrestigeSection] = useState<'item' | 'buffer'>('item')
-  const [clickerGrade, setClickerGrade] = useState(0)  // 0 = 손가락(기본)
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
-  const [muted, setMuted] = useState<boolean>(loadMuted())
-  const [showSplash, setShowSplash] = useState(true)
-  const handleSplashDone = useCallback(() => setShowSplash(false), [])
-  const [tutorialStep, setTutorialStep] = useState<number | null>(() => !localStorage.getItem('tutorialDone') ? 0 : null)
-  const [tutorialItemCount, setTutorialItemCount] = useState(0)
+  const mutedRef = useRef(muted)
+  mutedRef.current = muted
+  const boardRef = useRef(board)
+  useEffect(() => { boardRef.current = board }, [board])
+
+  const BOOST_MS = 10 * 60 * 1000
+  const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
+  const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
+  const [now, setNow] = useState(Date.now())
+
+  const goldBoostUntilRef = useRef(goldBoostUntil)
+  goldBoostUntilRef.current = goldBoostUntil
+  const speedBoostUntilRef = useRef(speedBoostUntil)
+  speedBoostUntilRef.current = speedBoostUntil
+  const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
+  goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
+
+  const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
+
+  // ── UI State ──────────────────────────────────────────────────────────────
+  const ui = useUIState()
+
+  // ── Game Actions ──────────────────────────────────────────────────────────
+  const actions = useGameActions({
+    goldRef, totalEarnedRef, mutedRef, goldBoostUntilRef, speedBoostUntilRef,
+    goldMultiplierLevelRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef,
+    boardSaveRef, boardRef, gameStateRef,
+    spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
+    setGold, setTotalEarned, setGoldPerSec, setGameState, setBoard, setResetKey, setSavedAt,
+    setMuted, setSpeedBoostUntil, setGoldBoostUntil,
+    goldPerSec, platform,
+    setClickerGrade: ui.setClickerGrade,
+    setTutorialStep: ui.setTutorialStep,
+    setTutorialItemCount: ui.setTutorialItemCount,
+    setSelectedFactory: ui.setSelectedFactory,
+    setShowPrestigeModal: ui.setShowPrestigeModal,
+    setShowPrestigeKeepModal: ui.setShowPrestigeKeepModal,
+    setShowSplash: ui.setShowSplash,
+    adTarget: ui.adTarget,
+    setAdTarget: ui.setAdTarget,
+    tutorialStep: ui.tutorialStep,
+    BOOST_MS,
+  })
+
+  // ── 튜토리얼 사이드이펙트 ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (ui.tutorialStep === 3 && ui.tutorialItemCount >= 20) ui.setTutorialStep(4)
+  }, [ui.tutorialItemCount, ui.tutorialStep])
 
   useEffect(() => {
-    if (tutorialStep === 3 && tutorialItemCount >= 20) setTutorialStep(4)
-  }, [tutorialItemCount, tutorialStep])
-
-  useEffect(() => {
-    const s = tutorialStep
+    const s = ui.tutorialStep
     if (s === null) return
-    if ([3, 4, 5, 6].includes(s)) setActiveTab(null)
-  }, [tutorialStep])
+    if ([3, 4, 5, 6].includes(s)) ui.setActiveTab(null)
+  }, [ui.tutorialStep])
 
+  // ── AdMob / Toss ──────────────────────────────────────────────────────────
   useEffect(() => { initAdMob() }, [])
 
-  // 앱인토스: 뒤로가기 이벤트 처리
   useEffect(() => {
     let cleanup = () => {}
     initTossBackEvent(() => {
-      if (activeTabRef.current !== null) {
-        setActiveTab(null)
-      } else {
-        closeView()
-      }
+      if (ui.activeTabRef.current !== null) ui.setActiveTab(null)
+      else closeView()
     }).then(fn => { cleanup = fn })
     return () => cleanup()
   }, [])
 
-  // 앱인토스: 백그라운드 전환 시 사운드 중단
   useEffect(() => {
     return initTossVisibility(
       () => { mutedRef.current = true },
@@ -192,22 +179,8 @@ export default function App() {
     )
   }, [muted])
 
-  // 부스트
-  const BOOST_MS = 10 * 60 * 1000
-  const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
-  const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
-  const [now, setNow] = useState(Date.now())
-  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | null>(null)
-  const [showPrestigeModal, setShowPrestigeModal] = useState(false)
-  const [showPrestigeKeepModal, setShowPrestigeKeepModal] = useState(false)
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
-
-  const boardRef = useRef(board)
-  useEffect(() => { boardRef.current = board }, [board])
-
+  // ── 저장 인터벌 ──────────────────────────────────────────────────────────
   const lastSavedSnapshotRef = useRef<string>('')
-
-  // 통합 인터벌: 100ms 기준, tick 카운터로 주기별 작업 분기
   useEffect(() => {
     const WINDOW = 60
     const getSnapshot = () => JSON.stringify({
@@ -263,7 +236,7 @@ export default function App() {
       if (tick % 600 === 0) {
         save()
         const { playerName } = gameStateRef.current
-        if (playerName) submitGoldScore(getDeviceId(), playerName, totalEarnedRef.current)
+        if (playerName) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
         tick = 0
       }
     }, 100)
@@ -273,619 +246,26 @@ export default function App() {
       window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const mutedRef = useRef(muted)
-  mutedRef.current = muted
-
-  const goldBoostUntilRef = useRef(goldBoostUntil)
-  goldBoostUntilRef.current = goldBoostUntil
-  const speedBoostUntilRef = useRef(speedBoostUntil)
-  speedBoostUntilRef.current = speedBoostUntil
-  const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
-  goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
-
-  const handleGoldEarned = useCallback((amount: number) => {
-    if (!isFinite(amount) || amount <= 0) return
-    const boostMultiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
-    const multiplier = boostMultiplier * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
-    const earned = amount * multiplier
-    earnedInSecRef.current += earned
-    goldBufferRef.current += earned
-    totalEarnedBufferRef.current += earned
-    if (!mutedRef.current) soundCoin()
-  }, [])
-
-  const handleClickerClick = useCallback(() => {
-    if (!mutedRef.current) soundHamster()
-    const now = performance.now()
-    setGameState(prev => {
-      const { clickCount, threshold, level } = prev.clicker
-
-      // 링 100% 상태: 스폰 잠금 해제 후 한 번 더 클릭 시 스폰
-      if (clickCount >= threshold) {
-        if (now < spawnUnlockTimeRef.current) return prev  // 아직 잠금 중 → 무시
-        spawnClickerItemRef.current?.(clickerGradeRef.current)
-        setTutorialItemCount(c => c + 1)
-
-        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CM_CLICKER_THRESHOLD } }
-      }
-
-      const next = clickCount + 1
-
-      if (clickCount === 0) {
-        // 첫 클릭: 등급 결정
-        const builtGrades = prev.producers.filter(p => p.built).map(p => p.grade)
-        const grade = builtGrades.length > 0
-          ? builtGrades[Math.floor(Math.random() * builtGrades.length)]
-          : 1
-        clickerGradeRef.current = grade
-        setTimeout(() => setClickerGrade(grade), 0)
-      }
-
-      // 매 클릭마다 현재 레벨로 threshold 재계산
-      const grade = clickerGradeRef.current
-      const quantity = getMaterialQuantity(prev.materialQuantityLevels[grade - 1] ?? 1)
-      const newThreshold = getClickerThreshold(quantity, level)
-      if (next >= newThreshold) spawnUnlockTimeRef.current = now + 250
-      return { ...prev, clicker: { ...prev.clicker, clickCount: next, threshold: newThreshold } }
-    })
-  }, [])
-
-  const handleUpgradeClicker = useCallback(() => {
-    setGameState(prev => {
-      const cost = getClickerUpgradeCost(prev.clicker.level)
-      if (goldRef.current < cost) return prev
-      setGold(g => g - cost)
-      return {
-        ...prev,
-        clicker: { ...prev.clicker, level: prev.clicker.level + 1 },
-      }
-    })
-  }, [])
-
-  const handleBuildProducer = useCallback((index: number) => {
-    setGameState(prev => {
-      const builtCount = prev.producers.filter(p => p.built).length
-      const cost = Math.floor(getProducerBuildCost(builtCount) * (1 - getBuildCostDiscount(prev.buildDiscountLevel ?? 0)))
-      if (goldRef.current < cost) return prev
-      if (!mutedRef.current) soundBuild()
-      setGold(g => g - cost)
-      const producers = [...prev.producers]
-      producers[index] = { ...producers[index], built: true, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) }
-      return { ...prev, producers }
-    })
-  }, [tutorialStep])
-
-  const handleProducerGradeChange = useCallback((index: number, grade: number) => {
-    setGameState(prev => {
-      const producers = [...prev.producers]
-      producers[index] = { ...producers[index], grade }
-      return { ...prev, producers }
-    })
-  }, [])
-
-  const handleUpgradeProducer = useCallback((index: number, amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      const producer = prev.producers[index]
-      if (!producer) return prev
-      let goldAmt = goldRef.current
-      let level = producer.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      let spent = 0
-      while (count < limit) {
-        const cost = getProducerUpgradeCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost
-        spent += cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      if (!mutedRef.current) soundBuild()
-      setGold(g => g - spent)
-      const producers = [...prev.producers]
-      producers[index] = { ...producer, level }
-      return { ...prev, producers }
-    })
-  }, [])
-
-  const handleAddBundle = useCallback(() => {
-    setGameState(prev => {
-      const cost = Math.floor(getBundleCost(prev.bundleCount) * (1 - getBundleCostDiscount(prev.bundleDiscountLevel ?? 0)))
-      if (goldRef.current < cost) return prev
-      setGold(g => g - cost)
-      setBoard(b => addBundle(b))
-      return { ...prev, bundleCount: prev.bundleCount + 1 }
-    })
-  }, [])
-
-  const handleBuildFactory = useCallback((row: number, col: number) => {
-    setGameState(prev => {
-      const cost = Math.floor(getFactoryBuildCost() * (1 - getBuildCostDiscount(prev.buildDiscountLevel ?? 0)))
-      if (goldRef.current < cost) return prev
-      if (!mutedRef.current) soundBuild()
-      setGold(g => g - cost)
-      const newFactory: Factory = {
-        row, col, built: true, type: 'WA', grade: 1, level: 1, dir: 'UP_TO_DOWN', animalId: null,
-      }
-      return { ...prev, factories: [...prev.factories, newFactory] }
-    })
-    if (tutorialStep === 7) {
-      setTutorialStep(8)
-      setSelectedFactory(null)
-    }
-  }, [tutorialStep])
-
-  const handleSetFactoryType = useCallback((row: number, col: number, type: Factory['type']) => {
-    const paMinGrade = Math.min(...Object.keys(RECIPES).map(Number))
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f => {
-        if (f.row !== row || f.col !== col) return f
-        const grade = type === 'PA' && f.grade < paMinGrade ? paMinGrade : f.grade
-        return { ...f, type, grade }
-      }),
-    }))
-  }, [])
-
-  const handleSetFactoryDir = useCallback((row: number, col: number, dir: Factory['dir']) => {
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, dir } : f),
-    }))
-  }, [])
-
-  const handleSetFactoryGrade = useCallback((row: number, col: number, grade: number) => {
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f =>
-        f.row === row && f.col === col ? { ...f, grade } : f
-      ),
-    }))
-  }, [])
-
-  const handleUpgradeFactoryLevel = useCallback((row: number, col: number, amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      const factory = prev.factories.find(f => f.row === row && f.col === col)
-      if (!factory) return prev
-      let goldAmt = goldRef.current
-      let level = factory.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      let spent = 0
-      while (count < limit) {
-        const cost = getFactoryLevelUpgradeCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost
-        spent += cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      if (!mutedRef.current) soundBuild()
-      setGold(g => g - spent)
-      return { ...prev, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level } : f) }
-    })
-  }, [])
-
-  const handleHardReset = useCallback(() => {
-    deleteScores(getDeviceId())
-    deleteSave()
-    localStorage.removeItem('tutorialDone')
-    localStorage.removeItem('animal-union-week-config')
-    setBoard(initialBoard)
-    setGameState({ ...initialGameState, playerName: `Player${Date.now().toString(36).toUpperCase()}` })
-    setGold(100)
-    setTotalEarned(0)
-    setGoldPerSec(0)
-    setResetKey(k => k + 1)
-    setSavedAt(null)
-    setActiveTab(null)
-    setTutorialStep(0)
-    setTutorialItemCount(0)
-    setShowSplash(true)
-  }, [])
-
-  const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
-
-  const handleCloudSave = useCallback(async (): Promise<boolean> => {
-    boardSaveRef.current?.()
-    const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }
-    return await saveToCloud(gameStateRef.current.playerName, fullState, boardRef.current, platform, {
-      boosts: { speedBoostUntil: speedBoostUntilRef.current, goldBoostUntil: goldBoostUntilRef.current },
-      items: loadItems() ?? [],
-      faStates: (loadFaStates() ?? {}) as Record<string, unknown>,
-      rsQueues: (loadRsQueues() ?? {}) as Record<string, unknown[]>,
-      produceTimers: loadProduceTimers() ?? {},
-      prStates: (loadPrStates() ?? {}) as Record<string, unknown>
-    })
-  }, [platform, goldPerSec])
-
-  const handleCloudLoad = useCallback(async (): Promise<boolean> => {
-    const data = await loadFromCloud()
-    if (!data || !Array.isArray(data.board) || !data.gameState || typeof data.gameState !== 'object') return false
-    if (data.items) saveItems(data.items)
-    if (data.faStates) saveFaStates(data.faStates)
-    if (data.rsQueues) saveRsQueues(data.rsQueues as Record<string, import('./types/item').Item[]>)
-    if (data.produceTimers) saveProduceTimers(data.produceTimers)
-    if (data.prStates) savePrStates(data.prStates)
-    if (data.boosts) {
-      setSpeedBoostUntil(data.boosts.speedBoostUntil)
-      setGoldBoostUntil(data.boosts.goldBoostUntil)
-    }
-    setBoard(data.board)
-    setGameState(data.gameState)
-    setGold(data.gameState.gold ?? 0)
-    setTotalEarned(data.gameState.totalEarned ?? 0)
-    setGoldPerSec(data.gameState.goldPerSec ?? 0)
-    setResetKey(k => k + 1)
-    return true
-  }, [])
-
-  const handleToggleMute = useCallback(() => {
-    setMuted(prev => {
-      saveMuted(!prev)
-      return !prev
-    })
-  }, [])
-
-  const doPrestige = useCallback(async (multiplier: number = 1) => {
-    const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
-    await fetchAndSaveWeekConfig()
-    const weekConfig = loadWeekConfig()
-    if (weekConfig) applyWeekConfig(weekConfig)
-
-    const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
-
-    if (!mutedRef.current) soundCat()
-    saveItems([])
-    saveFaStates({})
-    setResetKey(k => k + 1)
-    setBoard(initialBoard)
-
-    const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
-
-    setGold(0)
-    setTotalEarned(0)
-    setGoldPerSec(0)
-
-    setGameState(prev => {
-      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
-      const newPrestigeCount = prev.prestigeCount + 1
-      if (prev.playerName) {
-        submitPrestigeScore(getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
-      }
-      const resetBase = {
-        ...prev,
-        gold: 0,
-        goldPerSec: 0,
-        bundleCount: 0,
-        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        factories: initialGameState.factories,
-        totalEarned: 0,
-        clicker: initialGameState.clicker,
-        materialQuantityLevels: initialGameState.materialQuantityLevels,
-        itemValueLevels: initialGameState.itemValueLevels,
-        animals: initialGameState.animals,
-        rsBufferLevel: initialGameState.rsBufferLevel,
-        faBufferLevel: initialGameState.faBufferLevel,
-        railSpeedLevel: initialGameState.railSpeedLevel,
-        prestigeCount: newPrestigeCount,
-        totalPrestigePoints: newTotalPrestigePoints,
-      }
-      if (isNewSeason) {
-        // 새 시즌: 전부 리셋, 총 누적 포인트에 weekRate 패널티 적용
-        return { ...resetBase, prestigePoints: Math.floor(newTotalPrestigePoints * weekRate) }
-      }
-      // 같은 시즌: 전부 리셋 + 쓴 포인트 환불
-      return { ...resetBase, prestigePoints: newTotalPrestigePoints }
-    })
-
-    // 환생 후 CURRENT_WEEK = WEEK 저장 (이번 시즌 참여 표시)
-    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
-    saveWeekConfig(updatedConfig)
-    applyWeekConfig(updatedConfig)
-  }, [])
-
-  const handlePrestige = useCallback(async () => {
-    await fetchAndSaveWeekConfig()
-    const weekConfig = loadWeekConfig()
-    if (weekConfig) applyWeekConfig(weekConfig)
-    setShowPrestigeModal(true)
-  }, [])
-
-
-  const doPrestigeKeepPoints = useCallback(async (multiplier: number = 1) => {
-    const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
-    await fetchAndSaveWeekConfig()
-    const weekConfig = loadWeekConfig()
-    if (weekConfig) applyWeekConfig(weekConfig)
-
-    if (!mutedRef.current) soundCat()
-    saveItems([])
-    saveFaStates({})
-    setResetKey(k => k + 1)
-    setBoard(initialBoard)
-
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
-
-    setGold(0)
-    setTotalEarned(0)
-    setGoldPerSec(0)
-
-    setGameState(prev => {
-      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
-      const newPrestigeCount = prev.prestigeCount + 1
-      if (prev.playerName) {
-        submitPrestigeScore(getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
-      }
-      const keptPoints = Math.floor(prev.prestigePoints * weekRate) + earned
-      return {
-        ...prev,
-        gold: 0,
-        goldPerSec: 0,
-        bundleCount: 0,
-        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        factories: initialGameState.factories,
-        totalEarned: 0,
-        clicker: initialGameState.clicker,
-        materialQuantityLevels: initialGameState.materialQuantityLevels,
-        prestigePoints: keptPoints,
-        prestigeCount: newPrestigeCount,
-        totalPrestigePoints: newTotalPrestigePoints,
-        rsBufferLevel: prev.rsBufferLevel,
-        faBufferLevel: prev.faBufferLevel,
-      }
-    })
-
-    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
-    saveWeekConfig(updatedConfig)
-    applyWeekConfig(updatedConfig)
-  }, [])
-
-  const handlePrestigeKeepPoints = useCallback(() => {
-    setShowPrestigeKeepModal(true)
-  }, [])
-
-  const handleAdComplete = useCallback(() => {
-    const target = adTarget
-    setAdTarget(null)
-    if (target === 'speed') {
-      setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
-    } else if (target === 'gold') {
-      setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
-    } else if (target === 'prestige') {
-      setShowPrestigeModal(false)
-      doPrestige(2)
-    } else if (target === 'prestigeKeep') {
-      setShowPrestigeKeepModal(false)
-      doPrestigeKeepPoints(2)
-    }
-  }, [adTarget, doPrestige, doPrestigeKeepPoints])
-
-  const handleUnlockAnimal = useCallback((id: AnimalId) => {
-    setGameState(prev => {
-      const cost = getAnimalUnlockCost()
-      if (prev.prestigePoints < cost) return prev
-      return {
-        ...prev,
-        prestigePoints: prev.prestigePoints - cost,
-        animals: prev.animals.map(a => a.id === id ? { ...a, unlocked: true } : a),
-      }
-    })
-  }, [])
-
-  const handleUpgradeAnimal = useCallback((id: AnimalId, amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      const animal = prev.animals.find(a => a.id === id)
-      if (!animal || !animal.unlocked) return prev
-      let points = prev.prestigePoints
-      let level = animal.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getAnimalUpgradeCost(level)
-        if (points < cost) break
-        points -= cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      return {
-        ...prev,
-        prestigePoints: points,
-        animals: prev.animals.map(a => a.id === id ? { ...a, level } : a),
-      }
-    })
-  }, [])
-
-  const handleSetFactoryAnimal = useCallback((row: number, col: number, animalId: AnimalId | null) => {
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId } : f),
-    }))
-  }, [])
-
-  const handleStartPlacing = useCallback((id: AnimalId) => {
-    setPlacingAnimalId(id)
-    setActiveTab(null)
-  }, [])
-
-  const handlePlaceAnimal = useCallback((row: number, col: number) => {
-    if (!placingAnimalId) return
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, animalId: placingAnimalId } : f),
-    }))
-    setPlacingAnimalId(null)
-  }, [placingAnimalId])
-
-  const handleCancelPlacing = useCallback(() => setPlacingAnimalId(null), [])
-
+  // ── 크로스커팅 핸들러 ─────────────────────────────────────────────────────
+  // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
-    setSelectedFactory({ row, col })
-    if (tutorialStep === 6) setTutorialStep(7)
-  }, [tutorialStep])
+    ui.setSelectedFactory({ row, col })
+    if (ui.tutorialStep === 6) ui.setTutorialStep(7)
+  }, [ui.tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleFaLiveStateChange = useCallback((states: import('./hooks/useGameLoop').FALiveStates) => {
-    faLiveStatesRef.current = states
-  }, [])
+  // 동물 배치: placingAnimalId 전달 후 초기화
+  const handlePlaceAnimal = useCallback((row: number, col: number) => {
+    actions.handlePlaceAnimal(row, col, ui.placingAnimalId)
+    ui.setPlacingAnimalId(null)
+  }, [ui.placingAnimalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleProducerProgressChange = useCallback((progresses: Record<string, number>) => {
-    producerProgressesRef.current = progresses
-  }, [])
-
-  const handleProducerClick = useCallback((row: number, col: number) => {
-    setSelectedProducer({ row, col })
-  }, [tutorialStep])
-
-  const handleRsClick = useCallback((_row: number, _col: number, rsKey: string, rsQueuesRef: React.MutableRefObject<Record<string, import('./types/item').Item[]>>) => {
-    setSelectedRs({ rsKey, rsQueuesRef })
-  }, [])
-
-  const handleRecallAnimal = useCallback((id: AnimalId) => {
-    setGameState(prev => ({
-      ...prev,
-      factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
-    }))
-  }, [])
-
-  const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      let points = prev.prestigePoints
-      let level = prev.itemValueLevels[gradeIndex] ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getItemValueLevelCost(level)
-        if (points < cost) break
-        points -= cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      const itemValueLevels = [...prev.itemValueLevels]
-      itemValueLevels[gradeIndex] = level
-      return { ...prev, prestigePoints: points, itemValueLevels }
-    })
-  }, [])
-
-  const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      let goldAmt = goldRef.current
-      let level = prev.materialQuantityLevels[gradeIndex] ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      let spent = 0
-      while (count < limit) {
-        const cost = getMaterialQuantityLevelCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost
-        spent += cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      setGold(g => g - spent)
-      const materialQuantityLevels = [...prev.materialQuantityLevels]
-      materialQuantityLevels[gradeIndex] = level
-      return { ...prev, materialQuantityLevels }
-    })
-  }, [])
-
-  const handleUpgradeRsBuffer = useCallback((amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      let points = prev.prestigePoints
-      let level = prev.rsBufferLevel
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getBufferUpgradeCost(level)
-        if (points < cost) break
-        points -= cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      return { ...prev, prestigePoints: points, rsBufferLevel: level }
-    })
-  }, [])
-
-  const handleUpgradeFaBuffer = useCallback((amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      let points = prev.prestigePoints
-      let level = prev.faBufferLevel
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getBufferUpgradeCost(level)
-        if (points < cost) break
-        points -= cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      return { ...prev, prestigePoints: points, faBufferLevel: level }
-    })
-  }, [])
-
-  const handleUpgradeRailSpeed = useCallback((amount: UpgradeAmount = 1) => {
-    setGameState(prev => {
-      let points = prev.prestigePoints
-      let level = prev.railSpeedLevel ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        if (level >= CONFIG.RAIL_SPEED_MAX_LEVEL) break
-        const cost = getRailSpeedUpgradeCost(level)
-        if (points < cost) break
-        points -= cost
-        level++
-        count++
-      }
-      if (count === 0) return prev
-      return { ...prev, prestigePoints: points, railSpeedLevel: level }
-    })
-  }, [])
-
-  const handleUpgradeBuildDiscount = useCallback(() => {
-    setGameState(prev => {
-      if ((prev.buildDiscountLevel ?? 0) >= CONFIG.PF_BC_PROC_MAX) return prev
-      const cost = getBuildDiscountCost(prev.buildDiscountLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
-    })
-  }, [])
-
-  const handleUpgradeBundleDiscount = useCallback(() => {
-    setGameState(prev => {
-      if ((prev.bundleDiscountLevel ?? 0) >= CONFIG.PF_LC_PROC_MAX) return prev
-      const cost = getBundleDiscountCost(prev.bundleDiscountLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
-    })
-  }, [])
-
-  const handleUpgradeProducerStart = useCallback(() => {
-    setGameState(prev => {
-      const cost = getProducerStartCost(prev.producerStartLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
-    })
-  }, [])
-
-  const handleUpgradeGoldMultiplier = useCallback(() => {
-    setGameState(prev => {
-      if ((prev.goldMultiplierLevel ?? 0) >= CONFIG.PF_GM_PROC_MAX) return prev
-      const cost = getGoldMultiplierCost(prev.goldMultiplierLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
-    })
-  }, [])
+  // 하드 리셋: activeTab 초기화 추가
+  const handleHardReset = useCallback(() => {
+    actions.handleHardReset()
+    ui.setActiveTab(null)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
 
@@ -907,7 +287,7 @@ export default function App() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: activeTab !== null ? 'calc(40vh + 68px + env(safe-area-inset-bottom))' : 'calc(68px + env(safe-area-inset-bottom))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + env(safe-area-inset-bottom))' : 'calc(68px + env(safe-area-inset-bottom))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {bgEmojis.map((item, i) => (
@@ -923,32 +303,32 @@ export default function App() {
           }}>{item.emoji}</span>
         ))}
       </div>
-      {showSplash && <SplashScreen onDone={handleSplashDone} />}
-      {!showSplash && tutorialStep !== null && <Tutorial
-        step={tutorialStep}
-        clickCount={tutorialItemCount}
+      {ui.showSplash && <SplashScreen onDone={ui.handleSplashDone} />}
+      {!ui.showSplash && ui.tutorialStep !== null && <Tutorial
+        step={ui.tutorialStep}
+        clickCount={ui.tutorialItemCount}
         onNext={() => {
-          if (tutorialStep === 8) {
+          if (ui.tutorialStep === 8) {
             localStorage.setItem('tutorialDone', '1')
-            setTutorialStep(null)
+            ui.setTutorialStep(null)
           } else {
-            setTutorialStep(s => s !== null ? s + 1 : null)
+            ui.setTutorialStep(s => s !== null ? s + 1 : null)
           }
         }}
         onSkip={() => {
           localStorage.setItem('tutorialDone', '1')
-          setTutorialStep(null)
+          ui.setTutorialStep(null)
         }}
       />}
-      {!showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints} totalPrestigePoints={gameState.totalPrestigePoints} />}
-      {!showSplash && tutorialStep === 6 && (
+      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints} totalPrestigePoints={gameState.totalPrestigePoints} />}
+      {!ui.showSplash && ui.tutorialStep === 6 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
       )}
-      {!showSplash && <div style={tutorialStep === 6 ? { position: 'relative', zIndex: 24 } : undefined}><Board
+      {!ui.showSplash && <div style={ui.tutorialStep === 6 ? { position: 'relative', zIndex: 24 } : undefined}><Board
         key={resetKey}
         board={board}
-        onAddBundle={handleAddBundle}
-        onGoldEarned={handleGoldEarned}
+        onAddBundle={actions.handleAddBundle}
+        onGoldEarned={actions.handleGoldEarned}
         bundleCost={bundleCost}
         canAddBundle={gold >= bundleCost}
         producers={gameState.producers}
@@ -961,57 +341,57 @@ export default function App() {
           rsBufferLevel: gameState.rsBufferLevel,
           railSpeedLevel: gameState.railSpeedLevel ?? 1,
         }}
-        placingAnimalId={placingAnimalId}
+        placingAnimalId={ui.placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
-        onCancelPlacing={handleCancelPlacing}
+        onCancelPlacing={ui.handleCancelPlacing}
         spawnClickerItemRef={spawnClickerItemRef}
         onSaveRef={boardSaveRef}
         muted={muted}
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
         onFactoryClick={handleFactoryClick}
-        onProducerClick={handleProducerClick}
-        onRsClick={handleRsClick}
-        onFaLiveStateChange={handleFaLiveStateChange}
-        onProducerProgressChange={handleProducerProgressChange}
-        tutorialHighlight={tutorialStep === 6 ? 'fa' : undefined}
-        disableDerail={tutorialStep !== null}
+        onProducerClick={ui.handleProducerClick}
+        onRsClick={ui.handleRsClick}
+        onFaLiveStateChange={ui.handleFaLiveStateChange}
+        onProducerProgressChange={ui.handleProducerProgressChange}
+        tutorialHighlight={ui.tutorialStep === 6 ? 'fa' : undefined}
+        disableDerail={ui.tutorialStep !== null}
       /></div>}
-      {!showSplash && <TabBar
+      {!ui.showSplash && <TabBar
         clicker={gameState.clicker}
-        clickerGrade={clickerGrade}
-        onClickerClick={handleClickerClick}
+        clickerGrade={ui.clickerGrade}
+        onClickerClick={actions.handleClickerClick}
         onTabChange={(tab) => {
-          setActiveTab(tab)
+          ui.setActiveTab(tab)
           saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostUntil, goldBoostUntil })
           setSavedAt(Date.now())
         }}
-        activeTab={activeTab}
+        activeTab={ui.activeTab}
         speedBoostUntil={speedBoostUntil}
         goldBoostUntil={goldBoostUntil}
         now={now}
         onSpeedBoost={() => {
-          if (tutorialStep === 4) {
+          if (ui.tutorialStep === 4) {
             setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
-            setTutorialStep(5)
+            ui.setTutorialStep(5)
           } else {
-            setAdTarget('speed')
+            ui.setAdTarget('speed')
           }
         }}
         onGoldBoost={() => {
-          if (tutorialStep === 5) {
+          if (ui.tutorialStep === 5) {
             setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
-            setTutorialStep(6)
+            ui.setTutorialStep(6)
           } else {
-            setAdTarget('gold')
+            ui.setAdTarget('gold')
           }
         }}
       />}
-      {!showSplash && <BottomSheet
-        open={activeTab !== null}
-        onClose={() => { setActiveTab(null) }}
-        scrollKey={activeTab}
+      {!ui.showSplash && <BottomSheet
+        open={ui.activeTab !== null}
+        onClose={() => { ui.setActiveTab(null) }}
+        scrollKey={ui.activeTab}
         header={
-          activeTab === 0 ? (
+          ui.activeTab === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>공장</h2>
@@ -1019,26 +399,26 @@ export default function App() {
                   {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
                     <button
                       key={sec}
-                      onClick={() => { setProdSection(sec) }}
+                      onClick={() => { ui.setProdSection(sec) }}
                       style={{
                         padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: prodSection === sec ? '#16a34a' : '#e5e7eb',
-                        background: prodSection === sec ? '#f0fdf4' : '#fff',
-                        color: prodSection === sec ? '#16a34a' : '#9ca3af',
+                        borderColor: ui.prodSection === sec ? '#16a34a' : '#e5e7eb',
+                        background: ui.prodSection === sec ? '#f0fdf4' : '#fff',
+                        color: ui.prodSection === sec ? '#16a34a' : '#9ca3af',
                         fontSize: 13, fontWeight: 800, cursor: 'pointer',
                       }}
                     >{label}</button>
                   ))}
                 </div>
               </div>
-              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
+              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
-          ) : activeTab === 1 ? (
+          ) : ui.activeTab === 1 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>재료 관리</h2>
-              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
+              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
-          ) : activeTab === 2 ? (
+          ) : ui.activeTab === 2 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
@@ -1046,12 +426,12 @@ export default function App() {
                   {([['hamster', '햄스터'], ['cat', '고양이'], ['dog', '강아지']] as const).map(([type, label]) => (
                     <button
                       key={type}
-                      onClick={() => setAnimalType(type)}
+                      onClick={() => ui.setAnimalType(type)}
                       style={{
                         padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: animalType === type ? '#6366f1' : '#e5e7eb',
-                        background: animalType === type ? '#eef2ff' : '#fff',
-                        color: animalType === type ? '#6366f1' : '#9ca3af',
+                        borderColor: ui.animalType === type ? '#6366f1' : '#e5e7eb',
+                        background: ui.animalType === type ? '#eef2ff' : '#fff',
+                        color: ui.animalType === type ? '#6366f1' : '#9ca3af',
                         fontSize: 12, fontWeight: 800, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: 4,
                       }}
@@ -1062,9 +442,9 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
+              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
-          ) : activeTab === 3 ? (
+          ) : ui.activeTab === 3 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
@@ -1072,45 +452,44 @@ export default function App() {
                   {([['item', '📦 아이템'], ['buffer', '🔧 기타']] as const).map(([sec, label]) => (
                     <button
                       key={sec}
-                      onClick={() => setPrestigeSection(sec)}
+                      onClick={() => ui.setPrestigeSection(sec)}
                       style={{
                         padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
-                        background: prestigeSection === sec ? '#fffbeb' : '#fff',
-                        color: prestigeSection === sec ? '#d97706' : '#9ca3af',
+                        borderColor: ui.prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
+                        background: ui.prestigeSection === sec ? '#fffbeb' : '#fff',
+                        color: ui.prestigeSection === sec ? '#d97706' : '#9ca3af',
                         fontSize: 12, fontWeight: 800, cursor: 'pointer',
                       }}
                     >{label}</button>
                   ))}
                 </div>
               </div>
-              <UpgradeAmountToggle value={upgradeAmount} onChange={setUpgradeAmount} />
+              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
-          ) : activeTab === 4 ? (
+          ) : ui.activeTab === 4 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>{CONFIG.CURRENT_WEEK}시즌</span>
               </div>
-
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
-                  onClick={() => setLbMode('prestige')}
+                  onClick={() => ui.setLbMode('prestige')}
                   style={{
                     padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                    borderColor: lbMode === 'prestige' ? '#6366f1' : '#e5e7eb',
-                    background: lbMode === 'prestige' ? '#eef2ff' : '#fff',
-                    color: lbMode === 'prestige' ? '#6366f1' : '#9ca3af',
+                    borderColor: ui.lbMode === 'prestige' ? '#6366f1' : '#e5e7eb',
+                    background: ui.lbMode === 'prestige' ? '#eef2ff' : '#fff',
+                    color: ui.lbMode === 'prestige' ? '#6366f1' : '#9ca3af',
                     fontSize: 13, fontWeight: 800, cursor: 'pointer',
                   }}
                 >⭐ 환생</button>
                 <button
-                  onClick={() => setLbMode('gold')}
+                  onClick={() => ui.setLbMode('gold')}
                   style={{
                     padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                    borderColor: lbMode === 'gold' ? '#6366f1' : '#e5e7eb',
-                    background: lbMode === 'gold' ? '#eef2ff' : '#fff',
-                    color: lbMode === 'gold' ? '#6366f1' : '#9ca3af',
+                    borderColor: ui.lbMode === 'gold' ? '#6366f1' : '#e5e7eb',
+                    background: ui.lbMode === 'gold' ? '#eef2ff' : '#fff',
+                    color: ui.lbMode === 'gold' ? '#6366f1' : '#9ca3af',
                     fontSize: 13, fontWeight: 800, cursor: 'pointer',
                   }}
                 >💰 골드</button>
@@ -1118,143 +497,143 @@ export default function App() {
             </div>
           ) : (
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
-              {['공장', '재료 관리', '동물', '환생', '', '설정'][activeTab ?? 0]}
+              {['공장', '재료 관리', '동물', '환생', '', '설정'][ui.activeTab ?? 0]}
             </h2>
           )
         }
       >
-        {activeTab === 0 && prodSection === 'production' && (
+        {ui.activeTab === 0 && ui.prodSection === 'production' && (
           <ProductionTab
             producers={gameState.producers}
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             clicker={gameState.clicker}
-            onBuild={handleBuildProducer}
-            onUpgrade={(i) => handleUpgradeProducer(i, upgradeAmount)}
-            onUpgradeClicker={handleUpgradeClicker}
-            onGradeChange={handleProducerGradeChange}
+            onBuild={actions.handleBuildProducer}
+            onUpgrade={(i) => actions.handleUpgradeProducer(i, ui.upgradeAmount)}
+            onUpgradeClicker={actions.handleUpgradeClicker}
+            onGradeChange={actions.handleProducerGradeChange}
           />
         )}
-        {activeTab === 0 && prodSection === 'factory' && (
+        {ui.activeTab === 0 && ui.prodSection === 'factory' && (
           <FactoryTab
             board={board}
             factories={gameState.factories}
             gold={gold}
-            onBuild={handleBuildFactory}
-            onSetType={handleSetFactoryType}
-            onSetDir={handleSetFactoryDir}
-            onSetGrade={handleSetFactoryGrade}
-            onUpgradeLevel={(row, col) => handleUpgradeFactoryLevel(row, col, upgradeAmount)}
-            onSetAnimal={handleSetFactoryAnimal}
+            onBuild={actions.handleBuildFactory}
+            onSetType={actions.handleSetFactoryType}
+            onSetDir={actions.handleSetFactoryDir}
+            onSetGrade={actions.handleSetFactoryGrade}
+            onUpgradeLevel={(row, col) => actions.handleUpgradeFactoryLevel(row, col, ui.upgradeAmount)}
+            onSetAnimal={actions.handleSetFactoryAnimal}
             animals={gameState.animals}
             maxGrade={20}
-            focusFactory={focusFactory}
-            onFocusConsumed={() => setFocusFactory(null)}
+            focusFactory={ui.focusFactory}
+            onFocusConsumed={() => ui.setFocusFactory(null)}
           />
         )}
-        {activeTab === 1 && (
+        {ui.activeTab === 1 && (
           <MaterialTab
             gameState={gameState}
             gold={gold}
-            onUpgradeQuantity={(i) => handleUpgradeMaterialQuantity(i, upgradeAmount)}
+            onUpgradeQuantity={(i) => actions.handleUpgradeMaterialQuantity(i, ui.upgradeAmount)}
           />
         )}
-        {activeTab === 2 && (
+        {ui.activeTab === 2 && (
           <AnimalTab
             gameState={gameState}
-            animalType={animalType}
-            onUnlockAnimal={handleUnlockAnimal}
-            onUpgradeAnimal={(id) => handleUpgradeAnimal(id, upgradeAmount)}
-            onStartPlacing={handleStartPlacing}
-            onRecallAnimal={handleRecallAnimal}
+            animalType={ui.animalType}
+            onUnlockAnimal={actions.handleUnlockAnimal}
+            onUpgradeAnimal={(id) => actions.handleUpgradeAnimal(id, ui.upgradeAmount)}
+            onStartPlacing={ui.handleStartPlacing}
+            onRecallAnimal={actions.handleRecallAnimal}
           />
         )}
-        {activeTab === 3 && (
+        {ui.activeTab === 3 && (
           <PrestigeTab
             gameState={gameState}
-            section={prestigeSection}
-            onPrestige={handlePrestige}
-            onPrestigeKeepPoints={handlePrestigeKeepPoints}
-            onLevelUpItemValue={(i) => handleLevelUpItemValue(i, upgradeAmount)}
-            onUpgradeRsBuffer={() => handleUpgradeRsBuffer(upgradeAmount)}
-            onUpgradeFaBuffer={() => handleUpgradeFaBuffer(upgradeAmount)}
-            onUpgradeRailSpeed={() => handleUpgradeRailSpeed(upgradeAmount)}
-            onUpgradeBuildDiscount={handleUpgradeBuildDiscount}
-            onUpgradeBundleDiscount={handleUpgradeBundleDiscount}
-            onUpgradeProducerStart={handleUpgradeProducerStart}
-            onUpgradeGoldMultiplier={handleUpgradeGoldMultiplier}
+            section={ui.prestigeSection}
+            onPrestige={actions.handlePrestige}
+            onPrestigeKeepPoints={actions.handlePrestigeKeepPoints}
+            onLevelUpItemValue={(i) => actions.handleLevelUpItemValue(i, ui.upgradeAmount)}
+            onUpgradeRsBuffer={() => actions.handleUpgradeRsBuffer(ui.upgradeAmount)}
+            onUpgradeFaBuffer={() => actions.handleUpgradeFaBuffer(ui.upgradeAmount)}
+            onUpgradeRailSpeed={() => actions.handleUpgradeRailSpeed(ui.upgradeAmount)}
+            onUpgradeBuildDiscount={actions.handleUpgradeBuildDiscount}
+            onUpgradeBundleDiscount={actions.handleUpgradeBundleDiscount}
+            onUpgradeProducerStart={actions.handleUpgradeProducerStart}
+            onUpgradeGoldMultiplier={actions.handleUpgradeGoldMultiplier}
           />
         )}
-        {activeTab === 4 && (
+        {ui.activeTab === 4 && (
           <LeaderboardTab
             playerName={gameState.playerName}
-            mode={lbMode}
+            mode={ui.lbMode}
             onNameChange={async name => {
               if (!name.trim()) return
               const { prestigePoints, prestigeCount } = gameStateRef.current
               setGameState(prev => ({ ...prev, playerName: name }))
-              const deviceId = getDeviceId()
-              await deleteScores(deviceId)
-              await submitPrestigeScore(deviceId, name, prestigePoints, prestigeCount)
-              await submitGoldScore(deviceId, name, totalEarnedRef.current)
+              const deviceId = SaveService.getDeviceId()
+              await ScoreService.deleteAll(deviceId)
+              await ScoreService.submitPrestige(deviceId, name, prestigePoints, prestigeCount)
+              await ScoreService.submitGold(deviceId, name, totalEarnedRef.current)
             }}
           />
         )}
-        {activeTab === 5 && (
+        {ui.activeTab === 5 && (
           <SettingsTab
             savedAt={savedAt}
             muted={muted}
-            onToggleMute={handleToggleMute}
-            onCloudSave={handleCloudSave}
-            onCloudLoad={handleCloudLoad}
-            onHardReset={() => setShowResetConfirm(true)}
+            onToggleMute={actions.handleToggleMute}
+            onCloudSave={actions.handleCloudSave}
+            onCloudLoad={actions.handleCloudLoad}
+            onHardReset={() => ui.setShowResetConfirm(true)}
           />
         )}
       </BottomSheet>}
 
       {/* 광고 모달 */}
-      {adTarget !== null && (
+      {ui.adTarget !== null && (
         <AdModal
-          onComplete={handleAdComplete}
-          onClose={() => setAdTarget(null)}
+          onComplete={actions.handleAdComplete}
+          onClose={() => ui.setAdTarget(null)}
         />
       )}
 
       {/* 공장 팝업 */}
-      {selectedFactory && (() => {
-        const factory = gameState.factories.find(f => f.row === selectedFactory.row && f.col === selectedFactory.col)
+      {ui.selectedFactory && (() => {
+        const factory = gameState.factories.find(f => f.row === ui.selectedFactory!.row && f.col === ui.selectedFactory!.col)
         if (!factory?.built) {
           return (
             <FactoryBuildModal
               gold={gold}
-              onBuild={() => handleBuildFactory(selectedFactory.row, selectedFactory.col)}
-              onClose={() => setSelectedFactory(null)}
-              tutorialHighlight={tutorialStep === 7}
+              onBuild={() => actions.handleBuildFactory(ui.selectedFactory!.row, ui.selectedFactory!.col)}
+              onClose={() => ui.setSelectedFactory(null)}
+              tutorialHighlight={ui.tutorialStep === 7}
             />
           )
         }
-        const liveKey = `${selectedFactory.row}-${selectedFactory.col}`
-        const { row, col } = selectedFactory
+        const liveKey = `${ui.selectedFactory.row}-${ui.selectedFactory.col}`
+        const { row, col } = ui.selectedFactory
         return (
           <FactoryInfoModal
             factory={factory}
-            faLiveStatesRef={faLiveStatesRef}
+            faLiveStatesRef={ui.faLiveStatesRef}
             liveKey={liveKey}
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             maxGrade={20}
-            onClose={() => { setSelectedFactory(null) }}
-            onSetType={type => handleSetFactoryType(row, col, type)}
-            onSetDir={dir => handleSetFactoryDir(row, col, dir)}
-            onSetGrade={grade => handleSetFactoryGrade(row, col, grade)}
-            onUpgradeLevel={() => handleUpgradeFactoryLevel(row, col, upgradeAmount)}
+            onClose={() => { ui.setSelectedFactory(null) }}
+            onSetType={type => actions.handleSetFactoryType(row, col, type)}
+            onSetDir={dir => actions.handleSetFactoryDir(row, col, dir)}
+            onSetGrade={grade => actions.handleSetFactoryGrade(row, col, grade)}
+            onUpgradeLevel={() => actions.handleUpgradeFactoryLevel(row, col, ui.upgradeAmount)}
           />
         )
       })()}
 
       {/* 생산기 팝업 */}
-      {selectedProducer && (() => {
-        const producer = gameState.producers.find(p => p.row === selectedProducer.row && p.col === selectedProducer.col)
+      {ui.selectedProducer && (() => {
+        const producer = gameState.producers.find(p => p.row === ui.selectedProducer!.row && p.col === ui.selectedProducer!.col)
         if (!producer) return null
         const producerIndex = gameState.producers.indexOf(producer)
         const builtCount = gameState.producers.filter(p => p.built).length
@@ -1265,59 +644,59 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             builtCount={builtCount}
-            onBuild={() => handleBuildProducer(producerIndex)}
-            onUpgrade={() => handleUpgradeProducer(producerIndex, upgradeAmount)}
-            onClose={() => { setSelectedProducer(null) }}
-            onGradeChange={(grade) => handleProducerGradeChange(producerIndex, grade)}
-            producerProgressesRef={producerProgressesRef}
-            progressKey={`${selectedProducer.row}-${selectedProducer.col}`}
+            onBuild={() => actions.handleBuildProducer(producerIndex)}
+            onUpgrade={() => actions.handleUpgradeProducer(producerIndex, ui.upgradeAmount)}
+            onClose={() => { ui.setSelectedProducer(null) }}
+            onGradeChange={(grade) => actions.handleProducerGradeChange(producerIndex, grade)}
+            producerProgressesRef={ui.producerProgressesRef}
+            progressKey={`${ui.selectedProducer.row}-${ui.selectedProducer.col}`}
           />
         )
       })()}
 
       {/* 환생 모달 */}
-      {showPrestigeModal && (
+      {ui.showPrestigeModal && (
         <PrestigeAdModal
           earned={getPrestigePoints(totalEarned)}
           currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
           availablePoints={gameState.prestigePoints}
-          onPrestige={() => { setShowPrestigeModal(false); doPrestige(1) }}
-          onWatchAd={() => { setAdTarget('prestige') }}
-          onClose={() => setShowPrestigeModal(false)}
+          onPrestige={() => { ui.setShowPrestigeModal(false); actions.doPrestige(1) }}
+          onWatchAd={() => { ui.setAdTarget('prestige') }}
+          onClose={() => ui.setShowPrestigeModal(false)}
         />
       )}
 
       {/* 포인트 유지 환생 모달 */}
-      {showPrestigeKeepModal && (
+      {ui.showPrestigeKeepModal && (
         <PrestigeAdModal
           earned={getPrestigePoints(totalEarned)}
           currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
           availablePoints={gameState.prestigePoints}
           keepPoints
-          onPrestige={() => { setShowPrestigeKeepModal(false); doPrestigeKeepPoints(1) }}
-          onWatchAd={() => { setAdTarget('prestigeKeep') }}
-          onClose={() => setShowPrestigeKeepModal(false)}
+          onPrestige={() => { ui.setShowPrestigeKeepModal(false); actions.doPrestigeKeepPoints(1) }}
+          onWatchAd={() => { ui.setAdTarget('prestigeKeep') }}
+          onClose={() => ui.setShowPrestigeKeepModal(false)}
         />
       )}
 
       {/* RS 버퍼 팝업 */}
-      {selectedRs && (
+      {ui.selectedRs && (
         <RsInfoModal
-          rsKey={selectedRs.rsKey}
-          rsQueuesRef={selectedRs.rsQueuesRef}
+          rsKey={ui.selectedRs.rsKey}
+          rsQueuesRef={ui.selectedRs.rsQueuesRef}
           capacity={getRsBufferCapacity(gameState.rsBufferLevel)}
-          onClose={() => setSelectedRs(null)}
+          onClose={() => ui.setSelectedRs(null)}
         />
       )}
 
       {/* 초기화 확인 */}
-      {showResetConfirm && (
+      {ui.showResetConfirm && (
         <ConfirmModal
           title="게임 초기화"
           message={'모든 데이터가 삭제됩니다.\n정말 초기화하시겠습니까?'}
           confirmLabel="초기화"
-          onConfirm={() => { setShowResetConfirm(false); handleHardReset() }}
-          onClose={() => setShowResetConfirm(false)}
+          onConfirm={() => { ui.setShowResetConfirm(false); handleHardReset() }}
+          onClose={() => ui.setShowResetConfirm(false)}
         />
       )}
     </div>

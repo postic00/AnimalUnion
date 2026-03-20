@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { showRewardedAd } from '../utils/admob'
+import { showRewardedAd } from '../../utils/admob'
 import styles from './AdModal.module.css'
 
 interface Props {

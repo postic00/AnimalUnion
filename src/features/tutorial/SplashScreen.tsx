@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchAndSaveWeekConfig } from '../lib/userProfile'
-import { loadWeekConfig } from '../utils/saveLoad'
-import { applyWeekConfig } from '../config'
+import { CloudService } from '../../services/CloudService'
+import { SaveService } from '../../services/SaveService'
+import { applyWeekConfig } from '../../config'
 import styles from './SplashScreen.module.css'
 
 interface Props {
@@ -22,8 +22,8 @@ export default function SplashScreen({ onDone }: Props) {
   }
 
   useEffect(() => {
-    fetchAndSaveWeekConfig().then(() => {
-      const fresh = loadWeekConfig()
+    CloudService.fetchAndSaveWeekConfig().then(() => {
+      const fresh = SaveService.loadWeekConfig()
       if (fresh) applyWeekConfig(fresh)
       configDoneRef.current = true
       tryDone()

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { fetchPrestigeLeaderboard, fetchGoldLeaderboard } from '../lib/supabase'
-import type { LeaderboardEntry } from '../lib/supabase'
-import { formatGold } from '../utils/formatGold'
-import { CONFIG } from '../config'
+import { ScoreService } from '../../services/ScoreService'
+import type { LeaderboardEntry } from '../../services/ScoreService'
+import { formatGold } from '../../utils/formatGold'
+import { CONFIG } from '../../config'
 import styles from './LeaderboardTab.module.css'
 
 interface Props {
@@ -24,7 +24,7 @@ export default function LeaderboardTab({ playerName, mode, onNameChange }: Props
 
   const refresh = () => {
     setLoading(true)
-    const fetch = mode === 'prestige' ? fetchPrestigeLeaderboard : fetchGoldLeaderboard
+    const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
     fetch().then(data => { setEntries(data); setLoading(false) })
   }
 

@@ -1,6 +1,6 @@
 import type { JSX } from 'react'
-import type { Factory } from '../types/factory'
-import type { AnimalSpecies } from './AnimalSvg'
+import type { Factory } from '../../types/factory'
+import type { AnimalSpecies } from '../animal/AnimalSvg'
 import styles from './ProcessAnimation.module.css'
 
 // ── 땀방울 ───────────────────────────────────────────────────────

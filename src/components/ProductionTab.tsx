@@ -98,7 +98,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                     <span className={styles.levelBadge} style={{ background: grade.sub }}>Lv.{producer.level}</span>
                   </div>
                   <span className={styles.cardSub} style={{ color: grade.sub }}>
-                    {isActive ? `${perSec < 1 ? perSec.toFixed(3) : formatQuantity(perSec)}/s` : '비활성'}
+                    {isActive ? `${perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s` : '비활성'}
                   </span>
                 </div>
               </div>

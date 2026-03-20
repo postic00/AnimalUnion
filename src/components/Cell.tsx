@@ -112,9 +112,11 @@ function getDynamicStyle(cell: CellType, factory?: Factory, producer?: Producer)
 }
 
 
+const FA_SHORT: Record<string, string> = { WA: '세척', PA: '가공', PK: '포장' }
+
 function getLevelLabel(cell: CellType, factory?: Factory, producer?: Producer): string | null {
   if (cell.type === 'PR' && producer?.built) return `Lv.${producer.level}`
-  if (cell.type === 'FA' && factory?.built) return `${factory.type} ${factory.level}`
+  if (cell.type === 'FA' && factory?.built) return `${FA_SHORT[factory.type] ?? factory.type} ${factory.level}`
   return null
 }
 
@@ -170,8 +172,23 @@ const LABEL_STYLE: CSSProperties = {
   pointerEvents: 'none',
 }
 
+const LABEL_STYLE_RIGHT: CSSProperties = {
+  ...LABEL_STYLE,
+  left: 'auto',
+  right: 2,
+  transform: 'none',
+}
+
 const ICON_BOTTOM_LEFT: CSSProperties = { position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
 const ICON_BOTTOM_RIGHT: CSSProperties = { position: 'absolute', bottom: 2, right: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
+const ICON_TOP_LEFT: CSSProperties = { position: 'absolute', top: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
+
+const HAT_COLORS = [
+  '#ef4444','#f97316','#eab308','#22c55e','#06b6d4',
+  '#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f43f5e',
+  '#84cc16','#0ea5e9','#a855f7','#fb923c','#34d399',
+  '#60a5fa','#f472b6','#facc15','#4ade80','#c084fc',
+]
 const ANIM_CENTER: CSSProperties = { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'opacity 0.1s linear' }
 
 const BUFFER_BASE: CSSProperties = {
@@ -223,6 +240,16 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
           <span style={animStyle}>
             <ProcessAnimation type={factory!.type} species={getSpecies(factory!.animalId ?? null)} size={Math.round(size * 0.7)}/>
           </span>
+          {/* 좌측 상단: 동물 번호 */}
+          {factory!.animalId && (() => {
+            const num = parseInt(factory!.animalId.match(/(\d+)$/)?.[1] ?? '1')
+            const color = HAT_COLORS[(num - 1) % HAT_COLORS.length]
+            return (
+              <span style={{ ...ICON_TOP_LEFT, background: color, borderRadius: 4, minWidth: 13, height: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px' }}>
+                <span style={{ fontSize: 8, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{num}</span>
+              </span>
+            )
+          })()}
           {/* 좌측 하단: 아이템 등급 */}
           <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={factory!.grade}/>
@@ -236,9 +263,8 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
         <CellEmoji cell={cell} factory={factory} producer={producer} progress={progress} size={size} />
       )}
 
-      {label && <span style={LABEL_STYLE}>{label}</span>}
+      {label && <span style={cell.type === 'FA' ? LABEL_STYLE_RIGHT : LABEL_STYLE}>{label}</span>}
 
-      {/* 버퍼 표시 (count/capacity) */}
       {bufferInfo && (
         <span style={bufferInfo.count >= bufferInfo.capacity ? BUFFER_FULL : BUFFER_NORMAL}>
           {formatQuantity(bufferInfo.count)}/{formatQuantity(bufferInfo.capacity)}

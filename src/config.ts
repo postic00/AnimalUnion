@@ -14,7 +14,7 @@ export const CONFIG = {
   // 기타 고정값
   ITEM_BASE_VALUE: 10,
   CLICKER_THRESHOLD: 2,
-  FA_PICK_TIME: 2000,
+  FA_PICK_TIME: 1500,
   AM_UNLOCK_COST: 10,
   FA_BUILD_COST_BASE: 10,
   PR_BUILD_COST_BASE: 10,
@@ -71,7 +71,7 @@ export const CONFIG = {
 
   // BD (라인)
   BD_PROC_BASE: 1,    BD_PROC_RATE: 1,   BD_PROC_EXP: 1,   BD_PROC_ACC: 1,
-  BD_COST_BASE: 2,    BD_COST_RATE: 1.3, BD_COST_EXP: 3,   BD_COST_ACC: 0.03,
+  BD_COST_BASE: 1000, BD_COST_RATE: 1.3, BD_COST_EXP: 3,   BD_COST_ACC: 0.03,
 }
 
 export type ConfigKey = keyof typeof CONFIG

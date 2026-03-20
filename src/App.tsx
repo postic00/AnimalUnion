@@ -134,6 +134,7 @@ export default function App() {
   const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
   const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
   const faLiveStatesRef = useRef<import('./hooks/useGameLoop').FALiveStates>({})
+  const producerProgressesRef = useRef<Record<string, number>>({})
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
   const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
@@ -700,6 +701,10 @@ export default function App() {
     faLiveStatesRef.current = states
   }, [])
 
+  const handleProducerProgressChange = useCallback((progresses: Record<string, number>) => {
+    producerProgressesRef.current = progresses
+  }, [])
+
   const handleProducerClick = useCallback((row: number, col: number) => {
     setSelectedProducer({ row, col })
   }, [tutorialStep])
@@ -891,6 +896,7 @@ export default function App() {
         onFactoryClick={handleFactoryClick}
         onProducerClick={handleProducerClick}
         onFaLiveStateChange={handleFaLiveStateChange}
+        onProducerProgressChange={handleProducerProgressChange}
         tutorialHighlight={tutorialStep === 6 ? 'fa' : undefined}
       /></div>}
       {!showSplash && <TabBar
@@ -1180,6 +1186,8 @@ export default function App() {
             onBuild={() => handleBuildProducer(producerIndex)}
             onUpgrade={() => handleUpgradeProducer(producerIndex, upgradeAmount)}
             onClose={() => { setSelectedProducer(null) }}
+            producerProgressesRef={producerProgressesRef}
+            progressKey={`${selectedProducer.row}-${selectedProducer.col}`}
           />
         )
       })()}

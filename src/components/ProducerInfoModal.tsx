@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { Producer } from '../types/producer'
 import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../balance'
 import { formatGold, formatQuantity } from '../utils/formatGold'
@@ -23,10 +24,22 @@ interface Props {
   onClose: () => void
   tutorialHighlightBuild?: boolean
   tutorialHighlightClose?: boolean
+  producerProgressesRef?: React.RefObject<Record<string, number>>
+  progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, tutorialHighlightBuild, tutorialHighlightClose }: Props) {
+export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
+  const [progress, setProgress] = useState(0)
+  const progressKeyRef = useRef(progressKey)
+  progressKeyRef.current = progressKey
+  useEffect(() => {
+    if (!producerProgressesRef || !progressKey) return
+    const id = setInterval(() => {
+      setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
+    }, 100)
+    return () => clearInterval(id)
+  }, [producerProgressesRef, progressKey])
   const buildCost = getProducerBuildCost(builtCount)
   const upgradeCost = getProducerUpgradeCost(producer.level)
   const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
@@ -60,7 +73,7 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
             <div className={styles.statItem}>
               <span className={styles.statLabel}>초당 생산량</span>
               <span className={styles.statValue} style={{ color: grade.color }}>
-                {formatQuantity(perSec)}/s
+                {perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s
               </span>
             </div>
             <div className={styles.statDivider} />
@@ -74,6 +87,16 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
         ) : (
           <div className={styles.stats} style={{ background: '#f9fafb' }}>
             <span className={styles.unbuilt}>미건설</span>
+          </div>
+        )}
+
+        {/* 생산 프로그레스 */}
+        {producer.built && (
+          <div className={styles.progressWrap}>
+            <div className={styles.progressLabel}>생산 진행</div>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
+            </div>
           </div>
         )}
 

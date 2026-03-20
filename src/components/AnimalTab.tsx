@@ -21,21 +21,19 @@ function AnimalIcon({ id }: { id: string }) {
   const num = parseInt(id.match(/(\d+)$/)?.[1] ?? '1')
   const hatColor = HAT_COLORS[(num - 1) % HAT_COLORS.length]
   return (
-    <div style={{ position: 'relative', width: 36, height: 46, flexShrink: 0 }}>
+    <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+      <AnimalSvg species={type} size={44}/>
       <div style={{
-        position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+        position: 'absolute', bottom: 0, right: 0,
         background: hatColor,
-        borderRadius: '8px 8px 4px 4px',
-        width: 28, height: 18,
+        borderRadius: '6px',
+        minWidth: 16, height: 16,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: `0 2px 6px ${hatColor}66`,
-        zIndex: 1,
+        boxShadow: `0 1px 4px ${hatColor}99`,
+        padding: '0 3px',
       }}>
         <span style={{ fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{num}</span>
       </div>
-      <span style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }}>
-        <AnimalSvg species={type} size={32}/>
-      </span>
     </div>
   )
 }

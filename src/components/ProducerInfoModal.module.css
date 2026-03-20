@@ -125,6 +125,32 @@
   font-weight: 600;
 }
 
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progressLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
 .actionBtn {
   display: flex;
   align-items: center;

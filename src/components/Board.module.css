@@ -70,6 +70,85 @@
   cursor: default;
 }
 
+.goldFloat {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 900;
+  color: #DAA520;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 20;
+  animation: goldFloatUp 1s ease-out forwards;
+}
+
+@keyframes goldFloatUp {
+  0%   { opacity: 1;   transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0;   transform: translateX(-50%) translateY(-40px); }
+}
+
+.derailOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 30;
+  border-radius: 8px;
+}
+
+.derailBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.derailTitle {
+  font-size: 15px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.derailDesc {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.derailActions {
+  margin-top: 4px;
+  display: flex;
+  gap: 8px;
+}
+
+.derailBtn {
+  padding: 8px 24px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.derailBtnCancel {
+  padding: 8px 24px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .cancelPlacing {
   position: absolute;
   bottom: 8px;

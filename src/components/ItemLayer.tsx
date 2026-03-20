@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default memo(function ItemLayer({ items, cellSize }: Props) {
-  const size = cellSize * CONFIG.ITEM_SIZE_RATIO
+  const size = cellSize * CONFIG.CM_SIZE_RATIO
   const emojiSize = Math.round(size * 0.55)
 
   return (

@@ -45,7 +45,7 @@
   width: 100%;
   border-radius: 12px;
   display: block;
-  max-height: 36vh;
+  max-height: 30vh;
   object-fit: cover;
   object-position: top;
 }

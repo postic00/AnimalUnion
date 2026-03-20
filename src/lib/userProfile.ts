@@ -26,8 +26,14 @@ export async function fetchAndSaveWeekConfig(): Promise<void> {
 }
 
 interface CloudSaveData {
-  game_state: GameState
+  gameState: GameState
   board: Board
+  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+  items?: unknown[]
+  faStates?: Record<string, unknown>
+  rsQueues?: Record<string, unknown[]>
+  produceTimers?: Record<string, number>
+  prStates?: Record<string, unknown>
 }
 
 export async function saveToCloud(
@@ -35,6 +41,14 @@ export async function saveToCloud(
   gameState: GameState,
   board: Board,
   platform: string,
+  extras?: {
+    boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+    items?: unknown[]
+    faStates?: Record<string, unknown>
+    rsQueues?: Record<string, unknown[]>
+    produceTimers?: Record<string, number>
+    prStates?: Record<string, unknown>
+  }
 ): Promise<boolean> {
   const deviceId = getDeviceId()
   const { error } = await supabase
@@ -43,7 +57,16 @@ export async function saveToCloud(
       {
         device_id: deviceId,
         player_name: playerName,
-        game_state: { game_state: gameState, board },
+        game_state: {
+          gameState,
+          board,
+          boosts: extras?.boosts,
+          items: extras?.items,
+          faStates: extras?.faStates,
+          rsQueues: extras?.rsQueues,
+          produceTimers: extras?.produceTimers,
+          prStates: extras?.prStates,
+        },
         platform,
         app_version: CONFIG.WEEK_END_DATE ? '1.2' : '1.0',
         last_online_at: new Date().toISOString(),
@@ -63,6 +86,15 @@ export async function loadFromCloud(): Promise<CloudSaveData | null> {
 
   if (error || !data) return null
 
-  const { game_state, board } = data.game_state as { game_state: GameState; board: Board }
-  return { game_state, board }
+  const raw = data.game_state as CloudSaveData
+  return {
+    gameState: raw.gameState,
+    board: raw.board,
+    boosts: raw.boosts,
+    items: raw.items,
+    faStates: raw.faStates,
+    rsQueues: raw.rsQueues,
+    produceTimers: raw.produceTimers,
+    prStates: raw.prStates,
+  }
 }

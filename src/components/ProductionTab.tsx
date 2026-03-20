@@ -14,6 +14,7 @@ interface Props {
   onBuild: (index: number) => void
   onUpgrade: (index: number) => void
   onUpgradeClicker: () => void
+  onGradeChange: (index: number, grade: number) => void
 }
 
 const GRADES: Record<number, { name: string; emoji: string; color: string; border: string; text: string; sub: string }> = {
@@ -22,7 +23,7 @@ const GRADES: Record<number, { name: string; emoji: string; color: string; borde
   3: { name: '딸기', emoji: '🍓', color: '#fdf2f8', border: '#f9a8d4', text: '#9d174d', sub: '#db2777' },
 }
 
-export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker }: Props) {
+export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker, onGradeChange }: Props) {
   const builtCount = producers.filter(p => p.built).length
   const buildCost = getProducerBuildCost(builtCount)
   const clickerCost = getClickerUpgradeCost(clicker.level)
@@ -100,6 +101,18 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                   <span className={styles.cardSub} style={{ color: grade.sub }}>
                     {isActive ? `${perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s` : '비활성'}
                   </span>
+                  <div className={styles.gradeSelector}>
+                    {[1, 2, 3].map(g => (
+                      <button
+                        key={g}
+                        className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
+                        style={producer.grade === g ? { background: GRADES[g].sub, color: '#fff' } : { color: GRADES[g].text }}
+                        onClick={() => onGradeChange(index, g)}
+                      >
+                        {GRADES[g].emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <button

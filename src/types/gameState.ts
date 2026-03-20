@@ -24,6 +24,10 @@ export interface GameState {
   rsBufferLevel: number      // RS 버퍼 레벨 (환생 유지)
   faBufferLevel: number      // FA 버퍼 레벨 (환생 유지)
   railSpeedLevel: number     // 레일 속도 레벨 (환생 유지)
+  buildDiscountLevel: number   // 건설 비용 할인 레벨 (환생 유지)
+  bundleDiscountLevel: number  // 번들 비용 할인 레벨 (환생 유지)
+  producerStartLevel: number   // 생산자 시작 레벨 (환생 유지)
+  goldMultiplierLevel: number  // 골드 배율 레벨 (환생 유지)
 }
 
 export const initialGameState: GameState = {
@@ -36,7 +40,7 @@ export const initialGameState: GameState = {
     { row: 0, col: 3, built: false, level: 1, grade: 2 },
     { row: 0, col: 5, built: false, level: 1, grade: 3 },
   ],
-  clicker: { clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD, level: 1 },
+  clicker: { clickCount: 0, threshold: CONFIG.CM_CLICKER_THRESHOLD, level: 1 },
   factories: [],
   totalEarned: 0,
   prestigeCount: 0,
@@ -48,4 +52,8 @@ export const initialGameState: GameState = {
   rsBufferLevel: 1,
   faBufferLevel: 1,
   railSpeedLevel: 1,
+  buildDiscountLevel: 0,
+  bundleDiscountLevel: 0,
+  producerStartLevel: 0,
+  goldMultiplierLevel: 0,
 }

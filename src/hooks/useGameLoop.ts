@@ -64,8 +64,8 @@ export interface FAState {
   outputTimer: number
   outputBuffer: Item[]         // was Item | null
 
-  buffer: { grade: number; count: number }[]           // PA: 수집 저장소 (unchanged)
-  processingBuffer: { grade: number; count: number }[]  // PA: 처리 저장소 (unchanged)
+  buffer: { grade: number; count: number; waBonus: number }[]           // PA: 수집 저장소
+  processingBuffer: { grade: number; count: number; waBonus: number }[]  // PA: 처리 저장소
 }
 
 const DEFAULT_FA_STATE: FAState = {
@@ -73,6 +73,10 @@ const DEFAULT_FA_STATE: FAState = {
   processState: 'IDLE', processTimer: 0, inputBuffer: [], processBuffer: null,
   outputState: 'IDLE', outputTimer: 0, outputBuffer: [],
   buffer: [], processingBuffer: [],
+}
+
+export interface PRState {
+  outputBuffer: Item[]
 }
 
 function getNextTarget(
@@ -114,7 +118,7 @@ function placeOnBelt(
 export function useGameLoop(
   board: Board,
   cellSize: number,
-  onGoldEarned: (amount: number) => void,
+  onGoldEarned: (amount: number, x: number, y: number) => void,
   producers: Producer[],
   factories: Factory[],
   animals: Animal[],
@@ -129,6 +133,7 @@ export function useGameLoop(
   initialFaStates?: Record<string, FAState>,
   initialRsQueues?: Record<string, Item[]>,
   initialProduceTimers?: Record<string, number>,
+  initialPrStates?: Record<string, PRState>,
   onFaLiveStateChange?: (states: FALiveStates) => void,
   onProducerProgressChange?: (progresses: Record<string, number>) => void,
 ) {
@@ -136,10 +141,14 @@ export function useGameLoop(
   const [progresses, setProgresses] = useState<Progresses>({})
   const [faPhases, setFaPhases] = useState<FAPhases>({})
   const [bufferCounts, setBufferCounts] = useState<Record<string, { count: number; capacity: number }>>({})
+  const [hasDerailed, setHasDerailed] = useState(false)
+  const hasDerailedRef = useRef(false)
   const itemsRef = useRef<Item[]>(initialItems ?? [])
   const lastTimeRef = useRef<number>(0)
   const produceTimersRef = useRef<Record<string, number>>({})
   const rsQueuesRef = useRef<Record<string, Item[]>>({})  // RS 버퍼 큐
+  const prStatesRef = useRef<Record<string, PRState>>({})  // PR 출고 버퍼
+  const prRoundRobinRef = useRef<Record<string, number>>({})  // RS별 round-robin 인덱스
   const onGoldEarnedRef = useRef(onGoldEarned)
   onGoldEarnedRef.current = onGoldEarned
   const onFactoryProcessRef = useRef(onFactoryProcess)
@@ -173,6 +182,7 @@ export function useGameLoop(
   onFaLiveStateChangeRef.current = onFaLiveStateChange
   const onProducerProgressChangeRef = useRef(onProducerProgressChange)
   onProducerProgressChangeRef.current = onProducerProgressChange
+  const lastGoldTimeRef = useRef(Date.now())
   const rsBufferLevelRef = useRef(rsBufferLevel)
   rsBufferLevelRef.current = rsBufferLevel
   const railSpeedLevelRef = useRef(railSpeedLevel)
@@ -189,12 +199,32 @@ export function useGameLoop(
       faStatesRef.current = (initialFaStates as Record<string, FAState>) ?? {}
       rsQueuesRef.current = (initialRsQueues as Record<string, Item[]>) ?? {}
       produceTimersRef.current = initialProduceTimers ?? {}
+      prStatesRef.current = (initialPrStates as Record<string, PRState>) ?? {}
       pendingClickerSpawnsRef.current = 0
     }
     lastTimeRef.current = 0
 
-    const itemSize = cellSize * CONFIG.ITEM_GAP_RATIO
+    const itemSize = cellSize * CONFIG.CM_GAP_RATIO
     const pickTime = getFactoryPickTime()
+
+    // RS별 연결된 PR 목록 매핑 (board 변경 시 재계산)
+    const rsToPrs = new Map<string, { row: number; col: number }[]>()
+    board.forEach((row, rowIdx) => {
+      row.forEach((cell, colIdx) => {
+        if (cell.type !== 'PR') return
+        let rsRow = -1, rsCol = -1
+        for (let r = rowIdx + 1; r < board.length; r++) {
+          for (let c = 0; c < board[r].length; c++) {
+            if (board[r][c].type === 'RS') { rsRow = r; rsCol = c; break }
+          }
+          if (rsRow !== -1) break
+        }
+        if (rsRow === -1) return
+        const rsKey = `rs-${rsRow}-${rsCol}`
+        if (!rsToPrs.has(rsKey)) rsToPrs.set(rsKey, [])
+        rsToPrs.get(rsKey)!.push({ row: rowIdx, col: colIdx })
+      })
+    })
 
     let tickCount = 0
 
@@ -226,41 +256,63 @@ export function useGameLoop(
           const fullInterval = getProducerInterval(producer.level) * quantity
 
           if (produceTimersRef.current[key] >= fullInterval) {
-            // RS 위치 탐색
-            let rsRow = -1, rsCol = -1
-            for (let r = rowIdx + 1; r < board.length; r++) {
-              for (let c = 0; c < board[r].length; c++) {
-                if (board[r][c].type === 'RS') { rsRow = r; rsCol = c; break }
-              }
-              if (rsRow !== -1) break
-            }
-            if (rsRow === -1) return
-
-            const rsKey = `rs-${rsRow}-${rsCol}`
-            if (!rsQueuesRef.current[rsKey]) rsQueuesRef.current[rsKey] = []
-
+            if (!prStatesRef.current[key]) prStatesRef.current[key] = { outputBuffer: [] }
+            const prBuf = prStatesRef.current[key].outputBuffer
             const capacity = getRsBufferCapacity(rsBufferLevelRef.current)
-            if (rsQueuesRef.current[rsKey].length >= capacity) return
-
-            const center = getCellCenter(rsRow, rsCol, cellSize)
-            const dir = getCellDirection('RS')
-            const next = getNextTarget(board, cellSize, center.x, center.y)
-            if (!next) return
+            if (prBuf.length >= capacity) return
 
             produceTimersRef.current[key] = 0
 
             const newItem: Item = {
               id: crypto.randomUUID(),
-              x: center.x, y: center.y,
-              dx: dir.dx, dy: dir.dy,
-              targetX: next.targetX, targetY: next.targetY,
+              x: 0, y: 0,
+              dx: 0, dy: 0,
+              targetX: 0, targetY: 0,
               grade,
               value: getProducerValue(grade, itemValueLevelsRef.current[grade - 1] ?? 1),
               quantity,
               waBonus: 0, paBonus: 0, pkBonus: 0,
               waGrades: [], paGrades: [], pkGrades: [],
             }
-            rsQueuesRef.current[rsKey].push(newItem)
+            prBuf.push(newItem)
+          }
+        })
+      })
+
+      // PR 출고 버퍼 → RS 큐 (round-robin)
+      board.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          if (cell.type !== 'RS') return
+          const rsKey = `rs-${rowIdx}-${colIdx}`
+          if (!rsQueuesRef.current[rsKey]) rsQueuesRef.current[rsKey] = []
+          const capacity = getRsBufferCapacity(rsBufferLevelRef.current)
+          if (rsQueuesRef.current[rsKey].length >= capacity) return
+
+          const prs = rsToPrs.get(rsKey)
+          if (!prs || prs.length === 0) return
+
+          const rrIdx = prRoundRobinRef.current[rsKey] ?? 0
+          for (let attempt = 0; attempt < prs.length; attempt++) {
+            const prIdx = (rrIdx + attempt) % prs.length
+            const pr = prs[prIdx]
+            const prKey = `${pr.row}-${pr.col}`
+            const prState = prStatesRef.current[prKey]
+            if (prState?.outputBuffer.length > 0) {
+              const center = getCellCenter(rowIdx, colIdx, cellSize)
+              const dir = getCellDirection('RS')
+              const next = getNextTarget(board, cellSize, center.x, center.y)
+              if (!next) continue
+              const proto = prState.outputBuffer.shift()!
+              const item: Item = {
+                ...proto,
+                x: center.x, y: center.y,
+                dx: dir.dx, dy: dir.dy,
+                targetX: next.targetX, targetY: next.targetY,
+              }
+              rsQueuesRef.current[rsKey].push(item)
+              prRoundRobinRef.current[rsKey] = (prIdx + 1) % prs.length
+              break
+            }
           }
         })
       })
@@ -287,7 +339,7 @@ export function useGameLoop(
       // 아이템 이동
       const spatialHash = buildSpatialHash(items, itemSize, spatialHashRef.current)
       const step = (cellSize / getRailMoveSpeed(railSpeedLevelRef.current)) * delta
-      for (let i = 0; i < items.length; i++) {
+      for (let i = items.length - 1; i >= 0; i--) {
         const item = items[i]
         if (isBlocked(item, spatialHash, itemSize)) continue
 
@@ -304,6 +356,15 @@ export function useGameLoop(
             item.dy = next.dy
             item.targetX = next.targetX
             item.targetY = next.targetY
+          } else {
+            // 다음 목적지 없음 → RE가 아니면 즉시 제거 (탈선 복구)
+            const fcol = Math.round(item.targetX / cellSize - 0.5)
+            const frow = Math.round(item.targetY / cellSize - 0.5)
+            const fcell = getCell(board, frow, fcol)
+            if (fcell?.type !== 'RE' && fcell?.type !== 'FA') {
+              items.splice(i, 1)
+              hasDerailedRef.current = true
+            }
           }
         } else {
           const ratio = step / distToTarget
@@ -312,22 +373,21 @@ export function useGameLoop(
         }
       }
 
-      // 탈선 방어: 30틱(~1초)마다 유효하지 않은 셀에 있는 아이템 제거
       tickCount++
-      if (tickCount % 30 === 0) {
-        for (let i = items.length - 1; i >= 0; i--) {
-          const item = items[i]
-          if (!isFinite(item.x) || !isFinite(item.y)) { items.splice(i, 1); continue }
-          const col = Math.floor(item.x / cellSize)
-          const row = Math.floor(item.y / cellSize)
-          const cell = getCell(board, row, col)
-          if (!cell) { items.splice(i, 1); continue }
-          const type = cell.type
-          if (!(type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
-            || type === 'RS' || type === 'RE' || type === 'FA' || type === 'PR'
-            || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL')) {
-            items.splice(i, 1)
-          }
+      // 탈선 방어: 매 틱마다 유효하지 않은 셀에 있는 아이템 제거
+      for (let i = items.length - 1; i >= 0; i--) {
+        const item = items[i]
+        if (!isFinite(item.x) || !isFinite(item.y)) { items.splice(i, 1); hasDerailedRef.current = true; continue }
+        const col = Math.round(item.x / cellSize - 0.5)
+        const row = Math.round(item.y / cellSize - 0.5)
+        const cell = getCell(board, row, col)
+        if (!cell) { items.splice(i, 1); hasDerailedRef.current = true; continue }
+        const type = cell.type
+        if (!(type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
+          || type === 'RS' || type === 'RE' || type === 'FA'
+          || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL')) {
+          items.splice(i, 1)
+          hasDerailedRef.current = true
         }
       }
 
@@ -358,6 +418,7 @@ export function useGameLoop(
 
         const placeOutput = () => {
           const fas = faStatesRef.current[key]
+          if (!Array.isArray(fas.outputBuffer) || fas.outputBuffer.length === 0 || !fas.outputBuffer[0]) return
           const capacity = getFaBufferCapacity(faBufferLevelRef.current)
           const newOutputBuffer = fas.outputBuffer.slice(1)
           items.push(placeOnBelt(fas.outputBuffer[0], outputCenter, board, cellSize))
@@ -436,8 +497,9 @@ export function useGameLoop(
               const newTimer = fas.processTimer + delta
               if (newTimer >= processTime) {
                 onFactoryProcessRef.current?.(factory.animalId ?? null)
-                if (fas.outputBuffer.length < bufferCapacity) {
-                  const newOutputBuffer = [...fas.outputBuffer, fas.processBuffer!]
+                const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
+                if (safeOutBuf.length < bufferCapacity) {
+                  const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
                   const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
                   faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
                 } else {
@@ -495,7 +557,7 @@ export function useGameLoop(
                 const ejectItem: Item = {
                   id: crypto.randomUUID(), grade: ejectEntry.grade, quantity: ejectEntry.count, value: 0,
                   x: outputCenter.x, y: outputCenter.y,
-                  waBonus: 0, paBonus: 0, pkBonus: 0,
+                  waBonus: ejectEntry.waBonus ?? 0, paBonus: 0, pkBonus: 0,
                   waGrades: [], paGrades: [], pkGrades: [],
                   dx: 0, dy: 0, targetX: outputCenter.x, targetY: outputCenter.y,
                 }
@@ -530,10 +592,13 @@ export function useGameLoop(
               if (newTimer >= pickTime) {
                 const grade = fas.grabbed!.grade
                 const qty = fas.grabbed!.quantity
-                const found = fas.buffer.some(b => b.grade === grade)
-                const newBuffer = found
-                  ? fas.buffer.map(b => b.grade === grade ? { ...b, count: b.count + qty } : b)
-                  : [...fas.buffer, { grade, count: qty }]
+                const grabbedWaBonus = fas.grabbed!.waBonus
+                const existingEntry = fas.buffer.find(b => b.grade === grade)
+                const newBuffer = existingEntry
+                  ? fas.buffer.map(b => b.grade === grade
+                      ? { ...b, count: b.count + qty, waBonus: (b.waBonus * b.count + grabbedWaBonus * qty) / (b.count + qty) }
+                      : b)
+                  : [...fas.buffer, { grade, count: qty, waBonus: grabbedWaBonus }]
                 faStatesRef.current[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, buffer: newBuffer }
               } else {
                 faStatesRef.current[key] = { ...fas, grabTimer: newTimer }
@@ -554,15 +619,23 @@ export function useGameLoop(
                 const have = newProcBuf.find(b => b.grade === req.grade)?.count ?? 0
                 const remaining = need - have
                 if (remaining <= 0) continue
-                const inBuffer = newBuffer.find(b => b.grade === req.grade)?.count ?? 0
+                const bufEntry = newBuffer.find(b => b.grade === req.grade)
+                const inBuffer = bufEntry?.count ?? 0
                 if (inBuffer <= 0) continue
+                const movedWaBonus = bufEntry?.waBonus ?? 0
                 const move = Math.min(inBuffer, remaining)
                 newBuffer = newBuffer.map(b => b.grade === req.grade ? { ...b, count: b.count - move } : b).filter(b => b.count > 0)
                 const exists = newProcBuf.some(b => b.grade === req.grade)
                 if (exists) {
-                  newProcBuf.forEach(b => { if (b.grade === req.grade) b.count += move })
+                  newProcBuf.forEach(b => {
+                    if (b.grade === req.grade) {
+                      const totalCount = b.count + move
+                      b.waBonus = (b.waBonus * b.count + movedWaBonus * move) / totalCount
+                      b.count = totalCount
+                    }
+                  })
                 } else {
-                  newProcBuf.push({ grade: req.grade, count: move })
+                  newProcBuf.push({ grade: req.grade, count: move, waBonus: movedWaBonus })
                 }
                 transferred = true
               }
@@ -570,12 +643,16 @@ export function useGameLoop(
                 (newProcBuf.find(b => b.grade === req.grade)?.count ?? 0) >= req.count * outputQuantity
               )
               if (isReady) {
+                const totalProcCount = newProcBuf.reduce((s, b) => s + b.count, 0)
+                const avgWaBonus = totalProcCount > 0
+                  ? newProcBuf.reduce((s, b) => s + b.waBonus * b.count, 0) / totalProcCount
+                  : 0
                 const base = createRecipeOutput(
                   factory.grade, factory, animalsRef.current,
                   itemValueLevelsRef.current[factory.grade - 1] ?? 1,
                   materialQuantityLevelsRef.current[factory.grade - 1] ?? 1,
                 )
-                const processBuffer = { ...base, id: crypto.randomUUID() }
+                const processBuffer = { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }
                 faStatesRef.current[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer, buffer: newBuffer, processingBuffer: [] }
               } else if (transferred) {
                 faStatesRef.current[key] = { ...fas, buffer: newBuffer, processingBuffer: newProcBuf }
@@ -585,8 +662,9 @@ export function useGameLoop(
               const newTimer = fas.processTimer + delta
               if (newTimer >= processTime) {
                 onFactoryProcessRef.current?.(factory.animalId ?? null)
-                if (fas.outputBuffer.length < bufferCapacity) {
-                  const newOutputBuffer = [...fas.outputBuffer, fas.processBuffer!]
+                const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
+                if (safeOutBuf.length < bufferCapacity) {
+                  const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
                   const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
                   faStatesRef.current[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
                 } else {
@@ -663,7 +741,8 @@ export function useGameLoop(
         const center = getCellCenter(row, col, cellSize)
         const dist = Math.sqrt((item.x - center.x) ** 2 + (item.y - center.y) ** 2)
         if (dist > cellSize * 0.3) continue
-        onGoldEarnedRef.current(getFinalGold(item))
+        onGoldEarnedRef.current(getFinalGold(item), center.x, center.y)
+        lastGoldTimeRef.current = Date.now()
         items.splice(i, 1)
       }
 
@@ -676,9 +755,23 @@ export function useGameLoop(
 
     const startIntervals = () => {
       lastTimeRef.current = 0
+      lastGoldTimeRef.current = Date.now()
       tickId = setInterval(tick, 33)
       renderInterval = setInterval(() => {
         setRenderItems([...itemsRef.current])
+        // 잼 감지: 활성 생산자가 있고, 벨트에 아이템이 있는데 일정 시간 이상 골드가 안 들어오면
+        const activePrs = producersRef.current.filter(p => p.built && p.level > 0)
+        if (activePrs.length > 0 && itemsRef.current.length > 0) {
+          const maxPrInterval = activePrs.reduce((max, p) => {
+            const qty = getMaterialQuantity(materialQuantityLevelsRef.current[p.grade - 1] ?? 1)
+            return Math.max(max, getProducerInterval(p.level) * qty)
+          }, 0)
+          const threshold = Math.max(60000, maxPrInterval * 2)
+          if (Date.now() - lastGoldTimeRef.current > threshold) {
+            hasDerailedRef.current = true
+          }
+        }
+        if (hasDerailedRef.current) setHasDerailed(true)
       }, 100)
       progressIntervalId = setInterval(runProgress, 100)
     }
@@ -734,6 +827,17 @@ export function useGameLoop(
           const rsKey = `rs-${rowIdx}-${colIdx}`
           const count = rsQueuesRef.current[rsKey]?.length ?? 0
           bc[`${rowIdx}-${colIdx}`] = { count, capacity: rsCapacity }
+        })
+      })
+      board.forEach((row, rowIdx) => {
+        row.forEach((cell, colIdx) => {
+          if (cell.type !== 'PR') return
+          const key = `${rowIdx}-${colIdx}`
+          const producer = producersByPosRef.current.get(key)
+          if (!producer?.built) return
+          const prState = prStatesRef.current[key]
+          const count = prState?.outputBuffer.length ?? 0
+          bc[key] = { count, capacity: rsCapacity }
         })
       })
       const faCapacity = getFaBufferCapacity(faBufferLevelRef.current)
@@ -818,10 +922,28 @@ export function useGameLoop(
     }
   }, [board, cellSize])
 
+  useEffect(() => {
+    lastGoldTimeRef.current = Date.now()
+  }, [producers])
+
   const spawnClickerItem = useCallback((grade: number) => {
     pendingClickerGradeRef.current = grade
     pendingClickerSpawnsRef.current += 1
   }, [])
 
-  return { items: renderItems, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef }
+  const clearItems = useCallback(() => {
+    itemsRef.current = []
+    setRenderItems([])
+    hasDerailedRef.current = false
+    setHasDerailed(false)
+    lastGoldTimeRef.current = Date.now()
+  }, [])
+
+  const dismissDerail = useCallback(() => {
+    hasDerailedRef.current = false
+    setHasDerailed(false)
+    lastGoldTimeRef.current = Date.now()
+  }, [])
+
+  return { items: renderItems, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, dismissDerail }
 }

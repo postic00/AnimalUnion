@@ -20,11 +20,12 @@ import SplashScreen from './components/SplashScreen'
 import FactoryInfoModal from './components/FactoryInfoModal'
 import FactoryBuildModal from './components/FactoryBuildModal'
 import ProducerInfoModal from './components/ProducerInfoModal'
+import RsInfoModal from './components/RsInfoModal'
 import UpgradeAmountToggle from './components/UpgradeAmountToggle'
 import type { UpgradeAmount } from './components/UpgradeAmountToggle'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
-import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates, getDeviceId } from './utils/saveLoad'
+import { saveGame, loadGame, deleteSave, saveMuted, loadMuted, loadWeekConfig, saveWeekConfig, saveItems, saveFaStates, saveRsQueues, saveProduceTimers, savePrStates, loadItems, loadFaStates, loadRsQueues, loadProduceTimers, loadPrStates, getDeviceId } from './utils/saveLoad'
 import { CONFIG, applyWeekConfig } from './config'
 
 // 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
@@ -54,6 +55,15 @@ import {
   getClickerUpgradeCost,
   getBufferUpgradeCost,
   getRailSpeedUpgradeCost,
+  getRsBufferCapacity,
+  getBuildCostDiscount,
+  getBundleCostDiscount,
+  getGoldMultiplierBonus,
+  getProducerStartLevel,
+  getBuildDiscountCost,
+  getBundleDiscountCost,
+  getProducerStartCost,
+  getGoldMultiplierCost,
 } from './balance'
 import type { AnimalId } from './types/animal'
 
@@ -132,6 +142,7 @@ export default function App() {
   const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
   const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
   const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
+  const [selectedRs, setSelectedRs] = useState<{ rsKey: string; rsQueuesRef: React.MutableRefObject<Record<string, import('./types/item').Item[]>> } | null>(null)
   const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
   const faLiveStatesRef = useRef<import('./hooks/useGameLoop').FALiveStates>({})
   const producerProgressesRef = useRef<Record<string, number>>({})
@@ -191,10 +202,8 @@ export default function App() {
   const [showPrestigeKeepModal, setShowPrestigeKeepModal] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
-  const boardRef2 = useRef(board)
-  const gameStateRef2 = useRef(gameState)
-  useEffect(() => { boardRef2.current = board }, [board])
-  useEffect(() => { gameStateRef2.current = gameState }, [gameState])
+  const boardRef = useRef(board)
+  useEffect(() => { boardRef.current = board }, [board])
 
   const lastSavedSnapshotRef = useRef<string>('')
 
@@ -202,7 +211,7 @@ export default function App() {
   useEffect(() => {
     const WINDOW = 60
     const getSnapshot = () => JSON.stringify({
-      ...gameStateRef2.current,
+      ...gameStateRef.current,
       gold: goldRef.current,
       totalEarned: totalEarnedRef.current,
     })
@@ -210,7 +219,7 @@ export default function App() {
       const snapshot = getSnapshot()
       if (!force && snapshot === lastSavedSnapshotRef.current) return
       lastSavedSnapshotRef.current = snapshot
-      saveGame(boardRef2.current, { ...gameStateRef2.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
+      saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
         speedBoostUntil: speedBoostUntilRef.current,
         goldBoostUntil: goldBoostUntilRef.current,
       })
@@ -273,10 +282,13 @@ export default function App() {
   goldBoostUntilRef.current = goldBoostUntil
   const speedBoostUntilRef = useRef(speedBoostUntil)
   speedBoostUntilRef.current = speedBoostUntil
+  const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
+  goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
 
   const handleGoldEarned = useCallback((amount: number) => {
     if (!isFinite(amount) || amount <= 0) return
-    const multiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
+    const boostMultiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
+    const multiplier = boostMultiplier * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
     const earned = amount * multiplier
     earnedInSecRef.current += earned
     goldBufferRef.current += earned
@@ -296,7 +308,7 @@ export default function App() {
         spawnClickerItemRef.current?.(clickerGradeRef.current)
         setTutorialItemCount(c => c + 1)
 
-        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CLICKER_THRESHOLD } }
+        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CM_CLICKER_THRESHOLD } }
       }
 
       const next = clickCount + 1
@@ -335,15 +347,23 @@ export default function App() {
   const handleBuildProducer = useCallback((index: number) => {
     setGameState(prev => {
       const builtCount = prev.producers.filter(p => p.built).length
-      const cost = getProducerBuildCost(builtCount)
+      const cost = Math.floor(getProducerBuildCost(builtCount) * (1 - getBuildCostDiscount(prev.buildDiscountLevel ?? 0)))
       if (goldRef.current < cost) return prev
       if (!mutedRef.current) soundBuild()
       setGold(g => g - cost)
       const producers = [...prev.producers]
-      producers[index] = { ...producers[index], built: true, level: 1 }
+      producers[index] = { ...producers[index], built: true, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) }
       return { ...prev, producers }
     })
   }, [tutorialStep])
+
+  const handleProducerGradeChange = useCallback((index: number, grade: number) => {
+    setGameState(prev => {
+      const producers = [...prev.producers]
+      producers[index] = { ...producers[index], grade }
+      return { ...prev, producers }
+    })
+  }, [])
 
   const handleUpgradeProducer = useCallback((index: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -373,7 +393,7 @@ export default function App() {
 
   const handleAddBundle = useCallback(() => {
     setGameState(prev => {
-      const cost = getBundleCost(prev.bundleCount)
+      const cost = Math.floor(getBundleCost(prev.bundleCount) * (1 - getBundleCostDiscount(prev.bundleDiscountLevel ?? 0)))
       if (goldRef.current < cost) return prev
       setGold(g => g - cost)
       setBoard(b => addBundle(b))
@@ -383,7 +403,7 @@ export default function App() {
 
   const handleBuildFactory = useCallback((row: number, col: number) => {
     setGameState(prev => {
-      const cost = getFactoryBuildCost()
+      const cost = Math.floor(getFactoryBuildCost() * (1 - getBuildCostDiscount(prev.buildDiscountLevel ?? 0)))
       if (goldRef.current < cost) return prev
       if (!mutedRef.current) soundBuild()
       setGold(g => g - cost)
@@ -468,24 +488,38 @@ export default function App() {
     setShowSplash(true)
   }, [])
 
-  const boardRef = useRef(board)
-  useEffect(() => { boardRef.current = board }, [board])
-
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
   const handleCloudSave = useCallback(async (): Promise<boolean> => {
+    boardSaveRef.current?.()
     const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }
-    return await saveToCloud(gameStateRef.current.playerName, fullState, boardRef.current, platform)
+    return await saveToCloud(gameStateRef.current.playerName, fullState, boardRef.current, platform, {
+      boosts: { speedBoostUntil: speedBoostUntilRef.current, goldBoostUntil: goldBoostUntilRef.current },
+      items: loadItems() ?? [],
+      faStates: (loadFaStates() ?? {}) as Record<string, unknown>,
+      rsQueues: (loadRsQueues() ?? {}) as Record<string, unknown[]>,
+      produceTimers: loadProduceTimers() ?? {},
+      prStates: (loadPrStates() ?? {}) as Record<string, unknown>
+    })
   }, [platform, goldPerSec])
 
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await loadFromCloud()
-    if (!data || !Array.isArray(data.board) || !data.game_state || typeof data.game_state !== 'object') return false
+    if (!data || !Array.isArray(data.board) || !data.gameState || typeof data.gameState !== 'object') return false
+    if (data.items) saveItems(data.items)
+    if (data.faStates) saveFaStates(data.faStates)
+    if (data.rsQueues) saveRsQueues(data.rsQueues as Record<string, import('./types/item').Item[]>)
+    if (data.produceTimers) saveProduceTimers(data.produceTimers)
+    if (data.prStates) savePrStates(data.prStates)
+    if (data.boosts) {
+      setSpeedBoostUntil(data.boosts.speedBoostUntil)
+      setGoldBoostUntil(data.boosts.goldBoostUntil)
+    }
     setBoard(data.board)
-    setGameState(data.game_state)
-    setGold(data.game_state.gold ?? 0)
-    setTotalEarned(data.game_state.totalEarned ?? 0)
-    setGoldPerSec(data.game_state.goldPerSec ?? 0)
+    setGameState(data.gameState)
+    setGold(data.gameState.gold ?? 0)
+    setTotalEarned(data.gameState.totalEarned ?? 0)
+    setGoldPerSec(data.gameState.goldPerSec ?? 0)
     setResetKey(k => k + 1)
     return true
   }, [])
@@ -529,7 +563,7 @@ export default function App() {
         gold: 0,
         goldPerSec: 0,
         bundleCount: 0,
-        producers: initialGameState.producers,
+        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
         factories: initialGameState.factories,
         totalEarned: 0,
         clicker: initialGameState.clicker,
@@ -595,7 +629,7 @@ export default function App() {
         gold: 0,
         goldPerSec: 0,
         bundleCount: 0,
-        producers: initialGameState.producers,
+        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
         factories: initialGameState.factories,
         totalEarned: 0,
         clicker: initialGameState.clicker,
@@ -709,6 +743,10 @@ export default function App() {
     setSelectedProducer({ row, col })
   }, [tutorialStep])
 
+  const handleRsClick = useCallback((_row: number, _col: number, rsKey: string, rsQueuesRef: React.MutableRefObject<Record<string, import('./types/item').Item[]>>) => {
+    setSelectedRs({ rsKey, rsQueuesRef })
+  }, [])
+
   const handleRecallAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => ({
       ...prev,
@@ -814,7 +852,42 @@ export default function App() {
     })
   }, [])
 
-  const bundleCost = getBundleCost(gameState.bundleCount)
+  const handleUpgradeBuildDiscount = useCallback(() => {
+    setGameState(prev => {
+      if ((prev.buildDiscountLevel ?? 0) >= CONFIG.PF_BC_PROC_MAX) return prev
+      const cost = getBuildDiscountCost(prev.buildDiscountLevel ?? 0)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
+    })
+  }, [])
+
+  const handleUpgradeBundleDiscount = useCallback(() => {
+    setGameState(prev => {
+      if ((prev.bundleDiscountLevel ?? 0) >= CONFIG.PF_LC_PROC_MAX) return prev
+      const cost = getBundleDiscountCost(prev.bundleDiscountLevel ?? 0)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
+    })
+  }, [])
+
+  const handleUpgradeProducerStart = useCallback(() => {
+    setGameState(prev => {
+      const cost = getProducerStartCost(prev.producerStartLevel ?? 0)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
+    })
+  }, [])
+
+  const handleUpgradeGoldMultiplier = useCallback(() => {
+    setGameState(prev => {
+      if ((prev.goldMultiplierLevel ?? 0) >= CONFIG.PF_GM_PROC_MAX) return prev
+      const cost = getGoldMultiplierCost(prev.goldMultiplierLevel ?? 0)
+      if (prev.prestigePoints < cost) return prev
+      return { ...prev, prestigePoints: prev.prestigePoints - cost, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
+    })
+  }, [])
+
+  const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
 
   const bgEmojis = [
     { emoji: '🍲', top: '6%',  left: '4%',  size: 38, rot: -15, op: 0.13 },
@@ -895,9 +968,11 @@ export default function App() {
         speedMultiplier={Date.now() < speedBoostUntil ? 2 : 1}
         onFactoryClick={handleFactoryClick}
         onProducerClick={handleProducerClick}
+        onRsClick={handleRsClick}
         onFaLiveStateChange={handleFaLiveStateChange}
         onProducerProgressChange={handleProducerProgressChange}
         tutorialHighlight={tutorialStep === 6 ? 'fa' : undefined}
+        disableDerail={tutorialStep !== null}
       /></div>}
       {!showSplash && <TabBar
         clicker={gameState.clicker}
@@ -1055,6 +1130,7 @@ export default function App() {
             onBuild={handleBuildProducer}
             onUpgrade={(i) => handleUpgradeProducer(i, upgradeAmount)}
             onUpgradeClicker={handleUpgradeClicker}
+            onGradeChange={handleProducerGradeChange}
           />
         )}
         {activeTab === 0 && prodSection === 'factory' && (
@@ -1101,6 +1177,10 @@ export default function App() {
             onUpgradeRsBuffer={() => handleUpgradeRsBuffer(upgradeAmount)}
             onUpgradeFaBuffer={() => handleUpgradeFaBuffer(upgradeAmount)}
             onUpgradeRailSpeed={() => handleUpgradeRailSpeed(upgradeAmount)}
+            onUpgradeBuildDiscount={handleUpgradeBuildDiscount}
+            onUpgradeBundleDiscount={handleUpgradeBundleDiscount}
+            onUpgradeProducerStart={handleUpgradeProducerStart}
+            onUpgradeGoldMultiplier={handleUpgradeGoldMultiplier}
           />
         )}
         {activeTab === 4 && (
@@ -1186,6 +1266,7 @@ export default function App() {
             onBuild={() => handleBuildProducer(producerIndex)}
             onUpgrade={() => handleUpgradeProducer(producerIndex, upgradeAmount)}
             onClose={() => { setSelectedProducer(null) }}
+            onGradeChange={(grade) => handleProducerGradeChange(producerIndex, grade)}
             producerProgressesRef={producerProgressesRef}
             progressKey={`${selectedProducer.row}-${selectedProducer.col}`}
           />
@@ -1214,6 +1295,16 @@ export default function App() {
           onPrestige={() => { setShowPrestigeKeepModal(false); doPrestigeKeepPoints(1) }}
           onWatchAd={() => { setAdTarget('prestigeKeep') }}
           onClose={() => setShowPrestigeKeepModal(false)}
+        />
+      )}
+
+      {/* RS 버퍼 팝업 */}
+      {selectedRs && (
+        <RsInfoModal
+          rsKey={selectedRs.rsKey}
+          rsQueuesRef={selectedRs.rsQueuesRef}
+          capacity={getRsBufferCapacity(gameState.rsBufferLevel)}
+          onClose={() => setSelectedRs(null)}
         />
       )}
 

@@ -7,6 +7,7 @@ import coinIcon from '../assets/coin.svg'
 import styles from './ProducerInfoModal.module.css'
 
 const GRADE_NAMES: Record<number, string> = { 1: '고추', 2: '설탕', 3: '딸기' }
+const GRADE_EMOJI: Record<number, string> = { 1: '🌶️', 2: '🍬', 3: '🍓' }
 const GRADE_COLORS: Record<number, { color: string; bg: string; border: string }> = {
   1: { color: '#991b1b', bg: '#fff1f1', border: '#fca5a5' },
   2: { color: '#92400e', bg: '#fffbeb', border: '#fcd34d' },
@@ -22,13 +23,14 @@ interface Props {
   onBuild: () => void
   onUpgrade: () => void
   onClose: () => void
+  onGradeChange: (grade: number) => void
   tutorialHighlightBuild?: boolean
   tutorialHighlightClose?: boolean
   producerProgressesRef?: React.RefObject<Record<string, number>>
   progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
+export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [progress, setProgress] = useState(0)
   const progressKeyRef = useRef(progressKey)
@@ -65,6 +67,21 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
             <span className={styles.levelBadge}>Lv.{producer.level}</span>
           )}
           <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
+        </div>
+
+        {/* 등급 선택 */}
+        <div className={styles.gradeSelector}>
+          {[1, 2, 3].map(g => (
+            <button
+              key={g}
+              className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
+              style={producer.grade === g ? { background: GRADE_COLORS[g].color, borderColor: GRADE_COLORS[g].color } : { borderColor: GRADE_COLORS[g].border, color: GRADE_COLORS[g].color }}
+              onClick={() => onGradeChange(g)}
+            >
+              <span>{GRADE_EMOJI[g]}</span>
+              <span>{GRADE_NAMES[g]}</span>
+            </button>
+          ))}
         </div>
 
         {/* 상태 */}

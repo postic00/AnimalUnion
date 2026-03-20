@@ -254,17 +254,57 @@ export function getAnimalResetRefund(animals: { unlocked: boolean; level: number
 
 // 환생 가능 여부
 export function canPrestige(totalEarned: number): boolean {
-  return totalEarned >= CONFIG.PRESTIGE_CONDITION
+  return totalEarned >= CONFIG.CM_PRESTIGE_CONDITION
 }
 
 // 환생 시 획득 포인트
 export function getPrestigePoints(totalEarned: number): number {
-  return Math.floor(totalEarned / CONFIG.PRESTIGE_POINTS_DIVISOR)
+  return Math.floor(totalEarned / CONFIG.CM_PRESTIGE_DIVISOR)
 }
 
 // productGrade 해금 비용
 export function getProductGradeUnlockCost(grade: number): number {
   return Math.pow(2, grade - 2)
+}
+
+// 생산자 시작 레벨 (level당 0.2씩, 최대 100레벨 = +20)
+export function getProducerStartLevel(level: number): number {
+  return Math.floor(Math.min(level, CONFIG.PF_PS_PROC_MAX) * CONFIG.PF_PS_PROC_BASE)
+}
+
+// 건설 비용 할인율 (0.0~0.2)
+export function getBuildCostDiscount(level: number): number {
+  return Math.min(level, CONFIG.PF_BC_PROC_MAX) * CONFIG.PF_BC_PROC_BASE
+}
+
+// 번들 비용 할인율 (0.0~0.5)
+export function getBundleCostDiscount(level: number): number {
+  return Math.min(level, CONFIG.PF_LC_PROC_MAX) * CONFIG.PF_LC_PROC_BASE
+}
+
+// 골드 배율 (1.0 + bonus)
+export function getGoldMultiplierBonus(level: number): number {
+  return 1 + Math.min(level, CONFIG.PF_GM_PROC_MAX) * CONFIG.PF_GM_PROC_BASE
+}
+
+// 환생 보너스 업그레이드 비용 (건설 비용 할인)
+export function getBuildDiscountCost(level: number): number {
+  return calcCost(CONFIG.PF_BC_COST_BASE, CONFIG.PF_BC_COST_RATE, CONFIG.PF_BC_COST_EXP, CONFIG.PF_BC_COST_ACC, level)
+}
+
+// 환생 보너스 업그레이드 비용 (라인 비용 할인)
+export function getBundleDiscountCost(level: number): number {
+  return calcCost(CONFIG.PF_LC_COST_BASE, CONFIG.PF_LC_COST_RATE, CONFIG.PF_LC_COST_EXP, CONFIG.PF_LC_COST_ACC, level)
+}
+
+// 환생 보너스 업그레이드 비용 (생산자 시작 레벨)
+export function getProducerStartCost(level: number): number {
+  return calcCost(CONFIG.PF_PS_COST_BASE, CONFIG.PF_PS_COST_RATE, CONFIG.PF_PS_COST_EXP, CONFIG.PF_PS_COST_ACC, level)
+}
+
+// 환생 보너스 업그레이드 비용 (골드 배율)
+export function getGoldMultiplierCost(level: number): number {
+  return calcCost(CONFIG.PF_GM_COST_BASE, CONFIG.PF_GM_COST_RATE, CONFIG.PF_GM_COST_EXP, CONFIG.PF_GM_COST_ACC, level)
 }
 
 // 조합 레시피 정의

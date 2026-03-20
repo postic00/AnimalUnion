@@ -16,6 +16,18 @@ const SAVE_KEY = 'animal-union-save'
 const SAVE_VERSION = '1.1.0'
 const MIN_SAVE_VERSION = '1.1.0' // 이 버전 미만이면 로컬 데이터 삭제
 
+function parseVer(v: string): number[] {
+  return v.split('.').map(n => parseInt(n, 10) || 0)
+}
+function versionLt(a: string, b: string): boolean {
+  const av = parseVer(a), bv = parseVer(b)
+  for (let i = 0; i < Math.max(av.length, bv.length); i++) {
+    const d = (av[i] ?? 0) - (bv[i] ?? 0)
+    if (d !== 0) return d < 0
+  }
+  return false
+}
+
 interface SaveData {
   version: string
   savedAt: number
@@ -48,7 +60,7 @@ export function loadGame(): { board: Board; gameState: GameState; savedAt: numbe
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null
     const data: SaveData = JSON.parse(raw)
-    if (!data.version || data.version < MIN_SAVE_VERSION) {
+    if (!data.version || versionLt(data.version, MIN_SAVE_VERSION)) {
       deleteSave()
       return null
     }
@@ -66,12 +78,14 @@ export function deleteSave(): void {
   localStorage.removeItem(FA_STATES_KEY)
   localStorage.removeItem(RS_QUEUES_KEY)
   localStorage.removeItem(PRODUCE_TIMERS_KEY)
+  localStorage.removeItem(PR_STATES_KEY)
 }
 
 const ITEMS_KEY = 'animal-union-items'
 const FA_STATES_KEY = 'animal-union-fa-states'
 const RS_QUEUES_KEY = 'animal-union-rs-queues'
 const PRODUCE_TIMERS_KEY = 'animal-union-produce-timers'
+const PR_STATES_KEY = 'animal-union-pr-states'
 
 export function saveItems(items: unknown): void {
   try { localStorage.setItem(ITEMS_KEY, JSON.stringify(items)) } catch { /* ignore */ }
@@ -113,6 +127,17 @@ export function saveProduceTimers(timers: unknown): void {
 export function loadProduceTimers(): Record<string, number> | null {
   try {
     const raw = localStorage.getItem(PRODUCE_TIMERS_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+export function savePrStates(prStates: unknown): void {
+  try { localStorage.setItem(PR_STATES_KEY, JSON.stringify(prStates)) } catch { /* ignore */ }
+}
+
+export function loadPrStates(): Record<string, unknown> | null {
+  try {
+    const raw = localStorage.getItem(PR_STATES_KEY)
     return raw ? JSON.parse(raw) : null
   } catch { return null }
 }

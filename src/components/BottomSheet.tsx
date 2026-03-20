@@ -9,7 +9,7 @@ interface Props {
   scrollKey?: unknown
 }
 
-export default function BottomSheet({ open, header, children, scrollKey }: Props) {
+export default function BottomSheet({ open, onClose, header, children, scrollKey }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -20,7 +20,10 @@ export default function BottomSheet({ open, header, children, scrollKey }: Props
 
   return (
     <div className={styles.sheet}>
-      {header && <div className={styles.sheetHeader}>{header}</div>}
+      <div className={styles.sheetHeader}>
+        <div className={styles.sheetHeaderContent}>{header}</div>
+        <button className={styles.closeBtn} onClick={onClose}>✕</button>
+      </div>
       <div ref={bodyRef} className={styles.sheetBody}>{children}</div>
     </div>
   )

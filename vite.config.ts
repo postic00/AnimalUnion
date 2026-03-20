@@ -11,4 +11,7 @@ export default defineConfig({
 			'@apps-in-toss/web-framework': path.resolve(__dirname, 'src/stubs/apps-in-toss-web-framework.ts'),
 		},
 	},
+	build: {
+		chunkSizeWarningLimit: 600,
+	},
 })

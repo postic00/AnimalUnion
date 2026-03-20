@@ -182,3 +182,30 @@
   font-weight: 700;
   opacity: 0.9;
 }
+
+.gradeSelector {
+  display: flex;
+  gap: 6px;
+}
+
+.gradePill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 0;
+  border-radius: 10px;
+  border: 1.5px solid;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0.45;
+  color: #6b7280;
+}
+
+.gradePillActive {
+  opacity: 1;
+  color: #fff !important;
+}

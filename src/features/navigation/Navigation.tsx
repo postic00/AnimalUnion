@@ -40,8 +40,8 @@ export default function Navigation({ gold, goldPerSec, prestigePoints, totalPres
       <div className={styles.salaryCard}>
         <span className={styles.salaryIcon}>💼</span>
         <div className={styles.salaryInfo}>
-          <span className={styles.salaryLabel}>≈ {formatGold(expectedSalary)}</span>
-          <span className={styles.salaryTitle}>{formatCountdown(remaining)}</span>
+          <span className={styles.salaryLabel}>{formatCountdown(remaining)}</span>
+          <span className={styles.salaryTitle}>월급 {formatGold(expectedSalary)}</span>
         </div>
       </div>
     </nav>

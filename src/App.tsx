@@ -260,8 +260,12 @@ export default function App() {
     setAdTarget: ui.setAdTarget,
     onRewardClaim: handleClaimRewards,
     resetSalary: () => {
-      workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
+      workDataRef.current = { ...initialWorkData, lastWorked: Date.now() }
       setWorkData(workDataRef.current)
+			goldBufferRef.current = 0
+			totalEarnedBufferRef.current = 0
+			earnedInSecRef.current = 0
+			bucketHistoryRef.current = []
     },
     tutorialStep: ui.tutorialStep,
     BOOST_MS,
@@ -325,9 +329,8 @@ export default function App() {
 
     let rafId: number
 
-    const loop = (now: number) => {
 	  let lastTick = 0
-
+    const loop = (now: number) => {
       // ~1000ms: 초당 골드 계산
       if (now - lastTick >= 1000) {
         lastTick = now
@@ -340,7 +343,7 @@ export default function App() {
           setTotalEarned(prev => prev + t)
         }
         
-		setNow(Date.now())
+				setNow(Date.now())
 
         const bucket = earnedInSecRef.current
         earnedInSecRef.current = 0

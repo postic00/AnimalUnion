@@ -14,6 +14,8 @@ import Tutorial from './features/tutorial/Tutorial'
 import AdModal from './features/ad/AdModal'
 import PrestigeAdModal from './features/prestige/PrestigeAdModal'
 import ConfirmModal from './features/common/ConfirmModal'
+import WorkRewardModal from './features/reward/WorkRewardModal'
+import Toast from './features/common/Toast'
 import { SaveService } from './services/SaveService'
 import { ScoreService } from './services/ScoreService'
 import SplashScreen from './features/tutorial/SplashScreen'
@@ -24,7 +26,11 @@ import RsInfoModal from './features/rs/RsInfoModal'
 import UpgradeAmountToggle from './features/navigation/UpgradeAmountToggle'
 import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
+import { initialWorkData } from './types/workData'
+import type { WorkData, Reward } from './types/workData'
 import { saveGame, loadGame } from './utils/saveLoad'
+import { calcOfflineReward, calcMealReward, calcSalaryReward, tickWorkData } from './utils/workRewards'
+import { formatGold } from './utils/formatGold'
 import { CONFIG, applyWeekConfig } from './config'
 import { initAdMob } from './utils/admob'
 import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
@@ -133,6 +139,7 @@ export default function App() {
   const goldBoostUntilRef = useRef(goldBoostUntil)
   const speedBoostUntilRef = useRef(speedBoostUntil)
   const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
+  const goldPerSecRef = useRef(goldPerSec)
   useLayoutEffect(() => {
     goldRef.current = gold
     totalEarnedRef.current = totalEarned
@@ -140,9 +147,65 @@ export default function App() {
     goldBoostUntilRef.current = goldBoostUntil
     speedBoostUntilRef.current = speedBoostUntil
     goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
+    goldPerSecRef.current = goldPerSec
   })
 
+  const [workData, setWorkData] = useState<WorkData>(() => {
+    const saved = SaveService.loadWorkData()
+    return saved ?? { ...initialWorkData, lastWorked: Date.now() }
+  })
+  const workDataRef = useRef(workData)
+  useLayoutEffect(() => { workDataRef.current = workData })
+
+  const [pendingRewards, setPendingRewards] = useState<Reward[]>([])
+  const [salaryToast, setSalaryToast] = useState<string>('')
+  const [showSalaryToast, setShowSalaryToast] = useState(false)
+
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10)
+    if (workData.lastActivityDate !== today) {
+      ScoreService.recordSession(SaveService.getDeviceId(), platform)
+      setWorkData(prev => ({ ...prev, lastActivityDate: today }))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 앱 시작 시 휴게 보상 계산 ─────────────────────────────────────────────
+  useEffect(() => {
+    const saved = SaveService.loadWorkData()
+    if (saved) {
+      const offlineReward = calcOfflineReward(saved, goldPerSecRef.current)
+      if (offlineReward) setPendingRewards([offlineReward])
+    }
+    // lastWorked 갱신
+    setWorkData(prev => ({ ...prev, lastWorked: Date.now() }))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 보상 수령 핸들러 ──────────────────────────────────────────────────────
+  const pendingRewardsRef = useRef(pendingRewards)
+  useLayoutEffect(() => { pendingRewardsRef.current = pendingRewards })
+
+  const handleClaimRewards = useCallback((multiplier = 1) => {
+    pendingRewardsRef.current.forEach(r => {
+      if (r.gold) {
+        const gold = r.gold! * multiplier
+        setGold(g => g + gold)
+        goldBufferRef.current += gold
+        totalEarnedBufferRef.current += gold
+      }
+      if (r.boostMs) {
+        const boostMs = r.boostMs! * multiplier
+        setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + boostMs)
+        setGoldBoostUntil(prev => Math.max(prev, Date.now()) + boostMs)
+      }
+      if (r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner') {
+        const today = new Date().toISOString().slice(0, 10)
+        setWorkData(prev => ({ ...prev, meals: { ...prev.meals, [r.type]: today } }))
+      }
+    })
+    setPendingRewards([])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── UI State ──────────────────────────────────────────────────────────────
   const ui = useUIState()
@@ -165,6 +228,7 @@ export default function App() {
     setShowSplash: ui.setShowSplash,
     adTarget: ui.adTarget,
     setAdTarget: ui.setAdTarget,
+    onRewardClaim: handleClaimRewards,
     tutorialStep: ui.tutorialStep,
     BOOST_MS,
   })
@@ -202,7 +266,7 @@ export default function App() {
   // ── 저장 인터벌 ──────────────────────────────────────────────────────────
   const lastSavedSnapshotRef = useRef<string>('')
   useEffect(() => {
-    const WINDOW = 60
+    const WINDOW = 600
     const getSnapshot = () => JSON.stringify({
       ...gameStateRef.current,
       gold: goldRef.current,
@@ -257,9 +321,32 @@ export default function App() {
         earnedInSecRef.current = 0
         bucketHistoryRef.current.push(bucket)
         if (bucketHistoryRef.current.length > WINDOW) bucketHistoryRef.current.shift()
-        const total = bucketHistoryRef.current.reduce((a, b) => a + b, 0)
-        const len = bucketHistoryRef.current.length
-        setGoldPerSec(len > 0 ? Math.round(total / len) : 0)
+        const nonZero = bucketHistoryRef.current.filter(b => b > 0)
+        const total = nonZero.reduce((a, b) => a + b, 0)
+        setGoldPerSec(nonZero.length > 0 ? Math.round(total / nonZero.length) : 0)
+
+        // workData 틱
+        const newWorkData = tickWorkData(workDataRef.current)
+        workDataRef.current = newWorkData
+        setWorkData(newWorkData)
+
+        // 식사 보상 체크
+        const mealReward = calcMealReward(newWorkData)
+        if (mealReward) setPendingRewards(prev => [...prev, mealReward])
+
+        // 월급 체크
+        const salaryReward = calcSalaryReward(newWorkData, goldPerSecRef.current ?? 0)
+        if (salaryReward) {
+          // 월급 지급
+          setGold(g => g + salaryReward.gold!)
+          goldBufferRef.current += salaryReward.gold!
+          totalEarnedBufferRef.current += salaryReward.gold!
+          setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold!)}`)
+          setShowSalaryToast(true)
+          // salary 리셋
+          workDataRef.current = { ...newWorkData, salary: { secondsAccumulated: newWorkData.salary.secondsAccumulated - CONFIG.WR_SALARY_SECONDS } }
+          setWorkData(workDataRef.current)
+        }
       }
 
       rafId = requestAnimationFrame(loop)
@@ -269,6 +356,7 @@ export default function App() {
     // 60s: 저장 + 리더보드 업로드
     const saveInterval = setInterval(() => {
       save()
+      SaveService.saveWorkData(workDataRef.current)
       const { playerName } = gameStateRef.current
       if (playerName) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
     }, 60000)
@@ -356,7 +444,7 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} />}
+      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && ui.tutorialStep === 6 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
       )}
@@ -742,6 +830,14 @@ export default function App() {
           onClose={() => ui.setShowResetConfirm(false)}
         />
       )}
+
+      {/* 근무 보상 모달 */}
+      {pendingRewards.length > 0 && (
+        <WorkRewardModal rewards={pendingRewards} onClaim={handleClaimRewards} onWatchAd={() => ui.setAdTarget('reward')} />
+      )}
+
+      {/* 월급 토스트 */}
+      <Toast message={salaryToast} visible={showSalaryToast} onHide={() => setShowSalaryToast(false)} />
     </div>
   )
 }

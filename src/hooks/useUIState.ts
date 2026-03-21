@@ -33,7 +33,7 @@ export function useUIState() {
   } | null>(null)
 
   // ── 모달 ───────────────────────────────────────────────────────────────────
-  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | null>(null)
+  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null>(null)
   const [showPrestigeModal, setShowPrestigeModal] = useState(false)
   const [showPrestigeKeepModal, setShowPrestigeKeepModal] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)

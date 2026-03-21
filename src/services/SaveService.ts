@@ -1,5 +1,6 @@
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
+import type { WorkData } from '../types/workData'
 import {
   saveGame as _saveGame,
   loadGame as _loadGame,
@@ -14,6 +15,8 @@ import {
   saveMuted as _saveMuted,
   loadMuted as _loadMuted,
   getDeviceId as _getDeviceId,
+  saveWorkData as _saveWorkData,
+  loadWorkData as _loadWorkData,
 } from '../utils/saveLoad'
 
 // saveLoad.ts의 MIN_SAVE_VERSION과 동기화 필요
@@ -110,6 +113,17 @@ export const SaveService = {
   // ── 디바이스 ─────────────────────────────────────────────────────────────
   getDeviceId(): string {
     return _getDeviceId()
+  },
+
+  // ── 근무 보상 데이터 ──────────────────────────────────────────────────────
+  saveWorkData(data: WorkData): void {
+    _saveWorkData(data)
+  },
+
+  loadWorkData(): WorkData | null {
+    const raw = _loadWorkData()
+    if (!raw || typeof raw !== 'object') return null
+    return raw as WorkData
   },
 
   // ── 구버전 감지 ───────────────────────────────────────────────────────────

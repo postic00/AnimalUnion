@@ -1,4 +1,5 @@
 import { formatGold } from '../../utils/formatGold'
+import { CONFIG } from '../../config'
 import coinIcon from '../../assets/coin.svg'
 import styles from './Navigation.module.css'
 
@@ -7,9 +8,19 @@ interface Props {
   goldPerSec: number
   prestigePoints: number
   totalPrestigePoints: number
+  salarySecondsAccumulated: number
+  expectedSalary: number
 }
 
-export default function Navigation({ gold, goldPerSec, prestigePoints, totalPrestigePoints }: Props) {
+function formatCountdown(seconds: number): string {
+  const mm = Math.floor(seconds / 60)
+  const ss = seconds % 60
+  return `${mm}:${ss.toString().padStart(2, '0')}`
+}
+
+export default function Navigation({ gold, goldPerSec, prestigePoints, totalPrestigePoints, salarySecondsAccumulated, expectedSalary }: Props) {
+  const remaining = Math.max(0, CONFIG.WR_SALARY_SECONDS - salarySecondsAccumulated)
+
   return (
     <nav className={styles.nav}>
       <div className={styles.goldCard}>
@@ -24,6 +35,13 @@ export default function Navigation({ gold, goldPerSec, prestigePoints, totalPres
         <div className={styles.prestigeInfo}>
           <span className={styles.prestigeAmount}>{formatGold(totalPrestigePoints)}</span>
           <span className={styles.prestigeLabel}>미사용 {formatGold(prestigePoints)}</span>
+        </div>
+      </div>
+      <div className={styles.salaryCard}>
+        <span className={styles.salaryIcon}>💼</span>
+        <div className={styles.salaryInfo}>
+          <span className={styles.salaryLabel}>≈ {formatGold(expectedSalary)}</span>
+          <span className={styles.salaryTitle}>{formatCountdown(remaining)}</span>
         </div>
       </div>
     </nav>

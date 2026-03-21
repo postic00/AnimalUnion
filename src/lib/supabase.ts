@@ -29,6 +29,18 @@ export async function updatePlayerName(deviceId: string, playerName: string) {
   ])
 }
 
+export async function recordSession(deviceId: string, platform: string) {
+  if (!deviceId) return
+  const date = new Date().toISOString().slice(0, 10)
+  await supabase.rpc('record_session', { p_id: deviceId, p_date: date, p_platform: platform })
+}
+
+export async function recordAd(deviceId: string) {
+  if (!deviceId) return
+  const date = new Date().toISOString().slice(0, 10)
+  await supabase.rpc('record_ad', { p_id: deviceId, p_date: date })
+}
+
 export async function deleteAllScores(deviceId: string) {
   if (!deviceId) return
   await Promise.all([

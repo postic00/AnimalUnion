@@ -81,6 +81,7 @@ export function deleteSave(): void {
   localStorage.removeItem(RS_QUEUES_KEY)
   localStorage.removeItem(PRODUCE_TIMERS_KEY)
   localStorage.removeItem(PR_STATES_KEY)
+  localStorage.removeItem('animal-union-work-data')
 }
 
 const ITEMS_KEY = 'animal-union-items'
@@ -191,4 +192,17 @@ export function getSavedAt(): number | null {
   } catch {
     return null
   }
+}
+
+const WORK_DATA_KEY = 'animal-union-work-data'
+
+export function saveWorkData(data: unknown): void {
+  try { localStorage.setItem(WORK_DATA_KEY, JSON.stringify(data)) } catch {}
+}
+
+export function loadWorkData(): unknown | null {
+  try {
+    const raw = localStorage.getItem(WORK_DATA_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
 }

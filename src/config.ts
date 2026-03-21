@@ -84,6 +84,20 @@ export const CONFIG = {
   // PF_GM (골드 배율)
   PF_GM_PROC_BASE: 0.002, PF_GM_PROC_RATE: 1, PF_GM_PROC_EXP: 1, PF_GM_PROC_ACC: 1, PF_GM_PROC_MAX: 100,
   PF_GM_COST_BASE: 10,    PF_GM_COST_RATE: 1.5, PF_GM_COST_EXP: 3, PF_GM_COST_ACC: 0.05,
+
+  // WR (근무 보상)
+  WR_OFFLINE_MAX_SECONDS: 4 * 60 * 60,  // 휴게 보상 최대 오프라인 시간 (초, 4시간)
+  WR_OFFLINE_RATE: 0.3,          // 휴게 보상 비율 (goldPerSec 대비, 30%)
+  WR_SALARY_SECONDS: 600,        // 월급 지급 주기 (초)
+  WR_SALARY_RATE: 0.2,           // 월급 비율 (goldPerSec * 600 * 20% → gold)
+  WR_MEAL_SECONDS: 600,          // 식사 보상 요구 플레이 시간 (초)
+  WR_MEAL_BOOST_MS: 10 * 60 * 1000,  // 식사 부스터 지속 시간 (ms)
+  WR_BREAKFAST_START: 7,         // 아침 시작 시 (시)
+  WR_BREAKFAST_END: 10,          // 아침 종료 시 (시)
+  WR_LUNCH_START: 12,            // 점심 시작 시 (시)
+  WR_LUNCH_END: 14,              // 점심 종료 시 (시)
+  WR_DINNER_START: 18,           // 저녁 시작 시 (시)
+  WR_DINNER_END: 21,             // 저녁 종료 시 (시)
 }
 
 export type ConfigKey = keyof typeof CONFIG

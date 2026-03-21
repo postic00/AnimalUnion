@@ -79,8 +79,9 @@ export interface GameActionsCtx {
   setShowPrestigeModal: Dispatch<SetStateAction<boolean>>
   setShowPrestigeKeepModal: Dispatch<SetStateAction<boolean>>
   setShowSplash: Dispatch<SetStateAction<boolean>>
-  adTarget: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | null
-  setAdTarget: Dispatch<SetStateAction<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | null>>
+  adTarget: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null
+  setAdTarget: Dispatch<SetStateAction<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null>>
+  onRewardClaim: (multiplier: number) => void
   tutorialStep: number | null
   BOOST_MS: number
 }
@@ -96,7 +97,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     goldPerSec, platform,
     setClickerGrade, setTutorialStep, setTutorialItemCount, setSelectedFactory,
     setShowPrestigeModal, setShowPrestigeKeepModal, setShowSplash,
-    adTarget, setAdTarget, tutorialStep, BOOST_MS,
+    adTarget, setAdTarget, onRewardClaim, tutorialStep, BOOST_MS,
   } = ctx
 
   // ── 골드 획득 ────────────────────────────────────────────────────────────
@@ -575,6 +576,7 @@ export function useGameActions(ctx: GameActionsCtx) {
   const handleAdComplete = useCallback(() => {
     const target = adTarget
     setAdTarget(null)
+    ScoreService.recordAd(SaveService.getDeviceId())
     if (target === 'speed') {
       setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
     } else if (target === 'gold') {
@@ -585,8 +587,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     } else if (target === 'prestigeKeep') {
       setShowPrestigeKeepModal(false)
       doPrestigeKeepPoints(2)
+    } else if (target === 'reward') {
+      onRewardClaim(3)
     }
-  }, [adTarget, doPrestige, doPrestigeKeepPoints]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [adTarget, doPrestige, doPrestigeKeepPoints, onRewardClaim]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 설정 ─────────────────────────────────────────────────────────────────
   const handleToggleMute = useCallback(() => {

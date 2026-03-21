@@ -11,16 +11,15 @@ export function getCurrentMealType(): 'breakfast' | 'lunch' | 'dinner' | null {
 
 export function calcOfflineReward(workData: WorkData, goldPerSec: number): Reward | null {
   const elapsedSec = Math.min((Date.now() - workData.lastWorked) / 1000, CONFIG.WR_OFFLINE_MAX_SECONDS)
-  if (elapsedSec < 60) return null
+  if (elapsedSec < 300) return null
   const gold = Math.floor(goldPerSec * elapsedSec * CONFIG.WR_OFFLINE_RATE)
   if (gold <= 0) return null
   return { type: 'offline', gold }
 }
 
 export function calcMealReward(workData: WorkData): Reward | null {
-  const { type, seconds } = workData.mealWindow
+  const type = getCurrentMealType()
   if (!type) return null
-  if (seconds < CONFIG.WR_MEAL_SECONDS) return null
   const today = new Date().toISOString().slice(0, 10)
   if (workData.meals[type] === today) return null
   return { type, boostMs: CONFIG.WR_MEAL_BOOST_MS }
@@ -35,19 +34,8 @@ export function calcSalaryReward(workData: WorkData, goldPerSec: number): Reward
 
 // WorkData 틱 업데이트 (1초마다 호출)
 export function tickWorkData(workData: WorkData): WorkData {
-  const currentMeal = getCurrentMealType()
-  let mealWindow = workData.mealWindow
-
-  if (currentMeal !== mealWindow.type) {
-    // 식사 창 변경 시 리셋
-    mealWindow = { type: currentMeal, seconds: 0 }
-  } else if (currentMeal) {
-    mealWindow = { ...mealWindow, seconds: mealWindow.seconds + 1 }
-  }
-
   return {
     ...workData,
-    mealWindow,
     salary: { secondsAccumulated: workData.salary.secondsAccumulated + 1 },
   }
 }

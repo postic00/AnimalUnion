@@ -257,12 +257,13 @@
 }
 
 .levelBadge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
   background: var(--c-gray-500);
-  width: 40px;
-  height: 18px;
+  min-width: 48px;
+  height: 22px;
+  padding: 0 6px;
   display: flex;
   align-items: center;
   justify-content: center;

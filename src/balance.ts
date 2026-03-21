@@ -56,7 +56,7 @@ export const getProducerInterval = memo1((level: number): number => {
 export function getItemValue(grade: number, itemValueLevel = 1): number {
   const idx = Math.max(0, Math.min(grade - 1, 19))
   const baseValue = CONFIG.GRADE_BASE_VALUES[idx] ?? 1
-  return baseValue * calcProc(CONFIG.IT_PROC_BASE, CONFIG.IT_PROC_EXP, CONFIG.IT_PROC_ACC, Math.max(1, itemValueLevel))
+  return baseValue * calcProc(CONFIG.IT_PROC_BASE, CONFIG.IT_PROC_EXP, CONFIG.IT_PROC_ACC, itemValueLevel + 1)
 }
 
 // PR 아이템 가치
@@ -194,12 +194,12 @@ export function getMaterialQuantityLevelCost(level: number): number {
 
 // RS 버퍼 용량
 export function getRsBufferCapacity(level: number): number {
-  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level))
+  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level + 1))
 }
 
 // FA 버퍼 용량
 export function getFaBufferCapacity(level: number): number {
-  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level))
+  return Math.floor(calcProc(CONFIG.BF_PROC_BASE, CONFIG.BF_PROC_EXP, CONFIG.BF_PROC_ACC, level + 1))
 }
 
 // 버퍼 업그레이드 비용

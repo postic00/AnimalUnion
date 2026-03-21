@@ -28,7 +28,7 @@ import { initialBoard } from './data/initialBoard'
 import { initialGameState } from './types/gameState'
 import { initialWorkData } from './types/workData'
 import type { WorkData, Reward } from './types/workData'
-import { saveGame, loadGame } from './utils/saveLoad'
+import { saveGame, loadGame, savePrestigeTotal, loadPrestigeTotal } from './utils/saveLoad'
 import { calcOfflineReward, calcMealReward, calcSalaryReward, tickWorkData } from './utils/workRewards'
 import { formatGold } from './utils/formatGold'
 import { CONFIG, applyWeekConfig } from './config'
@@ -93,6 +93,11 @@ function loadInitialState() {
     const oldTotal = (savedState as unknown as { totalPrestigePoints?: number }).totalPrestigePoints ?? oldCurrent
     savedState.prestigePoints = { current: oldCurrent, total: oldTotal }
   }
+  // 세이브 초기화 후에도 prestige total 복구
+  if (savedState.prestigePoints.total === 0) {
+    const backed = loadPrestigeTotal()
+    if (backed > 0) savedState.prestigePoints = { ...savedState.prestigePoints, total: backed }
+  }
   return {
     board: getConsistentBoard(savedState.bundleCount),
     gameState: savedState,
@@ -117,6 +122,9 @@ export default function App() {
 
   const gameStateRef = useRef(gameState)
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
+  useEffect(() => {
+    if (gameState.prestigePoints.total > 0) savePrestigeTotal(gameState.prestigePoints.total)
+  }, [gameState.prestigePoints.total])
   const goldRef = useRef(gold)
   const totalEarnedRef = useRef(totalEarned)
   const earnedInSecRef = useRef(0)
@@ -157,7 +165,8 @@ export default function App() {
   const workDataRef = useRef(workData)
   useLayoutEffect(() => { workDataRef.current = workData })
 
-  const [pendingRewards, setPendingRewards] = useState<Reward[]>([])
+  const [rewardQueue, setRewardQueue] = useState<Reward[][]>([])
+  const pendingRewards = rewardQueue[0] ?? []
   const [salaryToast, setSalaryToast] = useState<string>('')
   const [showSalaryToast, setShowSalaryToast] = useState(false)
 
@@ -175,8 +184,12 @@ export default function App() {
   useEffect(() => {
     const saved = SaveService.loadWorkData()
     if (saved) {
+      const queue: Reward[][] = []
       const offlineReward = calcOfflineReward(saved, goldPerSecRef.current)
-      if (offlineReward) setPendingRewards([offlineReward])
+      if (offlineReward) queue.push([offlineReward])
+      const mealReward = calcMealReward(saved)
+      if (mealReward) queue.push([mealReward])
+      if (queue.length > 0) setRewardQueue(queue)
     }
     // lastWorked 갱신
     setWorkData(prev => ({ ...prev, lastWorked: Date.now() }))
@@ -201,10 +214,16 @@ export default function App() {
       }
       if (r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner') {
         const today = new Date().toISOString().slice(0, 10)
-        setWorkData(prev => ({ ...prev, meals: { ...prev.meals, [r.type]: today } }))
+        // ref도 즉시 업데이트하여 다음 틱에서 중복 emit 방지
+        workDataRef.current = {
+          ...workDataRef.current,
+          meals: { ...workDataRef.current.meals, [r.type]: today },
+          mealWindow: { type: workDataRef.current.mealWindow.type, seconds: 0 },
+        }
+        setWorkData(workDataRef.current)
       }
     })
-    setPendingRewards([])
+    setRewardQueue(prev => prev.slice(1))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── UI State ──────────────────────────────────────────────────────────────
@@ -229,6 +248,10 @@ export default function App() {
     adTarget: ui.adTarget,
     setAdTarget: ui.setAdTarget,
     onRewardClaim: handleClaimRewards,
+    resetSalary: () => {
+      workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
+      setWorkData(workDataRef.current)
+    },
     tutorialStep: ui.tutorialStep,
     BOOST_MS,
   })
@@ -284,7 +307,7 @@ export default function App() {
       boardSaveRef.current()
       setSavedAt(Date.now())
     }
-    const onVisibility = () => { if (document.hidden) save(true) }
+    const onVisibility = () => { if (document.hidden) { save(true); SaveService.saveWorkData(workDataRef.current) } }
     const onUnload = () => save()
     window.addEventListener('beforeunload', onUnload)
     document.addEventListener('visibilitychange', onVisibility)
@@ -330,9 +353,11 @@ export default function App() {
         workDataRef.current = newWorkData
         setWorkData(newWorkData)
 
-        // 식사 보상 체크
+        // 식사 보상 체크 (같은 타입 중복 방지)
         const mealReward = calcMealReward(newWorkData)
-        if (mealReward) setPendingRewards(prev => [...prev, mealReward])
+        if (mealReward) setRewardQueue(prev =>
+          prev.some(batch => batch.some(r => r.type === mealReward.type)) ? prev : [...prev, [mealReward]]
+        )
 
         // 월급 체크
         const salaryReward = calcSalaryReward(newWorkData, goldPerSecRef.current ?? 0)
@@ -385,11 +410,15 @@ export default function App() {
     setPlacingAnimalId(null)
   }, [actionsPlaceAnimal, placingAnimalId, setPlacingAnimalId])
 
-  // 하드 리셋: activeTab 초기화 추가
+  // 하드 리셋: activeTab + workData + rewardQueue + prestige total 초기화
   const handleHardReset = useCallback(() => {
     actionsHardReset()
     setActiveTab(null)
-  }, [actionsHardReset, setActiveTab])
+    workDataRef.current = { ...initialWorkData, lastWorked: Date.now() }
+    setWorkData(workDataRef.current)
+    setRewardQueue([])
+    localStorage.removeItem('animal-union-prestige-total')
+  }, [actionsHardReset, setActiveTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
 

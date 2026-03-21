@@ -82,6 +82,7 @@ export interface GameActionsCtx {
   adTarget: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null
   setAdTarget: Dispatch<SetStateAction<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null>>
   onRewardClaim: (multiplier: number) => void
+  resetSalary: () => void
   tutorialStep: number | null
   BOOST_MS: number
 }
@@ -97,7 +98,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     goldPerSec, platform,
     setClickerGrade, setTutorialStep, setTutorialItemCount, setSelectedFactory,
     setShowPrestigeModal, setShowPrestigeKeepModal, setShowSplash,
-    adTarget, setAdTarget, onRewardClaim, tutorialStep, BOOST_MS,
+    adTarget, setAdTarget, onRewardClaim, resetSalary, tutorialStep, BOOST_MS,
   } = ctx
 
   // ── 골드 획득 ────────────────────────────────────────────────────────────
@@ -495,20 +496,20 @@ export function useGameActions(ctx: GameActionsCtx) {
         ...initialGameState,
         playerName: prev.playerName,
         producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        // 환생 유지 (prestige buff)
+        // 환생 유지 (prestige buff - 할인/시작레벨만 유지, 골드배율/버퍼는 리셋)
         buildDiscountLevel: prev.buildDiscountLevel,
         bundleDiscountLevel: prev.bundleDiscountLevel,
         producerStartLevel: prev.producerStartLevel,
-        goldMultiplierLevel: prev.goldMultiplierLevel,
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: newTotal, total: newTotal },
       }
     })
+    resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)
     applyWeekConfig(updatedConfig)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetSalary]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const doPrestigeKeepPoints = useCallback(async (multiplier = 1) => {
     const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
@@ -556,10 +557,11 @@ export function useGameActions(ctx: GameActionsCtx) {
         prestigePoints: { current: keptCurrent, total: newTotal },
       }
     })
+    resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)
     applyWeekConfig(updatedConfig)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetSalary]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrestige = useCallback(async () => {
     await CloudService.fetchAndSaveWeekConfig()

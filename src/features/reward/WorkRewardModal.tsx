@@ -73,7 +73,7 @@ export default function WorkRewardModal({ rewards, onClaim, onWatchAd }: Props) 
             📺 3배 받기
           </button>
         )}
-        <button className={styles.claimBtn} onClick={onClaim}>
+        <button className={styles.claimBtn} onClick={() => onClaim()}>
           받기
         </button>
       </div>

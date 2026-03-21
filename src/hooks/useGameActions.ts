@@ -556,7 +556,7 @@ export function useGameActions(ctx: GameActionsCtx) {
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: keptCurrent, total: newTotal },
-				currnetWeek: CONFIG.WEEK,
+				currentWeek: CONFIG.WEEK,
       }
     })
 	setTimeout(() => {

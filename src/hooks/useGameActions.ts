@@ -287,10 +287,10 @@ export function useGameActions(ctx: GameActionsCtx) {
   const handleUnlockAnimal = useCallback((id: AnimalId) => {
     setGameState(prev => {
       const cost = getAnimalUnlockCost()
-      if (prev.prestigePoints < cost) return prev
+      if (prev.prestigePoints.current < cost) return prev
       return {
         ...prev,
-        prestigePoints: prev.prestigePoints - cost,
+        prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost },
         animals: prev.animals.map(a => a.id === id ? { ...a, unlocked: true } : a),
       }
     })
@@ -300,7 +300,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       const animal = prev.animals.find(a => a.id === id)
       if (!animal || !animal.unlocked) return prev
-      let points = prev.prestigePoints
+      let points = prev.prestigePoints.current
       let level = animal.level
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
@@ -312,7 +312,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (count === 0) return prev
       return {
         ...prev,
-        prestigePoints: points,
+        prestigePoints: { ...prev.prestigePoints, current: points },
         animals: prev.animals.map(a => a.id === id ? { ...a, level } : a),
       }
     })
@@ -343,7 +343,7 @@ export function useGameActions(ctx: GameActionsCtx) {
   // ── 재료 / 아이템 가치 ────────────────────────────────────────────────────
   const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints
+      let points = prev.prestigePoints.current
       let level = prev.itemValueLevels[gradeIndex] ?? 1
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
@@ -355,7 +355,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (count === 0) return prev
       const itemValueLevels = [...prev.itemValueLevels]
       itemValueLevels[gradeIndex] = level
-      return { ...prev, prestigePoints: points, itemValueLevels }
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, itemValueLevels }
     })
   }, [setGameState])
 
@@ -381,7 +381,7 @@ export function useGameActions(ctx: GameActionsCtx) {
   // ── 버퍼 / 레일 ───────────────────────────────────────────────────────────
   const handleUpgradeRsBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints
+      let points = prev.prestigePoints.current
       let level = prev.rsBufferLevel
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
@@ -391,13 +391,13 @@ export function useGameActions(ctx: GameActionsCtx) {
         points -= cost; level++; count++
       }
       if (count === 0) return prev
-      return { ...prev, prestigePoints: points, rsBufferLevel: level }
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, rsBufferLevel: level }
     })
   }, [setGameState])
 
   const handleUpgradeFaBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints
+      let points = prev.prestigePoints.current
       let level = prev.faBufferLevel
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
@@ -407,13 +407,13 @@ export function useGameActions(ctx: GameActionsCtx) {
         points -= cost; level++; count++
       }
       if (count === 0) return prev
-      return { ...prev, prestigePoints: points, faBufferLevel: level }
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, faBufferLevel: level }
     })
   }, [setGameState])
 
   const handleUpgradeRailSpeed = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints
+      let points = prev.prestigePoints.current
       let level = prev.railSpeedLevel ?? 1
       const limit = amount === 'MAX' ? Infinity : amount
       let count = 0
@@ -424,7 +424,7 @@ export function useGameActions(ctx: GameActionsCtx) {
         points -= cost; level++; count++
       }
       if (count === 0) return prev
-      return { ...prev, prestigePoints: points, railSpeedLevel: level }
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, railSpeedLevel: level }
     })
   }, [setGameState])
 
@@ -433,8 +433,8 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       if ((prev.buildDiscountLevel ?? 0) >= CONFIG.PF_BC_PROC_MAX) return prev
       const cost = getBuildDiscountCost(prev.buildDiscountLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
+      if (prev.prestigePoints.current < cost) return prev
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
     })
   }, [setGameState])
 
@@ -442,16 +442,16 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       if ((prev.bundleDiscountLevel ?? 0) >= CONFIG.PF_LC_PROC_MAX) return prev
       const cost = getBundleDiscountCost(prev.bundleDiscountLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
+      if (prev.prestigePoints.current < cost) return prev
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
     })
   }, [setGameState])
 
   const handleUpgradeProducerStart = useCallback(() => {
     setGameState(prev => {
       const cost = getProducerStartCost(prev.producerStartLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
+      if (prev.prestigePoints.current < cost) return prev
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
     })
   }, [setGameState])
 
@@ -459,8 +459,8 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       if ((prev.goldMultiplierLevel ?? 0) >= CONFIG.PF_GM_PROC_MAX) return prev
       const cost = getGoldMultiplierCost(prev.goldMultiplierLevel ?? 0)
-      if (prev.prestigePoints < cost) return prev
-      return { ...prev, prestigePoints: prev.prestigePoints - cost, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
+      if (prev.prestigePoints.current < cost) return prev
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
     })
   }, [setGameState])
 
@@ -481,30 +481,28 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGoldPerSec(0)
     setGameState(prev => {
       const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
+      const oldTotal = prev.prestigePoints.total
+      const newTotal = isNewSeason ? Math.floor(oldTotal * weekRate) + earned : oldTotal + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
-        ScoreService.submitPrestige(SaveService.getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+        const deviceId = SaveService.getDeviceId()
+        ScoreService.submitPrestige(deviceId, prev.playerName, newTotal, newPrestigeCount)
+        ScoreService.submitGold(deviceId, prev.playerName, 0)
       }
-      const resetBase = {
-        ...prev,
-        gold: 0, goldPerSec: 0, bundleCount: 0,
+      // initialGameState 기반: 새 필드 추가 시 자동으로 리셋됨
+      return {
+        ...initialGameState,
+        playerName: prev.playerName,
         producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        factories: initialGameState.factories,
-        totalEarned: 0,
-        clicker: initialGameState.clicker,
-        materialQuantityLevels: initialGameState.materialQuantityLevels,
-        itemValueLevels: initialGameState.itemValueLevels,
-        animals: initialGameState.animals,
-        rsBufferLevel: initialGameState.rsBufferLevel,
-        faBufferLevel: initialGameState.faBufferLevel,
-        railSpeedLevel: initialGameState.railSpeedLevel,
+        // 환생 유지 (prestige buff)
+        buildDiscountLevel: prev.buildDiscountLevel,
+        bundleDiscountLevel: prev.bundleDiscountLevel,
+        producerStartLevel: prev.producerStartLevel,
+        goldMultiplierLevel: prev.goldMultiplierLevel,
+        // 환생 카운터
         prestigeCount: newPrestigeCount,
-        totalPrestigePoints: newTotalPrestigePoints,
+        prestigePoints: { current: newTotal, total: newTotal },
       }
-      return isNewSeason
-        ? { ...resetBase, prestigePoints: Math.floor(newTotalPrestigePoints * weekRate) }
-        : { ...resetBase, prestigePoints: newTotalPrestigePoints }
     })
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)
@@ -520,31 +518,41 @@ export function useGameActions(ctx: GameActionsCtx) {
     SaveService.saveEngineState({ items: [], faStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
-    const weekRate = CONFIG.WEEK > CONFIG.CURRENT_WEEK ? CONFIG.NEXT_WEEK_RATE : 1
+    const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
+    const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
     setGold(0)
     setTotalEarned(0)
     setGoldPerSec(0)
     setGameState(prev => {
       const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const newTotalPrestigePoints = (prev.totalPrestigePoints ?? prev.prestigePoints) + earned
+      const oldTotal = prev.prestigePoints.total
+      const newTotal = isNewSeason ? Math.floor(oldTotal * weekRate) + earned : oldTotal + earned
       const newPrestigeCount = prev.prestigeCount + 1
       if (prev.playerName) {
-        ScoreService.submitPrestige(SaveService.getDeviceId(), prev.playerName, newTotalPrestigePoints * weekRate, newPrestigeCount)
+        const deviceId = SaveService.getDeviceId()
+        ScoreService.submitPrestige(deviceId, prev.playerName, newTotal, newPrestigeCount)
+        ScoreService.submitGold(deviceId, prev.playerName, 0)
       }
-      const keptPoints = Math.floor(prev.prestigePoints * weekRate) + earned
+      const keptCurrent = isNewSeason
+        ? Math.floor(prev.prestigePoints.current * weekRate) + earned
+        : prev.prestigePoints.current + earned
+      // initialGameState 기반: 새 필드 추가 시 자동으로 리셋됨
       return {
-        ...prev,
-        gold: 0, goldPerSec: 0, bundleCount: 0,
+        ...initialGameState,
+        playerName: prev.playerName,
         producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        factories: initialGameState.factories,
-        totalEarned: 0,
-        clicker: initialGameState.clicker,
-        materialQuantityLevels: initialGameState.materialQuantityLevels,
-        prestigePoints: keptPoints,
-        prestigeCount: newPrestigeCount,
-        totalPrestigePoints: newTotalPrestigePoints,
+        // 환생 유지 (prestige buff)
+        buildDiscountLevel: prev.buildDiscountLevel,
+        bundleDiscountLevel: prev.bundleDiscountLevel,
+        producerStartLevel: prev.producerStartLevel,
+        goldMultiplierLevel: prev.goldMultiplierLevel,
+        // 포인트 유지 전용: 버퍼/레일 유지
         rsBufferLevel: prev.rsBufferLevel,
         faBufferLevel: prev.faBufferLevel,
+        railSpeedLevel: prev.railSpeedLevel,
+        // 환생 카운터
+        prestigeCount: newPrestigeCount,
+        prestigePoints: { current: keptCurrent, total: newTotal },
       }
     })
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
@@ -586,7 +594,7 @@ export function useGameActions(ctx: GameActionsCtx) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleHardReset = useCallback(() => {
-    ScoreService.deleteAll(SaveService.getDeviceId())
+    ScoreService.deleteAllScores(SaveService.getDeviceId())
     SaveService.deleteSave()
     localStorage.removeItem('tutorialDone')
     localStorage.removeItem('animal-union-week-config')

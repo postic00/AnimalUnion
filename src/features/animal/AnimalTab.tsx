@@ -53,7 +53,8 @@ interface Props {
 }
 
 export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal }: Props) {
-  const { animals, factories, prestigePoints } = gameState
+  const { animals, factories } = gameState
+  const prestigePoints = gameState.prestigePoints.current
   const unlockCost = getAnimalUnlockCost()
   const filteredIds = ANIMAL_IDS.filter(id => id.startsWith(animalType))
 

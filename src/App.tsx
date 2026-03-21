@@ -82,8 +82,10 @@ function loadInitialState() {
   if (!savedState.playerName) {
     savedState.playerName = `Player${Date.now().toString(36).toUpperCase()}`
   }
-  if (savedState.totalPrestigePoints == null) {
-    savedState.totalPrestigePoints = savedState.prestigePoints
+  if (typeof (savedState.prestigePoints as unknown) === 'number') {
+    const oldCurrent = savedState.prestigePoints as unknown as number
+    const oldTotal = (savedState as unknown as { totalPrestigePoints?: number }).totalPrestigePoints ?? oldCurrent
+    savedState.prestigePoints = { current: oldCurrent, total: oldTotal }
   }
   return {
     board: getConsistentBoard(savedState.bundleCount),
@@ -354,7 +356,7 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints} totalPrestigePoints={gameState.totalPrestigePoints} />}
+      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} />}
       {!ui.showSplash && ui.tutorialStep === 6 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
       )}
@@ -604,12 +606,8 @@ export default function App() {
             mode={ui.lbMode}
             onNameChange={async name => {
               if (!name.trim()) return
-              const { prestigePoints, prestigeCount } = gameStateRef.current
               setGameState(prev => ({ ...prev, playerName: name }))
-              const deviceId = SaveService.getDeviceId()
-              await ScoreService.deleteAll(deviceId)
-              await ScoreService.submitPrestige(deviceId, name, prestigePoints, prestigeCount)
-              await ScoreService.submitGold(deviceId, name, totalEarnedRef.current)
+              await ScoreService.updatePlayerName(SaveService.getDeviceId(), name)
             }}
           />
         )}
@@ -692,8 +690,8 @@ export default function App() {
       {ui.showPrestigeModal && (
         <PrestigeAdModal
           earned={getPrestigePoints(totalEarned)}
-          currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
-          availablePoints={gameState.prestigePoints}
+          currentPoints={gameState.prestigePoints.total}
+          availablePoints={gameState.prestigePoints.current}
           onPrestige={() => { ui.setShowPrestigeModal(false); actions.doPrestige(1) }}
           onWatchAd={() => { ui.setAdTarget('prestige') }}
           onClose={() => ui.setShowPrestigeModal(false)}
@@ -704,8 +702,8 @@ export default function App() {
       {ui.showPrestigeKeepModal && (
         <PrestigeAdModal
           earned={getPrestigePoints(totalEarned)}
-          currentPoints={gameState.totalPrestigePoints ?? gameState.prestigePoints}
-          availablePoints={gameState.prestigePoints}
+          currentPoints={gameState.prestigePoints.total}
+          availablePoints={gameState.prestigePoints.current}
           keepPoints
           onPrestige={() => { ui.setShowPrestigeKeepModal(false); actions.doPrestigeKeepPoints(1) }}
           onWatchAd={() => { ui.setAdTarget('prestigeKeep') }}

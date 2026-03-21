@@ -23,7 +23,8 @@ interface Props {
 }
 
 export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer, onUpgradeRailSpeed, onUpgradeBuildDiscount, onUpgradeBundleDiscount, onUpgradeProducerStart, onUpgradeGoldMultiplier }: Props) {
-  const { totalEarned, prestigePoints, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
+  const { totalEarned, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
+  const prestigePoints = gameState.prestigePoints.current
   const railSpeedLevel = gameState.railSpeedLevel ?? 1
   const buildDiscountLevel = gameState.buildDiscountLevel ?? 0
   const bundleDiscountLevel = gameState.bundleDiscountLevel ?? 0

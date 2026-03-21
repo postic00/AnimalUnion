@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { CONFIG } from '../config'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -20,7 +21,15 @@ export interface LeaderboardEntry {
   created_at: string
 }
 
-export async function deleteScores(deviceId: string) {
+export async function updatePlayerName(deviceId: string, playerName: string) {
+  if (!deviceId || !playerName.trim()) return
+  await Promise.all([
+    supabase.from('leaderboard').update({ player_name: playerName }).eq('id', deviceId),
+    supabase.from('leaderboard_gold').update({ player_name: playerName }).eq('id', deviceId),
+  ])
+}
+
+export async function deleteAllScores(deviceId: string) {
   if (!deviceId) return
   await Promise.all([
     supabase.from('leaderboard').delete().eq('id', deviceId),
@@ -32,7 +41,7 @@ export async function submitPrestigeScore(deviceId: string, playerName: string, 
   if (!playerName.trim() || !isFinite(score) || score < 0 || prestigeCount < 0) return false
   const { error } = await supabase
     .from('leaderboard')
-    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score), prestige_count: prestigeCount }, { onConflict: 'id' })
+    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score), prestige_count: prestigeCount, last_seen: new Date().toISOString() }, { onConflict: 'id' })
   return !error
 }
 
@@ -40,7 +49,7 @@ export async function submitGoldScore(deviceId: string, playerName: string, scor
   if (!playerName.trim() || !isFinite(score) || score < 0) return false
   const { error } = await supabase
     .from('leaderboard_gold')
-    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score) }, { onConflict: 'id' })
+    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score), week: CONFIG.CURRENT_WEEK, last_seen: new Date().toISOString() }, { onConflict: 'id,week' })
   return !error
 }
 
@@ -58,6 +67,7 @@ export async function fetchGoldLeaderboard(limit = 100): Promise<LeaderboardEntr
   const { data, error } = await supabase
     .from('leaderboard_gold')
     .select('*')
+    .eq('week', CONFIG.CURRENT_WEEK)
     .order('score', { ascending: false })
     .limit(Math.max(1, limit))
   if (error || !Array.isArray(data)) return []

@@ -1,5 +1,6 @@
 import {
-  deleteScores as _deleteScores,
+  updatePlayerName as _updatePlayerName,
+  deleteAllScores as _deleteAllScores,
   submitPrestigeScore as _submitPrestigeScore,
   submitGoldScore as _submitGoldScore,
   fetchPrestigeLeaderboard as _fetchPrestigeLeaderboard,
@@ -9,8 +10,12 @@ export type { LeaderboardEntry } from '../lib/supabase'
 
 export const ScoreService = {
   // ── 점수 제출 ─────────────────────────────────────────────────────────────
-  deleteAll(deviceId: string): Promise<void> {
-    return _deleteScores(deviceId).catch(e => console.warn('[ScoreService] deleteAll 실패:', e))
+  updatePlayerName(deviceId: string, playerName: string): Promise<void> {
+    return _updatePlayerName(deviceId, playerName).catch(e => console.warn('[ScoreService] updatePlayerName 실패:', e))
+  },
+
+  deleteAllScores(deviceId: string): Promise<void> {
+    return _deleteAllScores(deviceId).catch(e => console.warn('[ScoreService] deleteAllScores 실패:', e))
   },
 
   submitPrestige(deviceId: string, playerName: string, score: number, prestigeCount: number): Promise<boolean> {

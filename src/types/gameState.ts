@@ -27,6 +27,7 @@ export interface GameState {
   bundleDiscountLevel: number  // 번들 비용 할인 레벨 (환생 유지)
   producerStartLevel: number   // 생산자 시작 레벨 (환생 유지)
   goldMultiplierLevel: number  // 골드 배율 레벨 (환생 유지)
+	currentWeek: number
 }
 
 export const initialGameState: GameState = {
@@ -54,4 +55,5 @@ export const initialGameState: GameState = {
   bundleDiscountLevel: 0,
   producerStartLevel: 0,
   goldMultiplierLevel: 0,
+	currentWeek: 0,
 }

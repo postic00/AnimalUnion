@@ -500,6 +500,7 @@ export function useGameActions(ctx: GameActionsCtx) {
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: newTotal, total: newTotal },
+				currentWeek: CONFIG.WEEK,
       }
     })
     resetSalary()
@@ -555,6 +556,7 @@ export function useGameActions(ctx: GameActionsCtx) {
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: keptCurrent, total: newTotal },
+				currnetWeek: CONFIG.WEEK,
       }
     })
 	setTimeout(() => {

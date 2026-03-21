@@ -98,6 +98,7 @@ function loadInitialState() {
     const backed = loadPrestigeTotal()
     if (backed > 0) savedState.prestigePoints = { ...savedState.prestigePoints, total: backed }
   }
+	if(savedState.currentWeek) CONFIG.CURRENT_WEEK = savedState.currentWeek
   return {
     board: getConsistentBoard(savedState.bundleCount),
     gameState: savedState,
@@ -108,18 +109,7 @@ function loadInitialState() {
   }
 }
 
-let _testCnt = 0
-if (typeof window !== 'undefined') {
-	setInterval(() => {
-		if(_testCnt > 0) {
-			console.log(`RENDER ${_testCnt} >> ${(_testCnt/5).toFixed(1)}`)
-			_testCnt = 0
-		}
-	}, 5000)
-}
-
 export default function App() {
-	_testCnt++
   const [initData] = useState(loadInitialState)
   const [showOldSaveAlert, setShowOldSaveAlert] = useState(initData.hasOldSave)
   const [board, setBoard] = useState<BoardType>(initData.board)
@@ -174,8 +164,6 @@ export default function App() {
     return saved ?? { ...initialWorkData, lastWorked: Date.now() }
   })
   const workDataRef = useRef(workData)
-  useLayoutEffect(() => { workDataRef.current = workData })
-
   const [rewardQueue, setRewardQueue] = useState<Reward[][]>([])
   const pendingRewards = rewardQueue[0] ?? []
   const [salaryToast, setSalaryToast] = useState<string>('')

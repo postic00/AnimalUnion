@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Board from './features/board/Board'
 import Navigation from './features/navigation/Navigation'
 import TabBar from './features/navigation/TabBar'
@@ -110,9 +110,7 @@ export default function App() {
   const gameStateRef = useRef(gameState)
   useEffect(() => { gameStateRef.current = gameState }, [gameState])
   const goldRef = useRef(gold)
-  goldRef.current = gold
   const totalEarnedRef = useRef(totalEarned)
-  totalEarnedRef.current = totalEarned
   const earnedInSecRef = useRef(0)
   const goldBufferRef = useRef(0)
   const totalEarnedBufferRef = useRef(0)
@@ -122,7 +120,6 @@ export default function App() {
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
   const mutedRef = useRef(muted)
-  mutedRef.current = muted
   const boardRef = useRef(board)
   useEffect(() => { boardRef.current = board }, [board])
 
@@ -132,11 +129,16 @@ export default function App() {
   const [now, setNow] = useState(() => Date.now())
 
   const goldBoostUntilRef = useRef(goldBoostUntil)
-  goldBoostUntilRef.current = goldBoostUntil
   const speedBoostUntilRef = useRef(speedBoostUntil)
-  speedBoostUntilRef.current = speedBoostUntil
   const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
-  goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
+  useLayoutEffect(() => {
+    goldRef.current = gold
+    totalEarnedRef.current = totalEarned
+    mutedRef.current = muted
+    goldBoostUntilRef.current = goldBoostUntil
+    speedBoostUntilRef.current = speedBoostUntil
+    goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
+  })
 
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
@@ -278,23 +280,26 @@ export default function App() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 크로스커팅 핸들러 ─────────────────────────────────────────────────────
+  const { setSelectedFactory, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
+  const { handlePlaceAnimal: actionsPlaceAnimal, handleHardReset: actionsHardReset } = actions
+
   // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
-    ui.setSelectedFactory({ row, col })
-    if (ui.tutorialStep === 6) ui.setTutorialStep(7)
-  }, [ui.tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
+    setSelectedFactory({ row, col })
+    if (tutorialStep === 6) setTutorialStep(7)
+  }, [setSelectedFactory, tutorialStep, setTutorialStep])
 
   // 동물 배치: placingAnimalId 전달 후 초기화
   const handlePlaceAnimal = useCallback((row: number, col: number) => {
-    actions.handlePlaceAnimal(row, col, ui.placingAnimalId)
-    ui.setPlacingAnimalId(null)
-  }, [ui.placingAnimalId]) // eslint-disable-line react-hooks/exhaustive-deps
+    actionsPlaceAnimal(row, col, placingAnimalId)
+    setPlacingAnimalId(null)
+  }, [actionsPlaceAnimal, placingAnimalId, setPlacingAnimalId])
 
   // 하드 리셋: activeTab 초기화 추가
   const handleHardReset = useCallback(() => {
-    actions.handleHardReset()
-    ui.setActiveTab(null)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    actionsHardReset()
+    setActiveTab(null)
+  }, [actionsHardReset, setActiveTab])
 
   const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
 

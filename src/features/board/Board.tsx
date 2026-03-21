@@ -63,7 +63,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     return () => window.removeEventListener('resize', updateSize)
   }, [])
 
-  const { items: initialItems, faStates: initialFaStates, rsQueues: initialRsQueues, produceTimers: initialProduceTimers, prStates: initialPrStates } = useRef(SaveService.loadEngineState()).current
+  const [{ items: initialItems, faStates: initialFaStates, rsQueues: initialRsQueues, produceTimers: initialProduceTimers, prStates: initialPrStates }] = useState(SaveService.loadEngineState)
 
   const [goldFloats, setGoldFloats] = useState<{ id: number; x: number; y: number; amount: number }[]>([])
   const floatIdRef = useRef(0)

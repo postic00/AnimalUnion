@@ -23,7 +23,6 @@ export default function LeaderboardTab({ playerName, mode, onNameChange }: Props
   const [nameInput, setNameInput] = useState(playerName)
 
   const refresh = () => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
     const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
     fetch()
@@ -40,7 +39,7 @@ export default function LeaderboardTab({ playerName, mode, onNameChange }: Props
       .then(data => { setEntries(data) })
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode])
 
   const handleNameSave = () => {
     const trimmed = nameInput.trim()

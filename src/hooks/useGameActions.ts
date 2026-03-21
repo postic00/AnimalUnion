@@ -393,7 +393,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (count === 0) return prev
       return { ...prev, prestigePoints: points, rsBufferLevel: level }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeFaBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -409,7 +409,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (count === 0) return prev
       return { ...prev, prestigePoints: points, faBufferLevel: level }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeRailSpeed = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -426,7 +426,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (count === 0) return prev
       return { ...prev, prestigePoints: points, railSpeedLevel: level }
     })
-  }, [])
+  }, [setGameState])
 
   // ── 환생 보너스 ──────────────────────────────────────────────────────────
   const handleUpgradeBuildDiscount = useCallback(() => {
@@ -436,7 +436,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (prev.prestigePoints < cost) return prev
       return { ...prev, prestigePoints: prev.prestigePoints - cost, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeBundleDiscount = useCallback(() => {
     setGameState(prev => {
@@ -445,7 +445,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (prev.prestigePoints < cost) return prev
       return { ...prev, prestigePoints: prev.prestigePoints - cost, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeProducerStart = useCallback(() => {
     setGameState(prev => {
@@ -453,7 +453,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (prev.prestigePoints < cost) return prev
       return { ...prev, prestigePoints: prev.prestigePoints - cost, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
     })
-  }, [])
+  }, [setGameState])
 
   const handleUpgradeGoldMultiplier = useCallback(() => {
     setGameState(prev => {
@@ -462,7 +462,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       if (prev.prestigePoints < cost) return prev
       return { ...prev, prestigePoints: prev.prestigePoints - cost, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
     })
-  }, [])
+  }, [setGameState])
 
   // ── 환생 ────────────────────────────────────────────────────────────────
   const doPrestige = useCallback(async (multiplier = 1) => {

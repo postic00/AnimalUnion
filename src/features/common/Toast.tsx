@@ -14,7 +14,7 @@ export default function Toast({ message, visible, onHide }: Props) {
       onHide()
     }, 2500)
     return () => clearTimeout(timer)
-  }, [visible, onHide])
+  }, [visible])
 
   return (
     <div className={`${styles.toast} ${visible ? styles.visible : ''}`}>

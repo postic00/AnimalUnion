@@ -37,7 +37,7 @@ import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import { AnimalSvg } from './features/animal/AnimalSvg'
-import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity } from './balance'
+import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity, getGoldMultiplierBonus } from './balance'
 import { useUIState } from './hooks/useUIState'
 import { useGameActions } from './hooks/useGameActions'
 
@@ -108,7 +108,18 @@ function loadInitialState() {
   }
 }
 
+let _testCnt = 0
+if (typeof window !== 'undefined') {
+	setInterval(() => {
+		if(_testCnt > 0) {
+			console.log(`RENDER ${_testCnt} >> ${(_testCnt/5).toFixed(1)}`)
+			_testCnt = 0
+		}
+	}, 5000)
+}
+
 export default function App() {
+	_testCnt++
   const [initData] = useState(loadInitialState)
   const [showOldSaveAlert, setShowOldSaveAlert] = useState(initData.hasOldSave)
   const [board, setBoard] = useState<BoardType>(initData.board)
@@ -203,7 +214,7 @@ export default function App() {
     pendingRewardsRef.current.forEach(r => {
       if (r.gold) {
         const gold = r.gold! * multiplier
-        setGold(g => g + gold)
+        setGold(g => g + gold * getGoldMultiplierBonus(goldMultiplierLevelRef.current) )
         goldBufferRef.current += gold
         totalEarnedBufferRef.current += gold
       }
@@ -313,14 +324,13 @@ export default function App() {
     document.addEventListener('visibilitychange', onVisibility)
 
     let rafId: number
-    let lastGold = 0
-    let lastBoost = 0
-    let lastPerSec = 0
 
     const loop = (now: number) => {
-      // ~100ms: 골드 버퍼 flush
-      if (now - lastGold >= 100) {
-        lastGold = now
+	  let lastTick = 0
+
+      // ~1000ms: 초당 골드 계산
+      if (now - lastTick >= 1000) {
+        lastTick = now
         const g = goldBufferRef.current
         const t = totalEarnedBufferRef.current
         if (g > 0) {
@@ -329,17 +339,9 @@ export default function App() {
           setGold(prev => prev + g)
           setTotalEarned(prev => prev + t)
         }
-      }
+        
+		setNow(Date.now())
 
-      // ~500ms: 부스트 타이머 갱신
-      if (now - lastBoost >= 500) {
-        lastBoost = now
-        setNow(Date.now())
-      }
-
-      // ~1000ms: 초당 골드 계산
-      if (now - lastPerSec >= 1000) {
-        lastPerSec = now
         const bucket = earnedInSecRef.current
         earnedInSecRef.current = 0
         bucketHistoryRef.current.push(bucket)
@@ -351,25 +353,24 @@ export default function App() {
         // workData 틱
         const newWorkData = tickWorkData(workDataRef.current)
         workDataRef.current = newWorkData
-        setWorkData(newWorkData)
 
         // 식사 보상 체크 (같은 타입 중복 방지)
-        const mealReward = calcMealReward(newWorkData)
+        const mealReward = calcMealReward(workDataRef.current)
         if (mealReward) setRewardQueue(prev =>
           prev.some(batch => batch.some(r => r.type === mealReward.type)) ? prev : [...prev, [mealReward]]
         )
 
         // 월급 체크
-        const salaryReward = calcSalaryReward(newWorkData, goldPerSecRef.current ?? 0)
+        const salaryReward = calcSalaryReward(workDataRef.current, goldPerSecRef.current ?? 0)
         if (salaryReward) {
           // 월급 지급
-          setGold(g => g + salaryReward.gold!)
+          setGold(g => g + salaryReward.gold! * getGoldMultiplierBonus(goldMultiplierLevelRef.current) )
           goldBufferRef.current += salaryReward.gold!
           totalEarnedBufferRef.current += salaryReward.gold!
           setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold!)}`)
           setShowSalaryToast(true)
           // salary 리셋
-          workDataRef.current = { ...newWorkData, salary: { secondsAccumulated: newWorkData.salary.secondsAccumulated - CONFIG.WR_SALARY_SECONDS } }
+          workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: newWorkData.salary.secondsAccumulated - CONFIG.WR_SALARY_SECONDS } }
           setWorkData(workDataRef.current)
         }
       }
@@ -473,7 +474,7 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
+      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workDataRef.current.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && ui.tutorialStep === 6 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
       )}

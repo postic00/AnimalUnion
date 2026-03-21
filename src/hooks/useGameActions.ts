@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { saveGame } from '../utils/saveLoad'
 import type { MutableRefObject, Dispatch, SetStateAction } from 'react'
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
@@ -474,7 +475,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     if (weekConfig) applyWeekConfig(weekConfig)
     const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
     if (!mutedRef.current) soundCat()
-    SaveService.saveEngineState({ items: [], faStates: {} })
+    SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
@@ -496,10 +497,6 @@ export function useGameActions(ctx: GameActionsCtx) {
         ...initialGameState,
         playerName: prev.playerName,
         producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        // 환생 유지 (prestige buff - 할인/시작레벨만 유지, 골드배율/버퍼는 리셋)
-        buildDiscountLevel: prev.buildDiscountLevel,
-        bundleDiscountLevel: prev.bundleDiscountLevel,
-        producerStartLevel: prev.producerStartLevel,
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: newTotal, total: newTotal },
@@ -517,7 +514,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     const weekConfig = SaveService.loadWeekConfig()
     if (weekConfig) applyWeekConfig(weekConfig)
     if (!mutedRef.current) soundCat()
-    SaveService.saveEngineState({ items: [], faStates: {} })
+    SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
     const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
@@ -552,11 +549,22 @@ export function useGameActions(ctx: GameActionsCtx) {
         rsBufferLevel: prev.rsBufferLevel,
         faBufferLevel: prev.faBufferLevel,
         railSpeedLevel: prev.railSpeedLevel,
+		// 포인트 구매 항목 유지
+        animals: prev.animals,
+        itemValueLevels: prev.itemValueLevels,
         // 환생 카운터
         prestigeCount: newPrestigeCount,
         prestigePoints: { current: keptCurrent, total: newTotal },
       }
     })
+	setTimeout(() => {
+		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPreSec: 0 }
+		saveGame(boardRef.current, fullState, { 
+			speedBoostUntil: ctx.speedBoostUntilRef.current, 
+			goldBoostUntil: goldBoostUntilRef.current, 
+		})
+	}, 0)	
+
     resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)

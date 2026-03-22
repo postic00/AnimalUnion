@@ -33,7 +33,7 @@ import { calcOfflineReward, calcMealReward, calcSalaryReward, tickWorkData } fro
 import { formatGold } from './utils/formatGold'
 import { CONFIG, applyWeekConfig } from './config'
 import { initAdMob } from './utils/admob'
-import { initTossBackEvent, initTossVisibility, closeView } from './utils/toss'
+import { initTossBackEvent, initTossVisibility, closeView, isTossEnvironment } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import type { GameState } from './types/gameState'
 import { AnimalSvg } from './features/animal/AnimalSvg'
@@ -107,6 +107,11 @@ function loadInitialState() {
     goldBoostUntil: saved?.boosts?.goldBoostUntil ?? 0,
     hasOldSave: false,
   }
+}
+
+if(typeof window !== 'undefined' && isTossEnvironment()) {
+	document.documentElement.style.setProperty('--safe-area-inset-top', '0px')
+	document.documentElement.style.setProperty('--safe-area-inset-bottom', '0px')
 }
 
 export default function App() {
@@ -432,7 +437,7 @@ export default function App() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + env(safe-area-inset-bottom))' : 'calc(68px + env(safe-area-inset-bottom))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + ver(--safe-area-inset-bottom, 0px))' : 'calc(68px + var(--safe-area-inset-bottom, 0px))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {bgEmojis.map((item, i) => (

@@ -1,4 +1,4 @@
-import { defineConfig } from '@apps-in-toss/web-framework/config';
+import { defineConfig } from '@apps-in-toss/web-framework/config'
 
 export default defineConfig({
   appName: 'animalunion',
@@ -18,4 +18,4 @@ export default defineConfig({
   },
   permissions: [],
   outdir: 'dist',
-});
+})

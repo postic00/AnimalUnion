@@ -18,7 +18,7 @@ const GRAB_COLOR: Record<string, string> = { IDLE: '#9ca3af', GRABBING: '#22c55e
 const PROC_LABEL: Record<string, string> = { IDLE: '대기', PROCESSING: '가공 중', WAITING: '출력 대기' }
 const PROC_COLOR: Record<string, string> = { IDLE: '#9ca3af', PROCESSING: '#22c55e', WAITING: '#ef4444' }
 
-const OUT_LABEL: Record<string, string> = { IDLE: '비어있음', PLACING: '출고 중', WAITING: '벨트 대기' }
+const OUT_LABEL: Record<string, string> = { IDLE: '대기', PLACING: '출고 중', WAITING: '벨트 대기' }
 const OUT_COLOR: Record<string, string> = { IDLE: '#9ca3af', PLACING: '#22c55e', WAITING: '#ef4444' }
 
 const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
@@ -97,7 +97,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
             ? recipe.map((r) => (
                 <span key={r.grade} className={styles.recipeItem}>
                   <GradeIcon size={13} grade={r.grade} />
-                  <span className={styles.recipeCount}>×{r.count * qty}</span>
+                  <span className={styles.recipeCount}>×{formatQuantity(r.count * qty)}</span>
                 </span>
               ))
             : <span className={styles.recipeItem}><GradeIcon size={13} grade={factory.grade} /></span>
@@ -105,7 +105,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
           <span className={styles.recipeArrow}>→</span>
           <span className={styles.recipeItem}>
             <GradeIcon size={13} grade={factory.grade} />
-            {factory.type === 'PA' && <span className={styles.recipeCount}>×{qty}</span>}
+            {factory.type === 'PA' && <span className={styles.recipeCount}>×{formatQuantity(qty)}</span>}
             {factory.type === 'PK' && <span className={styles.recipeCount}>📦</span>}
           </span>
         </div>
@@ -122,7 +122,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
                 {GRAB_LABEL[grabState]}
               </span>
             </div>
-            <span className={styles.bufferCount}>{live?.inputBuffer ?? 0}/{live?.inputCapacity ?? 0}</span>
+            <span className={styles.bufferCount}>{formatQuantity(live?.inputBuffer ?? 0)}/{formatQuantity(live?.inputCapacity ?? 0)}</span>
             <div className={styles.storageList}>
               {recipe
                 ? recipe.map((r) => {
@@ -188,7 +188,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
                 {OUT_LABEL[outputState]}
               </span>
             </div>
-            <span className={styles.bufferCount}>{live?.outputCount ?? 0}/{live?.outputCapacity ?? 1}</span>
+            <span className={styles.bufferCount}>{formatQuantity(live?.outputCount ?? 0)}/{formatQuantity(live?.outputCapacity ?? 1)}</span>
             {displayItem && (
               <div className={styles.outputItem}>
                 <GradeIcon size={18} grade={displayItem.grade} />

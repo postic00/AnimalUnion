@@ -1,5 +1,6 @@
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
+import type { WorkData } from '../types/workData'
 import {
   fetchAndSaveWeekConfig as _fetchAndSaveWeekConfig,
   saveToCloud as _saveToCloud,
@@ -7,7 +8,8 @@ import {
 } from '../lib/userProfile'
 
 export interface CloudExtras {
-  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+  boosts?: { speedBoostRemaining: number; goldBoostRemaining: number }
+  workData?: WorkData
   items?: unknown[]
   faStates?: Record<string, unknown>
   rsQueues?: Record<string, unknown[]>

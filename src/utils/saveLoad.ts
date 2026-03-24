@@ -33,13 +33,13 @@ interface SaveData {
   savedAt: number
   board: Board
   gameState: GameState
-  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+  boosts?: { speedBoostRemaining: number; goldBoostRemaining: number; speedBoostUntil?: number; goldBoostUntil?: number }
 }
 
 export function saveGame(
   board: Board,
   gameState: GameState,
-  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+  boosts?: { speedBoostRemaining: number; goldBoostRemaining: number; speedBoostUntil?: number; goldBoostUntil?: number }
 ): boolean {
   try {
     const data: SaveData = {
@@ -57,7 +57,7 @@ export function saveGame(
   }
 }
 
-export function loadGame(): { board: Board; gameState: GameState; savedAt: number; boosts?: { speedBoostUntil: number; goldBoostUntil: number } } | null {
+export function loadGame(): { board: Board; gameState: GameState; savedAt: number; boosts?: { speedBoostRemaining: number; goldBoostRemaining: number; speedBoostUntil?: number; goldBoostUntil?: number } } | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     if (!raw) return null

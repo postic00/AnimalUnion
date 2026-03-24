@@ -26,6 +26,9 @@ export const CONFIG = {
     57000000, 200000000,
   ] as number[],
 
+  // 아이템 등급별 기본 가격 배율
+  GRADE_BASE_MULTIPLIER: Array(20).fill(1) as number[],
+
   // FA 등급별 보너스 배열
   WA_BONUS: Array(20).fill(1.5) as number[],
   PA_BONUS: Array(20).fill(0) as number[],

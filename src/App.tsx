@@ -77,8 +77,8 @@ function loadInitialState() {
       board: initialBoard,
       gameState: { ...initialGameState },
       savedAt: null as number | null,
-      speedBoostUntil: 0,
-      goldBoostUntil: 0,
+      speedBoostRemaining: 0,
+      goldBoostRemaining: 0,
       hasOldSave: true,
     }
   }
@@ -103,8 +103,8 @@ function loadInitialState() {
     board: getConsistentBoard(savedState.bundleCount),
     gameState: savedState,
     savedAt: saved?.savedAt ?? null,
-    speedBoostUntil: saved?.boosts?.speedBoostUntil ?? 0,
-    goldBoostUntil: saved?.boosts?.goldBoostUntil ?? 0,
+    speedBoostRemaining: saved?.boosts?.speedBoostRemaining ?? Math.max(0, (saved?.boosts?.speedBoostUntil ?? 0) - Date.now()),
+    goldBoostRemaining: saved?.boosts?.goldBoostRemaining ?? Math.max(0, (saved?.boosts?.goldBoostUntil ?? 0) - Date.now()),
     hasOldSave: false,
   }
 }
@@ -146,20 +146,19 @@ export default function App() {
   useEffect(() => { boardRef.current = board }, [board])
 
   const BOOST_MS = 10 * 60 * 1000
-  const [speedBoostUntil, setSpeedBoostUntil] = useState(initData.speedBoostUntil)
-  const [goldBoostUntil, setGoldBoostUntil] = useState(initData.goldBoostUntil)
-  const [now, setNow] = useState(() => Date.now())
+  const [speedBoostRemaining, setSpeedBoostRemaining] = useState(initData.speedBoostRemaining)
+  const [goldBoostRemaining, setGoldBoostRemaining] = useState(initData.goldBoostRemaining)
 
-  const goldBoostUntilRef = useRef(goldBoostUntil)
-  const speedBoostUntilRef = useRef(speedBoostUntil)
+  const goldBoostRemainingRef = useRef(goldBoostRemaining)
+  const speedBoostRemainingRef = useRef(speedBoostRemaining)
   const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
   const goldPerSecRef = useRef(goldPerSec)
   useLayoutEffect(() => {
     goldRef.current = gold
     totalEarnedRef.current = totalEarned
     mutedRef.current = muted
-    goldBoostUntilRef.current = goldBoostUntil
-    speedBoostUntilRef.current = speedBoostUntil
+    goldBoostRemainingRef.current = goldBoostRemaining
+    speedBoostRemainingRef.current = speedBoostRemaining
     goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
     goldPerSecRef.current = goldPerSec
   })
@@ -213,8 +212,8 @@ export default function App() {
       }
       if (r.boostMs) {
         const boostMs = r.boostMs! * multiplier
-        setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + boostMs)
-        setGoldBoostUntil(prev => Math.max(prev, Date.now()) + boostMs)
+        setSpeedBoostRemaining(prev => prev + boostMs)
+        setGoldBoostRemaining(prev => prev + boostMs)
       }
       if (r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner') {
         const today = new Date().toISOString().slice(0, 10)
@@ -235,12 +234,12 @@ export default function App() {
 
   // ── Game Actions ──────────────────────────────────────────────────────────
   const actions = useGameActions({
-    goldRef, totalEarnedRef, mutedRef, goldBoostUntilRef, speedBoostUntilRef,
+    goldRef, totalEarnedRef, mutedRef, goldBoostRemainingRef, speedBoostRemainingRef,
     goldMultiplierLevelRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef,
     boardSaveRef, boardRef, gameStateRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
     setGold, setTotalEarned, setGoldPerSec, setGameState, setBoard, setResetKey, setSavedAt,
-    setMuted, setSpeedBoostUntil, setGoldBoostUntil,
+    setMuted, setSpeedBoostRemaining, setGoldBoostRemaining,
     goldPerSec, platform,
     setClickerGrade: ui.setClickerGrade,
     setTutorialStep: ui.setTutorialStep,
@@ -251,9 +250,15 @@ export default function App() {
     setShowSplash: ui.setShowSplash,
     adTarget: ui.adTarget,
     setAdTarget: ui.setAdTarget,
+    workDataRef,
+    setWorkData,
     onRewardClaim: handleClaimRewards,
     resetSalary: () => {
-      workDataRef.current = { ...initialWorkData, lastWorked: Date.now() }
+      workDataRef.current = {
+        ...workDataRef.current,
+        lastWorked: Date.now(),
+        salary: { secondsAccumulated: 0 },
+      }
       setWorkData(workDataRef.current)
 			goldBufferRef.current = 0
 			totalEarnedBufferRef.current = 0
@@ -307,8 +312,8 @@ export default function App() {
       const snapshot = getSnapshot()
       if (!force && snapshot === lastSavedSnapshotRef.current) return
       const ok = saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
-        speedBoostUntil: speedBoostUntilRef.current,
-        goldBoostUntil: goldBoostUntilRef.current,
+        speedBoostRemaining: speedBoostRemainingRef.current,
+        goldBoostRemaining: goldBoostRemainingRef.current,
       })
       if (!ok) return // 원자저장: 메인 저장 실패 시 엔진 상태 저장 생략
       lastSavedSnapshotRef.current = snapshot
@@ -336,7 +341,8 @@ export default function App() {
           setTotalEarned(prev => prev + t)
         }
         
-				setNow(Date.now())
+        if (speedBoostRemainingRef.current > 0) setSpeedBoostRemaining(prev => Math.max(0, prev - 1000))
+        if (goldBoostRemainingRef.current > 0) setGoldBoostRemaining(prev => Math.max(0, prev - 1000))
 
         const bucket = earnedInSecRef.current
         earnedInSecRef.current = 0
@@ -366,7 +372,7 @@ export default function App() {
           setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold!)}`)
           setShowSalaryToast(true)
           // salary 리셋
-          workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: newWorkData.salary.secondsAccumulated - CONFIG.WR_SALARY_SECONDS } }
+          workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
           setWorkData(workDataRef.current)
         }
       }
@@ -497,7 +503,7 @@ export default function App() {
         spawnClickerItemRef={spawnClickerItemRef}
         onSaveRef={boardSaveRef}
         muted={muted}
-        speedMultiplier={now < speedBoostUntil ? 2 : 1}
+        speedMultiplier={speedBoostRemaining > 0 ? 2 : 1}
         onFactoryClick={handleFactoryClick}
         onProducerClick={ui.handleProducerClick}
         onRsClick={ui.handleRsClick}
@@ -512,16 +518,15 @@ export default function App() {
         onClickerClick={actions.handleClickerClick}
         onTabChange={(tab) => {
           ui.setActiveTab(tab)
-          saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostUntil, goldBoostUntil })
+          saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostRemaining, goldBoostRemaining })
           setSavedAt(Date.now())
         }}
         activeTab={ui.activeTab}
-        speedBoostUntil={speedBoostUntil}
-        goldBoostUntil={goldBoostUntil}
-        now={now}
+        speedBoostRemaining={speedBoostRemaining}
+        goldBoostRemaining={goldBoostRemaining}
         onSpeedBoost={() => {
           if (ui.tutorialStep === 4) {
-            setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+            setSpeedBoostRemaining(prev => prev + BOOST_MS)
             ui.setTutorialStep(5)
           } else {
             ui.setAdTarget('speed')
@@ -529,7 +534,7 @@ export default function App() {
         }}
         onGoldBoost={() => {
           if (ui.tutorialStep === 5) {
-            setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+            setGoldBoostRemaining(prev => prev + BOOST_MS)
             ui.setTutorialStep(6)
           } else {
             ui.setAdTarget('gold')

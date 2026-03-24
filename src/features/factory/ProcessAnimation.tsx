@@ -30,14 +30,14 @@ function HamsterHead({ tired }: { tired?: boolean }) {
         <ellipse cx="34" cy="22" rx="4.5" ry="3" fill="#ffb8c0" opacity="0.7"/>
         {tired
           ? <>
-              <path d="M18 17 Q21 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              <path d="M24 17 Q27 19.5 30 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M17 17 Q20 19.5 23 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M25 17 Q28 19.5 31 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
             </>
           : <>
-              <circle cx="20" cy="16" r="3" fill="#1a1a1a"/>
-              <circle cx="28" cy="16" r="3" fill="#1a1a1a"/>
-              <circle cx="18.8" cy="14.5" r="1" fill="#fff"/>
-              <circle cx="26.8" cy="14.5" r="1" fill="#fff"/>
+              <circle cx="19" cy="16" r="3.5" fill="#1a1a1a"/>
+              <circle cx="29" cy="16" r="3.5" fill="#1a1a1a"/>
+              <circle cx="17.5" cy="14.5" r="1.2" fill="#fff"/>
+              <circle cx="27.5" cy="14.5" r="1.2" fill="#fff"/>
             </>
         }
         <ellipse cx="24" cy="21" rx="2" ry="1.5" fill="#1a1a1a"/>
@@ -70,16 +70,16 @@ function CatHead({ tired }: { tired?: boolean }) {
         <ellipse cx="34" cy="22" rx="4" ry="2.8" fill="#ffb8c0" opacity="0.65"/>
         {tired
           ? <>
-              <path d="M19 17 Q21.5 19.5 24 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              <path d="M24 17 Q26.5 19.5 29 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M17 17 Q20 19.5 23 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M25 17 Q28 19.5 31 17" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
             </>
           : <>
-              <circle cx="20" cy="16" r="3.5" fill="#1a1a1a"/>
-              <circle cx="28" cy="16" r="3.5" fill="#1a1a1a"/>
-              <ellipse cx="20" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
-              <ellipse cx="28" cy="16" rx="1" ry="2.8" fill="#7c3aed" opacity="0.45"/>
-              <circle cx="21.3" cy="14.5" r="1" fill="#fff"/>
-              <circle cx="29.3" cy="14.5" r="1" fill="#fff"/>
+              <circle cx="19" cy="16" r="4" fill="#1a1a1a"/>
+              <circle cx="29" cy="16" r="4" fill="#1a1a1a"/>
+              <ellipse cx="19" cy="16" rx="1" ry="3" fill="#7c3aed" opacity="0.45"/>
+              <ellipse cx="29" cy="16" rx="1" ry="3" fill="#7c3aed" opacity="0.45"/>
+              <circle cx="20.5" cy="14.5" r="1.2" fill="#fff"/>
+              <circle cx="30.5" cy="14.5" r="1.2" fill="#fff"/>
             </>
         }
         <path d="M22 21 L24 19.5 L26 21 Q24 23 22 21Z" fill="#f43f5e"/>
@@ -101,14 +101,14 @@ function DogHead({ tired }: { tired?: boolean }) {
         <ellipse cx="35" cy="18" rx="3.5" ry="2.5" fill="#ffb8c0" opacity="0.7"/>
         {tired
           ? <>
-              <path d="M18 13 Q21 15.5 24 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-              <path d="M24 13 Q27 15.5 30 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M16 13 Q20 15.5 24 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+              <path d="M24 13 Q28 15.5 32 13" stroke="#1a1a1a" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
             </>
           : <>
-              <circle cx="19" cy="12" r="3.5" fill="#1a1a1a"/>
-              <circle cx="29" cy="12" r="3.5" fill="#1a1a1a"/>
-              <circle cx="17.5" cy="10.5" r="1.2" fill="#fff"/>
-              <circle cx="27.5" cy="10.5" r="1.2" fill="#fff"/>
+              <circle cx="18" cy="12" r="4" fill="#1a1a1a"/>
+              <circle cx="30" cy="12" r="4" fill="#1a1a1a"/>
+              <circle cx="16.5" cy="10.5" r="1.2" fill="#fff"/>
+              <circle cx="28.5" cy="10.5" r="1.2" fill="#fff"/>
             </>
         }
         <path d="M20 20 Q22 18 24 18 Q26 18 28 20 Q26 22 24 22 Q22 22 20 20Z" fill="#1a1a1a"/>
@@ -133,11 +133,11 @@ function RobotHead({ tired }: { tired?: boolean }) {
       <ellipse cx="34" cy="21" rx="3" ry="2" fill="#ffb8c0" opacity="0.85"/>
       {/* 눈/표정 */}
       {tired
-        ? <path d="M18 18 Q24 21 30 18" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
+        ? <path d="M17 18 Q24 21 31 18" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round"/>
         : <>
-            <rect x="14" y="13" width="6" height="6" rx="2.5" fill="#1a1a1a"/>
-            <rect x="28" y="13" width="6" height="6" rx="2.5" fill="#1a1a1a"/>
-            <rect x="15" y="14" width="3" height="3" rx="1" fill="#bfdbfe" opacity="0.8"/>
+            <rect x="13" y="13" width="7" height="7" rx="2.5" fill="#1a1a1a"/>
+            <rect x="28" y="13" width="7" height="7" rx="2.5" fill="#1a1a1a"/>
+            <rect x="14" y="14" width="3" height="3" rx="1" fill="#bfdbfe" opacity="0.8"/>
             <rect x="29" y="14" width="3" height="3" rx="1" fill="#bfdbfe" opacity="0.8"/>
           </>
       }
@@ -181,44 +181,44 @@ function makeWA(species: AnimalSpecies): JSX.Element[] {
   return [
     // F0: 스폰지 들고 대기
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q8 29 7 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q40 29 41 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="38" y="22" width="8" height="6" rx="2" fill="#86efac"/>
       <rect x="39" y="23" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
-      <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
+      <ellipse cx="24" cy="43" rx="11" ry="4" fill="#fef3c7"/>
     </>,
 
     // F1: 좌→우 닦기
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q10 26 13 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q42 26 44 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="41" y="17" width="8" height="6" rx="2" fill="#86efac"/>
       <rect x="42" y="18" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
       <path d="M15 42 Q24 40 33 42" stroke="#7dd3fc" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
-      <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
+      <ellipse cx="24" cy="43" rx="11" ry="4" fill="#fef3c7"/>
       <SweatOrSpark species={species} x={35} y={26} s={0.9}/>
     </>,
 
     // F2: 우→좌 닦기
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q6 26 4 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q38 26 36 21" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="-1" y="17" width="8" height="6" rx="2" fill="#86efac"/>
       <rect x="0"  y="18" width="6" height="4" rx="1" fill="#4ade80" opacity="0.5"/>
       <path d="M33 42 Q24 40 15 42" stroke="#7dd3fc" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.8"/>
-      <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
+      <ellipse cx="24" cy="43" rx="11" ry="4" fill="#fef3c7"/>
       <SweatOrSpark species={species} x={5} y={26} s={0.9}/>
     </>,
 
     // F3: 힘껏 문지르기 (아래)
     <>
-      <ellipse cx="24" cy="33" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="33" rx="13" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 32 Q9 37 11 42" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 32 Q39 37 37 42" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -233,12 +233,12 @@ function makeWA(species: AnimalSpecies): JSX.Element[] {
 
     // F4: 이마 닦기 (지침)
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 31 Q9 22 14 10" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q40 26 42 30" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <rect x="11" y="7" width="14" height="5" rx="2.5" fill="#fde68a"/>
-      <ellipse cx="24" cy="43" rx="9" ry="4" fill="#fef3c7"/>
+      <ellipse cx="24" cy="43" rx="11" ry="4" fill="#fef3c7"/>
       <SweatOrSpark species={species} x={28} y={4}  s={1.3}/>
       <SweatOrSpark species={species} x={36} y={9}  s={1.1}/>
       <SweatOrSpark species={species} x={40} y={19} s={0.9}/>
@@ -254,7 +254,7 @@ function makePA(species: AnimalSpecies): JSX.Element[] {
   return [
     // F0: 팬 들고 대기
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 31 Q8 30 6 32" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q40 28 42 28" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -268,7 +268,7 @@ function makePA(species: AnimalSpecies): JSX.Element[] {
 
     // F1: 좌로 흔들 + 증기
     <>
-      <ellipse cx="22" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="22" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M12 31 Q6 30 4 32" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M32 31 Q38 26 40 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -287,7 +287,7 @@ function makePA(species: AnimalSpecies): JSX.Element[] {
 
     // F2: 우로 흔들 + 증기
     <>
-      <ellipse cx="26" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="26" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M16 31 Q10 26 8 26" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M36 31 Q42 30 44 32" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -306,7 +306,7 @@ function makePA(species: AnimalSpecies): JSX.Element[] {
 
     // F3: 뒤집기!
     <>
-      <ellipse cx="24" cy="33" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="33" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 32 Q8 25 10 18" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 32 Q40 25 38 18" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -325,7 +325,7 @@ function makePA(species: AnimalSpecies): JSX.Element[] {
 
     // F4: 지침
     <>
-      <ellipse cx="24" cy="32" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="32" rx="13" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 31 Q9 22 14 10" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 31 Q42 30 44 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -350,7 +350,7 @@ function makePK(species: AnimalSpecies): JSX.Element[] {
   return [
     // F0: 박스 앞 대기
     <>
-      <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="30" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q8 30 7 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 29 Q40 30 41 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -361,7 +361,7 @@ function makePK(species: AnimalSpecies): JSX.Element[] {
 
     // F1: 박스 힘껏 누르기
     <>
-      <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="30" rx="13" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 29 Q8 34 9 39" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 29 Q40 34 39 39" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -376,7 +376,7 @@ function makePK(species: AnimalSpecies): JSX.Element[] {
 
     // F2: 왼쪽 테이프
     <>
-      <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="30" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q5 26 3 35" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 29 Q40 26 42 22" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -393,7 +393,7 @@ function makePK(species: AnimalSpecies): JSX.Element[] {
 
     // F3: 오른쪽 테이프
     <>
-      <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="30" rx="13" ry="11" fill={bc}/>
       <Head species={species}/>
       <path d="M14 29 Q8 26 6 22" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <circle cx="5" cy="20" r="6" fill="#93c5fd"/>
@@ -411,7 +411,7 @@ function makePK(species: AnimalSpecies): JSX.Element[] {
 
     // F4: 완료! 지침
     <>
-      <ellipse cx="24" cy="30" rx="10" ry="11" fill={bc}/>
+      <ellipse cx="24" cy="30" rx="13" ry="11" fill={bc}/>
       <Head species={species} tired/>
       <path d="M14 29 Q9 20 14 8" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
       <path d="M34 29 Q42 30 44 34" stroke={bc} strokeWidth="4.5" fill="none" strokeLinecap="round"/>
@@ -451,13 +451,14 @@ interface Props {
 
 export function ProcessAnimation({ type, species, size }: Props) {
   const frames = getFrames(species, type)
+  const h = Math.round(size * 48 / 58)
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48">
-      <g className={styles.f0}>{frames[0]}</g>
-      <g className={styles.f1}>{frames[1]}</g>
-      <g className={styles.f2}>{frames[2]}</g>
-      <g className={styles.f3}>{frames[3]}</g>
-      <g className={styles.f4}>{frames[4]}</g>
+    <svg width={size} height={h} viewBox="0 0 58 48">
+      <g className={styles.f0} transform="translate(5,0)">{frames[0]}</g>
+      <g className={styles.f1} transform="translate(5,0)">{frames[1]}</g>
+      <g className={styles.f2} transform="translate(5,0)">{frames[2]}</g>
+      <g className={styles.f3} transform="translate(5,0)">{frames[3]}</g>
+      <g className={styles.f4} transform="translate(5,0)">{frames[4]}</g>
     </svg>
   )
 }

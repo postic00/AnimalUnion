@@ -52,16 +52,42 @@ export const getProducerInterval = memo1((level: number): number => {
   return CONFIG.PR_PROC_BASE / Math.pow(CONFIG.PR_PROC_RATE, level - 1)
 })
 
+// 등급 기본값: 1~3은 GRADE_BASE_VALUES × 배율, 4+는 레시피 재료값 합산 × 배율 (재귀)
+export function getGradeBaseValue(grade: number): number {
+  const idx = Math.max(0, Math.min(grade - 1, 19))
+  const multiplier = CONFIG.GRADE_BASE_MULTIPLIER[idx] ?? 1
+  const recipe = RECIPES[grade]
+  if (!recipe) {
+    return (CONFIG.GRADE_BASE_VALUES[idx] ?? 1) * multiplier
+  }
+  const ingredientSum = recipe.reduce((sum, ing) => sum + getGradeBaseValue(ing.grade) * ing.count, 0)
+  return ingredientSum * multiplier
+}
+
 // 아이템 가치: 등급 기본값 × 가치레벨 배수
 export function getItemValue(grade: number, itemValueLevel = 1): number {
-  const idx = Math.max(0, Math.min(grade - 1, 19))
-  const baseValue = CONFIG.GRADE_BASE_VALUES[idx] ?? 1
+  const baseValue = getGradeBaseValue(grade)
   return baseValue * calcProc(CONFIG.IT_PROC_BASE, CONFIG.IT_PROC_EXP, CONFIG.IT_PROC_ACC, itemValueLevel + 1)
 }
 
+// 아이템 가치 (레벨 배열로 조회) - 공통 헬퍼
+// 4등급 이상: 재료 등급의 실제 값(레벨 포함) 합산 × 배율 × 자신의 레벨 배수 (재귀)
+export function getEffectiveItemValue(grade: number, itemValueLevels: number[]): number {
+  const idx = Math.max(0, Math.min(grade - 1, 19))
+  const multiplier = CONFIG.GRADE_BASE_MULTIPLIER[idx] ?? 1
+  const level = itemValueLevels[idx] ?? 1
+  const levelMult = calcProc(CONFIG.IT_PROC_BASE, CONFIG.IT_PROC_EXP, CONFIG.IT_PROC_ACC, level + 1)
+  const recipe = RECIPES[grade]
+  if (!recipe) {
+    return (CONFIG.GRADE_BASE_VALUES[idx] ?? 1) * multiplier * levelMult
+  }
+  const ingredientSum = recipe.reduce((sum, ing) => sum + getEffectiveItemValue(ing.grade, itemValueLevels) * ing.count, 0)
+  return ingredientSum * multiplier * levelMult
+}
+
 // PR 아이템 가치
-export function getProducerValue(grade: number, itemValueLevel = 1): number {
-  return getItemValue(grade, itemValueLevel)
+export function getProducerValue(grade: number, itemValueLevels: number[]): number {
+  return getEffectiveItemValue(grade, itemValueLevels)
 }
 
 // 아이템 가치 레벨업 비용
@@ -136,11 +162,11 @@ export function createRecipeOutput(
   outputGrade: number,
   factory: Factory,
   animals: Animal[],
-  itemValueLevel: number,
+  itemValueLevels: number[],
   materialQuantityLevel: number,
 ): Item {
   const quantity = getMaterialQuantity(materialQuantityLevel)
-  const value = getItemValue(outputGrade, itemValueLevel)
+  const value = getEffectiveItemValue(outputGrade, itemValueLevels)
   const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
   const animalBonus = animal ? getAnimalStat(animal.level) : 0
   const bonus = getFactoryBonus(factory.type, factory.grade) + animalBonus
@@ -316,15 +342,15 @@ export const RECIPES: Record<number, { grade: number; count: number }[]> = {
   7:  [{ grade: 4, count: 5 }, { grade: 5, count: 5 }],
   8:  [{ grade: 5, count: 5 }, { grade: 6, count: 5 }],
   9:  [{ grade: 4, count: 5 }, { grade: 5, count: 5 }, { grade: 6, count: 5 }],
-  10: [{ grade: 7, count: 5 }],
-  11: [{ grade: 7, count: 5 }, { grade: 8, count: 5 }],
-  12: [{ grade: 8, count: 5 }, { grade: 9, count: 5 }],
-  13: [{ grade: 10, count: 5 }],
-  14: [{ grade: 10, count: 5 }, { grade: 11, count: 5 }],
-  15: [{ grade: 11, count: 5 }, { grade: 12, count: 5 }],
-  16: [{ grade: 13, count: 5 }],
-  17: [{ grade: 13, count: 5 }, { grade: 14, count: 5 }],
-  18: [{ grade: 14, count: 5 }, { grade: 15, count: 5 }],
-  19: [{ grade: 16, count: 5 }, { grade: 17, count: 5 }],
-  20: [{ grade: 17, count: 5 }, { grade: 18, count: 5 }],
+  10: [{ grade: 7, count: 5 }, { grade: 6, count: 5 }, { grade: 5, count: 5 }],
+  11: [{ grade: 8, count: 5 }, { grade: 7, count: 5 }],
+  12: [{ grade: 9, count: 5 }, { grade: 8, count: 5 }],
+  13: [{ grade: 10, count: 5 }, { grade: 9, count: 5 }],
+  14: [{ grade: 11, count: 5 }, { grade: 10, count: 5 }],
+  15: [{ grade: 12, count: 5 }, { grade: 11, count: 5 }],
+  16: [{ grade: 13, count: 5 }, { grade: 12, count: 5 }],
+  17: [{ grade: 14, count: 5 }, { grade: 13, count: 5 }],
+  18: [{ grade: 14, count: 5 }, { grade: 13, count: 5 }, { grade: 12, count: 5 }],
+  19: [{ grade: 17, count: 5 }, { grade: 16, count: 5 }, { grade: 15, count: 5 }],
+  20: [{ grade: 19, count: 5 }, { grade: 18, count: 5 }],
 }

@@ -3,6 +3,7 @@ import { CONFIG } from '../config'
 import { saveWeekConfig, getDeviceId } from '../utils/saveLoad'
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
+import type { WorkData } from '../types/workData'
 
 export async function fetchAndSaveWeekConfig(): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
@@ -28,7 +29,8 @@ export async function fetchAndSaveWeekConfig(): Promise<void> {
 interface CloudSaveData {
   gameState: GameState
   board: Board
-  boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+  boosts?: { speedBoostRemaining: number; goldBoostRemaining: number }
+  workData?: WorkData
   items?: unknown[]
   faStates?: Record<string, unknown>
   rsQueues?: Record<string, unknown[]>
@@ -42,7 +44,8 @@ export async function saveToCloud(
   board: Board,
   platform: string,
   extras?: {
-    boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+    boosts?: { speedBoostRemaining: number; goldBoostRemaining: number }
+    workData?: WorkData
     items?: unknown[]
     faStates?: Record<string, unknown>
     rsQueues?: Record<string, unknown[]>
@@ -61,6 +64,7 @@ export async function saveToCloud(
           gameState,
           board,
           boosts: extras?.boosts,
+          workData: extras?.workData,
           items: extras?.items,
           faStates: extras?.faStates,
           rsQueues: extras?.rsQueues,
@@ -107,6 +111,7 @@ export async function loadFromCloud(): Promise<CloudSaveData | null> {
     gameState: raw.gameState,
     board: raw.board,
     boosts: raw.boosts,
+    workData: raw.workData as WorkData | undefined,
     items: raw.items,
     faStates: raw.faStates,
     rsQueues: raw.rsQueues,

@@ -48,7 +48,7 @@ export const SaveService = {
   saveGame(
     board: Board,
     gameState: GameState,
-    boosts?: { speedBoostUntil: number; goldBoostUntil: number }
+    boosts?: { speedBoostRemaining: number; goldBoostRemaining: number; speedBoostUntil?: number; goldBoostUntil?: number }
   ): boolean {
     return _saveGame(board, gameState, boosts)
   },

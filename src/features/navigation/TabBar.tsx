@@ -10,9 +10,8 @@ interface Props {
   onClickerClick: () => void
   onTabChange: (tab: number | null) => void
   activeTab: number | null
-  speedBoostUntil: number
-  goldBoostUntil: number
-  now: number
+  speedBoostRemaining: number
+  goldBoostRemaining: number
   onSpeedBoost: () => void
   onGoldBoost: () => void
   tutorialHighlightTab?: number
@@ -34,7 +33,7 @@ const TABS = [
   { label: '설정', icon: '🔧' },
 ]
 
-export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostUntil, goldBoostUntil, now, onSpeedBoost, onGoldBoost, tutorialHighlightTab }: Props) {
+export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostRemaining, goldBoostRemaining, onSpeedBoost, onGoldBoost, tutorialHighlightTab }: Props) {
   const radius = 24
   const circumference = 2 * Math.PI * radius
   const progress = clicker.clickCount / clicker.threshold
@@ -46,8 +45,8 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
     ? `calc(40vh + 76px + ${safeBottom})`
     : `calc(76px + ${safeBottom})`
 
-  const speedRemain = Math.max(0, speedBoostUntil - now)
-  const goldRemain = Math.max(0, goldBoostUntil - now)
+  const speedRemain = Math.max(0, speedBoostRemaining)
+  const goldRemain = Math.max(0, goldBoostRemaining)
   const speedProgress = Math.min(speedRemain, BOOST_DURATION) / BOOST_DURATION
   const goldProgress = Math.min(goldRemain, BOOST_DURATION) / BOOST_DURATION
   const speedDash = circumference * (1 - Math.min(speedProgress, 1))

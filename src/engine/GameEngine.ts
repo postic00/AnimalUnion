@@ -205,7 +205,7 @@ export class GameEngine {
                   : fas.processState !== 'IDLE' ? fas.processState
                   : fas.grabState
       if (fas.processState === 'PROCESSING') {
-        const qty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
+        const qty = fas.processBuffer?.quantity ?? 1
         const processTime = getFactoryProcessTime(factory.level, qty)
         p[cellKey] = Math.min(fas.processTimer / processTime, 1)
       } else if (fas.outputState !== 'IDLE' || fas.processState === 'WAITING') {
@@ -284,12 +284,12 @@ export class GameEngine {
               return acc
             }, {})
           )
-      const qty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
+      const qty = fas.processBuffer?.quantity ?? 1
       const processTime = getFactoryProcessTime(factory.level, qty)
       const previewOutput = factory.type === 'PA'
         ? createRecipeOutput(
             factory.grade, factory, this.config.animals,
-            this.config.itemValueLevels[factory.grade - 1] ?? 1,
+            this.config.itemValueLevels,
             materialQuantityLevels[factory.grade - 1] ?? 1,
           )
         : null
@@ -409,7 +409,7 @@ export class GameEngine {
           id: crypto.randomUUID(),
           x: 0, y: 0, dx: 0, dy: 0, targetX: 0, targetY: 0,
           grade,
-          value: getProducerValue(grade, itemValueLevels[grade - 1] ?? 1),
+          value: getProducerValue(grade, itemValueLevels),
           quantity,
           waBonus: 0, paBonus: 0, pkBonus: 0,
           waGrades: [], paGrades: [], pkGrades: [],
@@ -533,7 +533,7 @@ export class GameEngine {
     isOutputOccupied: () => boolean, placeOutput: () => void,
   ): void {
     const bufferCapacity = getFaBufferCapacity(this.config.faBufferLevel)
-    const { cellSize, animals, materialQuantityLevels } = this.config
+    const { cellSize, animals } = this.config
     const isTargetItem = (it: Item): boolean => {
       if (it.grade !== factory.grade) return false
       if (factory.type === 'WA') {
@@ -586,14 +586,15 @@ export class GameEngine {
           this.faStates[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: next, inputBuffer: rest }
         }
       } else if (fas.processState === 'PROCESSING') {
-        const outputQty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
+        const outputQty = fas.processBuffer?.quantity ?? 1
         const processTime = getFactoryProcessTime(factory.level, outputQty)
         const newTimer = fas.processTimer + delta
         if (newTimer >= processTime) {
           this.config.onFactoryProcess?.(factory.animalId ?? null)
           const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
           if (safeOutBuf.length < bufferCapacity) {
-            const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
+            const updatedItem = { ...fas.processBuffer!, quantity: outputQty }
+            const newOutputBuffer = [...safeOutBuf, updatedItem]
             const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
             this.faStates[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
           } else {
@@ -754,7 +755,7 @@ export class GameEngine {
             ? newProcBuf.reduce((s, b) => s + b.waBonus * b.count, 0) / totalProcCount : 0
           const base = createRecipeOutput(
             factory.grade, factory, animals,
-            itemValueLevels[factory.grade - 1] ?? 1,
+            itemValueLevels,
             materialQuantityLevels[factory.grade - 1] ?? 1,
           )
           this.faStates[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }, buffer: newBuffer, processingBuffer: [] }
@@ -872,7 +873,7 @@ export class GameEngine {
         dx: dir.dx, dy: dir.dy,
         targetX: next.targetX, targetY: next.targetY,
         grade,
-        value: getProducerValue(grade, itemValueLevels[grade - 1] ?? 1),
+        value: getProducerValue(grade, itemValueLevels),
         quantity: getMaterialQuantity(materialQuantityLevels[grade - 1] ?? 1),
         waBonus: 0, paBonus: 0, pkBonus: 0,
         waGrades: [], paGrades: [], pkGrades: [],

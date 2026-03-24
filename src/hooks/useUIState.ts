@@ -4,6 +4,15 @@ import type { Item } from '../types/item'
 import type { FALiveStates } from '../engine/types'
 import type { UpgradeAmount } from '../features/navigation/UpgradeAmountToggle'
 
+export type ActiveModal =
+  | { type: 'ad'; target: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' }
+  | { type: 'factory'; row: number; col: number }
+  | { type: 'producer'; row: number; col: number }
+  | { type: 'rs'; rsKey: string; rsQueuesRef: React.MutableRefObject<Record<string, Item[]>> }
+  | { type: 'prestige' }
+  | { type: 'prestigeKeep' }
+  | { type: 'resetConfirm' }
+
 export function useUIState() {
   // ── 네비게이션 ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<number | null>(null)
@@ -25,18 +34,41 @@ export function useUIState() {
 
   // ── 팝업 선택 상태 ─────────────────────────────────────────────────────────
   const [focusFactory, setFocusFactory] = useState<{ row: number; col: number } | null>(null)
-  const [selectedFactory, setSelectedFactory] = useState<{ row: number; col: number } | null>(null)
-  const [selectedProducer, setSelectedProducer] = useState<{ row: number; col: number } | null>(null)
-  const [selectedRs, setSelectedRs] = useState<{
-    rsKey: string
-    rsQueuesRef: React.MutableRefObject<Record<string, Item[]>>
-  } | null>(null)
 
-  // ── 모달 ───────────────────────────────────────────────────────────────────
-  const [adTarget, setAdTarget] = useState<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null>(null)
-  const [showPrestigeModal, setShowPrestigeModal] = useState(false)
-  const [showPrestigeKeepModal, setShowPrestigeKeepModal] = useState(false)
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  // ── 모달 (단일 상태 - 동시 열림 방지) ────────────────────────────────────
+  const [activeModal, setActiveModal] = useState<ActiveModal | null>(null)
+
+  // 파생 값
+  const adTarget = activeModal?.type === 'ad' ? activeModal.target : null
+  const selectedFactory = activeModal?.type === 'factory' ? { row: activeModal.row, col: activeModal.col } : null
+  const selectedProducer = activeModal?.type === 'producer' ? { row: activeModal.row, col: activeModal.col } : null
+  const selectedRs = activeModal?.type === 'rs' ? { rsKey: activeModal.rsKey, rsQueuesRef: activeModal.rsQueuesRef } : null
+  const showPrestigeModal = activeModal?.type === 'prestige'
+  const showPrestigeKeepModal = activeModal?.type === 'prestigeKeep'
+  const showResetConfirm = activeModal?.type === 'resetConfirm'
+
+  // 호환 세터
+  const setAdTarget = useCallback((target: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null) => {
+    setActiveModal(target ? { type: 'ad', target } : null)
+  }, [])
+  const setSelectedFactory = useCallback((val: { row: number; col: number } | null) => {
+    setActiveModal(val ? { type: 'factory', ...val } : null)
+  }, [])
+  const setSelectedProducer = useCallback((val: { row: number; col: number } | null) => {
+    setActiveModal(val ? { type: 'producer', ...val } : null)
+  }, [])
+  const setSelectedRs = useCallback((val: { rsKey: string; rsQueuesRef: React.MutableRefObject<Record<string, Item[]>> } | null) => {
+    setActiveModal(val ? { type: 'rs', ...val } : null)
+  }, [])
+  const setShowPrestigeModal = useCallback((show: boolean) => {
+    setActiveModal(show ? { type: 'prestige' } : null)
+  }, [])
+  const setShowPrestigeKeepModal = useCallback((show: boolean) => {
+    setActiveModal(show ? { type: 'prestigeKeep' } : null)
+  }, [])
+  const setShowResetConfirm = useCallback((show: boolean) => {
+    setActiveModal(show ? { type: 'resetConfirm' } : null)
+  }, [])
 
   // ── 스플래시 / 튜토리얼 ────────────────────────────────────────────────────
   const [showSplash, setShowSplash] = useState(true)
@@ -60,11 +92,11 @@ export function useUIState() {
   const handleCancelPlacing = useCallback(() => setPlacingAnimalId(null), [])
 
   const handleFactoryClick = useCallback((row: number, col: number) => {
-    setSelectedFactory({ row, col })
+    setActiveModal({ type: 'factory', row, col })
   }, [])
 
   const handleProducerClick = useCallback((_row: number, _col: number) => {
-    setSelectedProducer({ row: _row, col: _col })
+    setActiveModal({ type: 'producer', row: _row, col: _col })
   }, [])
 
   const handleRsClick = useCallback((
@@ -73,7 +105,7 @@ export function useUIState() {
     rsKey: string,
     rsQueuesRef: React.MutableRefObject<Record<string, Item[]>>,
   ) => {
-    setSelectedRs({ rsKey, rsQueuesRef })
+    setActiveModal({ type: 'rs', rsKey, rsQueuesRef })
   }, [])
 
   const handleFaLiveStateChange = useCallback((states: FALiveStates) => {
@@ -99,11 +131,13 @@ export function useUIState() {
     placingAnimalId, setPlacingAnimalId,
     // 팝업
     focusFactory, setFocusFactory,
+    // 모달 (단일 상태)
+    activeModal, setActiveModal,
+    // 모달 파생 값 (호환)
+    adTarget, setAdTarget,
     selectedFactory, setSelectedFactory,
     selectedProducer, setSelectedProducer,
     selectedRs, setSelectedRs,
-    // 모달
-    adTarget, setAdTarget,
     showPrestigeModal, setShowPrestigeModal,
     showPrestigeKeepModal, setShowPrestigeKeepModal,
     showResetConfirm, setShowResetConfirm,

@@ -1,11 +1,12 @@
 import type { GameState } from '../../types/gameState'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost } from '../../balance'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getEffectiveItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost } from '../../balance'
 import { formatGold } from '../../utils/formatGold'
 import { CONFIG } from '../../config'
 import coinIcon from '../../assets/coin.svg'
 import styles from './PrestigeTab.module.css'
 
 import { getGradeData } from '../../data/grades'
+import { GradeIcon } from '../common/GradeIcon'
 
 interface Props {
   gameState: GameState
@@ -65,7 +66,7 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
             return (
               <div key={grade} className={styles.card}>
                 <div className={styles.cardLeft}>
-                  <span className={styles.cardEmoji}>{getGradeData(grade).emoji}</span>
+                  <GradeIcon size={32} grade={grade}/>
                   <div className={styles.cardInfo}>
                     <div className={styles.cardNameRow}>
                       <span className={styles.cardName}>{getGradeData(grade).name}</span>
@@ -73,7 +74,7 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
                     </div>
                     <span className={styles.cardSub}>
                       <img src={coinIcon} className={styles.subIcon} alt="" />
-                      {formatGold(getItemValue(grade, level))}
+                      {formatGold(getEffectiveItemValue(grade, itemValueLevels))}
                     </span>
                   </div>
                 </div>

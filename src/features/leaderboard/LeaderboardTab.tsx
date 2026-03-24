@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function LeaderboardTab({ playerName, mode, onNameChange }: Props) {
-  const hasPrestigedThisWeek = CONFIG.WEEK <= CONFIG.CURRENT_WEEK
+  const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
 

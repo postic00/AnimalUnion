@@ -39,6 +39,7 @@ import { soundHamster, soundCoin, soundCat, soundBuild } from '../utils/sound'
 import { SaveService } from '../services/SaveService'
 import { CloudService } from '../services/CloudService'
 import { ScoreService } from '../services/ScoreService'
+import type { WorkData } from '../types/workData'
 
 // ── Context 타입 ─────────────────────────────────────────────────────────────
 export interface GameActionsCtx {
@@ -46,8 +47,8 @@ export interface GameActionsCtx {
   goldRef: MutableRefObject<number>
   totalEarnedRef: MutableRefObject<number>
   mutedRef: MutableRefObject<boolean>
-  goldBoostUntilRef: MutableRefObject<number>
-  speedBoostUntilRef: MutableRefObject<number>
+  goldBoostRemainingRef: MutableRefObject<number>
+  speedBoostRemainingRef: MutableRefObject<number>
   goldMultiplierLevelRef: MutableRefObject<number>
   earnedInSecRef: MutableRefObject<number>
   goldBufferRef: MutableRefObject<number>
@@ -68,20 +69,22 @@ export interface GameActionsCtx {
   setResetKey: Dispatch<SetStateAction<number>>
   setSavedAt: Dispatch<SetStateAction<number | null>>
   setMuted: Dispatch<SetStateAction<boolean>>
-  setSpeedBoostUntil: Dispatch<SetStateAction<number>>
-  setGoldBoostUntil: Dispatch<SetStateAction<number>>
+  setSpeedBoostRemaining: Dispatch<SetStateAction<number>>
+  setGoldBoostRemaining: Dispatch<SetStateAction<number>>
   goldPerSec: number
   platform: string
   // UI state setters (cross-cutting concerns)
   setClickerGrade: Dispatch<SetStateAction<number>>
   setTutorialStep: Dispatch<SetStateAction<number | null>>
   setTutorialItemCount: Dispatch<SetStateAction<number>>
-  setSelectedFactory: Dispatch<SetStateAction<{ row: number; col: number } | null>>
-  setShowPrestigeModal: Dispatch<SetStateAction<boolean>>
-  setShowPrestigeKeepModal: Dispatch<SetStateAction<boolean>>
+  setSelectedFactory: (val: { row: number; col: number } | null) => void
+  setShowPrestigeModal: (show: boolean) => void
+  setShowPrestigeKeepModal: (show: boolean) => void
   setShowSplash: Dispatch<SetStateAction<boolean>>
   adTarget: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null
-  setAdTarget: Dispatch<SetStateAction<'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null>>
+  setAdTarget: (target: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null) => void
+  workDataRef: MutableRefObject<WorkData>
+  setWorkData: Dispatch<SetStateAction<WorkData>>
   onRewardClaim: (multiplier: number) => void
   resetSalary: () => void
   tutorialStep: number | null
@@ -90,22 +93,22 @@ export interface GameActionsCtx {
 
 export function useGameActions(ctx: GameActionsCtx) {
   const {
-    goldRef, totalEarnedRef, mutedRef, goldBoostUntilRef,
+    goldRef, totalEarnedRef, mutedRef, goldBoostRemainingRef,
     goldMultiplierLevelRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef,
     boardSaveRef, boardRef, gameStateRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
     setGold, setTotalEarned, setGoldPerSec, setGameState, setBoard, setResetKey, setSavedAt,
-    setMuted, setSpeedBoostUntil, setGoldBoostUntil,
+    setMuted, setSpeedBoostRemaining, setGoldBoostRemaining,
     goldPerSec, platform,
     setClickerGrade, setTutorialStep, setTutorialItemCount, setSelectedFactory,
     setShowPrestigeModal, setShowPrestigeKeepModal, setShowSplash,
-    adTarget, setAdTarget, onRewardClaim, resetSalary, tutorialStep, BOOST_MS,
+    adTarget, setAdTarget, workDataRef, setWorkData, onRewardClaim, resetSalary, tutorialStep, BOOST_MS,
   } = ctx
 
   // ── 골드 획득 ────────────────────────────────────────────────────────────
   const handleGoldEarned = useCallback((amount: number) => {
     if (!isFinite(amount) || amount <= 0) return
-    const boostMultiplier = Date.now() < goldBoostUntilRef.current ? 3 : 1
+    const boostMultiplier = goldBoostRemainingRef.current > 0 ? 3 : 1
     const multiplier = boostMultiplier * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
     const earned = amount * multiplier
     earnedInSecRef.current += earned
@@ -561,9 +564,9 @@ export function useGameActions(ctx: GameActionsCtx) {
     })
 	setTimeout(() => {
 		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPreSec: 0 }
-		saveGame(boardRef.current, fullState, { 
-			speedBoostUntil: ctx.speedBoostUntilRef.current, 
-			goldBoostUntil: goldBoostUntilRef.current, 
+		saveGame(boardRef.current, fullState, {
+			speedBoostRemaining: ctx.speedBoostRemainingRef.current,
+			goldBoostRemaining: goldBoostRemainingRef.current,
 		})
 	}, 0)	
 
@@ -590,9 +593,9 @@ export function useGameActions(ctx: GameActionsCtx) {
     setAdTarget(null)
     ScoreService.recordAd(SaveService.getDeviceId())
     if (target === 'speed') {
-      setSpeedBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+      setSpeedBoostRemaining(prev => prev + BOOST_MS)
     } else if (target === 'gold') {
-      setGoldBoostUntil(prev => Math.max(prev, Date.now()) + BOOST_MS)
+      setGoldBoostRemaining(prev => prev + BOOST_MS)
     } else if (target === 'prestige') {
       setShowPrestigeModal(false)
       doPrestige(2)
@@ -632,7 +635,8 @@ export function useGameActions(ctx: GameActionsCtx) {
     const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }
     const engineState = SaveService.loadEngineState()
     return await CloudService.save(gameStateRef.current.playerName, fullState, boardRef.current, platform, {
-      boosts: { speedBoostUntil: ctx.speedBoostUntilRef.current, goldBoostUntil: goldBoostUntilRef.current },
+      boosts: { speedBoostRemaining: ctx.speedBoostRemainingRef.current, goldBoostRemaining: goldBoostRemainingRef.current },
+      workData: workDataRef.current,
       ...engineState,
     })
   }, [platform, goldPerSec]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -648,8 +652,13 @@ export function useGameActions(ctx: GameActionsCtx) {
       prStates: data.prStates,
     })
     if (data.boosts) {
-      setSpeedBoostUntil(data.boosts.speedBoostUntil)
-      setGoldBoostUntil(data.boosts.goldBoostUntil)
+      setSpeedBoostRemaining(data.boosts.speedBoostRemaining ?? 0)
+      setGoldBoostRemaining(data.boosts.goldBoostRemaining ?? 0)
+    }
+    if (data.workData) {
+      workDataRef.current = data.workData
+      setWorkData(data.workData)
+      SaveService.saveWorkData(data.workData)
     }
     setBoard(data.board)
     setGameState(data.gameState)

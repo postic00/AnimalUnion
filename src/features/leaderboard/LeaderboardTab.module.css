@@ -161,17 +161,45 @@
   gap: 6px;
 }
 
+.viewRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.viewBtn {
+  flex: 1;
+  padding: 7px;
+  border: 1.5px solid var(--c-gray-200);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c-gray-400);
+  cursor: pointer;
+}
+
+.viewBtn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.viewBtnActive {
+  border-color: var(--c-indigo);
+  color: var(--c-indigo);
+  background: #eef2ff;
+}
+
 .refreshBtn {
-  display: block;
-  margin: 0 auto 10px;
-  padding: 6px 16px;
+  padding: 7px 14px;
   font-size: var(--text-base);
   font-weight: 700;
   color: var(--c-gray-500);
   background: var(--c-gray-100);
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   cursor: pointer;
+  flex-shrink: 0;
 }
 .refreshBtn:disabled {
   opacity: 0.45;

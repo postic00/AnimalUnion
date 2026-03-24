@@ -334,6 +334,16 @@ export function getGoldMultiplierCost(level: number): number {
   return calcCost(CONFIG.PF_GM_COST_BASE, CONFIG.PF_GM_COST_RATE, CONFIG.PF_GM_COST_EXP, CONFIG.PF_GM_COST_ACC, level)
 }
 
+// 초기 골드 (환생 후 시작 골드)
+export function getInitialGold(level: number): number {
+  return CONFIG.PF_IG_PROC_BASE * level
+}
+
+// 초기 골드 업그레이드 비용
+export function getInitialGoldCost(level: number): number {
+  return calcCost(CONFIG.PF_IG_COST_BASE, CONFIG.PF_IG_COST_RATE, CONFIG.PF_IG_COST_EXP, CONFIG.PF_IG_COST_ACC, level)
+}
+
 // 조합 레시피 정의
 export const RECIPES: Record<number, { grade: number; count: number }[]> = {
   4:  [{ grade: 1, count: 5 }],

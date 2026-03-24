@@ -5,6 +5,8 @@ import {
   submitGoldScore as _submitGoldScore,
   fetchPrestigeLeaderboard as _fetchPrestigeLeaderboard,
   fetchGoldLeaderboard as _fetchGoldLeaderboard,
+  fetchPrestigeAround as _fetchPrestigeAround,
+  fetchGoldAround as _fetchGoldAround,
   recordSession as _recordSession,
   recordAd as _recordAd,
 } from '../lib/supabase'
@@ -38,11 +40,19 @@ export const ScoreService = {
   },
 
   // ── 리더보드 조회 ─────────────────────────────────────────────────────────
-  fetchPrestige(limit = 100) {
+  fetchPrestige(limit = 10) {
     return _fetchPrestigeLeaderboard(limit)
   },
 
-  fetchGold(limit = 100) {
+  fetchGold(limit = 10) {
     return _fetchGoldLeaderboard(limit)
+  },
+
+  fetchPrestigeAround(deviceId: string, range = 5) {
+    return _fetchPrestigeAround(deviceId, range)
+  },
+
+  fetchGoldAround(deviceId: string, range = 5) {
+    return _fetchGoldAround(deviceId, range)
   },
 }

@@ -1,5 +1,5 @@
 import { formatGold } from '../../utils/formatGold'
-import type { Reward } from '../../types/workData'
+import type { Reward, MealReward } from '../../types/workData'
 import styles from './WorkRewardModal.module.css'
 
 interface Props {
@@ -20,13 +20,17 @@ function getMealLabel(type: 'breakfast' | 'lunch' | 'dinner'): string {
   return '저녁 식사'
 }
 
+function isMealReward(r: Reward): r is MealReward {
+  return r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner'
+}
+
 function getTitle(rewards: Reward[]): { icon: string; title: string } {
   const hasOffline = rewards.some(r => r.type === 'offline')
-  const hasMeal = rewards.some(r => r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner')
+  const hasMeal = rewards.some(isMealReward)
   if (hasOffline && hasMeal) return { icon: '🎁', title: '근무 보상' }
   if (hasOffline) return { icon: '😴', title: '휴게 보상' }
-  const meal = rewards.find(r => r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner')
-  if (meal) return { icon: getMealEmoji(meal.type as 'breakfast' | 'lunch' | 'dinner'), title: getMealLabel(meal.type as 'breakfast' | 'lunch' | 'dinner') }
+  const meal = rewards.find(isMealReward)
+  if (meal) return { icon: getMealEmoji(meal.type), title: getMealLabel(meal.type) }
   return { icon: '🎁', title: '보상' }
 }
 
@@ -48,7 +52,7 @@ export default function WorkRewardModal({ rewards, onClaim, onWatchAd }: Props) 
                   <span className={styles.rewardEmoji}>😴</span>
                   <div className={styles.rewardInfo}>
                     <span className={styles.rewardLabel}>휴게 보상</span>
-                    <span className={styles.rewardValue}>+{formatGold(reward.gold ?? 0)} 골드</span>
+                    <span className={styles.rewardValue}>+{formatGold(reward.gold)} 골드</span>
                   </div>
                 </div>
               )

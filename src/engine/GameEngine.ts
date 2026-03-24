@@ -556,22 +556,21 @@ export class GameEngine {
         if (inputQty < bufferCapacity) {
           const idx = this.items.findIndex(isTargetItem)
           if (idx !== -1) {
-            const grabbed = this.items[idx]
+            fas.grabbed = this.items[idx]
             this.items[idx] = this.items[this.items.length - 1]; this.items.pop()
-            this.faStates[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
+            fas.grabState = 'GRABBING'; fas.grabTimer = 0
           }
         } else {
-          this.faStates[key] = { ...fas, grabState: 'WAITING' }
+          fas.grabState = 'WAITING'
         }
       } else if (fas.grabState === 'WAITING') {
-        if (inputQty < bufferCapacity) this.faStates[key] = { ...fas, grabState: 'IDLE' }
+        if (inputQty < bufferCapacity) fas.grabState = 'IDLE'
       } else if (fas.grabState === 'GRABBING') {
-        const newTimer = fas.grabTimer + delta
-        if (newTimer >= this.pickTime) {
+        fas.grabTimer += delta
+        if (fas.grabTimer >= this.pickTime) {
           const pending = applyBonus(fas.grabbed!)
-          this.faStates[key] = { ...fas, grabState: 'IDLE', grabTimer: 0, grabbed: null, inputBuffer: [...(fas.inputBuffer ?? []), pending] }
-        } else {
-          this.faStates[key] = { ...fas, grabTimer: newTimer }
+          fas.inputBuffer = [...(fas.inputBuffer ?? []), pending]
+          fas.grabState = 'IDLE'; fas.grabTimer = 0; fas.grabbed = null
         }
       }
     }
@@ -582,26 +581,24 @@ export class GameEngine {
       const queue = fas.inputBuffer ?? []
       if (fas.processState === 'IDLE') {
         if (queue.length > 0) {
-          const [next, ...rest] = queue
-          this.faStates[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: next, inputBuffer: rest }
+          fas.processBuffer = queue[0]
+          fas.inputBuffer = queue.slice(1)
+          fas.processState = 'PROCESSING'; fas.processTimer = 0
         }
       } else if (fas.processState === 'PROCESSING') {
         const outputQty = fas.processBuffer?.quantity ?? 1
         const processTime = getFactoryProcessTime(factory.level, outputQty)
-        const newTimer = fas.processTimer + delta
-        if (newTimer >= processTime) {
+        fas.processTimer += delta
+        if (fas.processTimer >= processTime) {
           this.config.onFactoryProcess?.(factory.animalId ?? null)
           const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
           if (safeOutBuf.length < bufferCapacity) {
-            const updatedItem = { ...fas.processBuffer!, quantity: outputQty }
-            const newOutputBuffer = [...safeOutBuf, updatedItem]
-            const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
-            this.faStates[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
+            fas.outputBuffer = [...safeOutBuf, { ...fas.processBuffer!, quantity: outputQty }]
+            if (fas.outputState === 'IDLE') { fas.outputState = 'PLACING'; fas.outputTimer = 0 }
+            fas.processState = 'IDLE'; fas.processTimer = 0; fas.processBuffer = null
           } else {
-            this.faStates[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
+            fas.processState = 'WAITING'; fas.processTimer = 0
           }
-        } else {
-          this.faStates[key] = { ...fas, processTimer: newTimer }
         }
       }
     }
@@ -610,12 +607,10 @@ export class GameEngine {
     {
       const fas = this.faStates[key]
       if (fas.outputState === 'PLACING') {
-        const newTimer = fas.outputTimer + delta
-        if (newTimer >= this.pickTime) {
+        fas.outputTimer += delta
+        if (fas.outputTimer >= this.pickTime) {
           if (!isOutputOccupied()) placeOutput()
-          else this.faStates[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
-        } else {
-          this.faStates[key] = { ...fas, outputTimer: newTimer }
+          else { fas.outputState = 'WAITING'; fas.outputTimer = 0 }
         }
       } else if (fas.outputState === 'WAITING') {
         if (!isOutputOccupied()) placeOutput()
@@ -674,9 +669,8 @@ export class GameEngine {
             dx: 0, dy: 0, targetX: outputCenter.x, targetY: outputCenter.y,
           }, outputCenter))
           const fromBuffer = fas.buffer.some(b => b.grade === ejectEntry.grade)
-          this.faStates[key] = fromBuffer
-            ? { ...fas, buffer: fas.buffer.filter(b => b.grade !== ejectEntry.grade) }
-            : { ...fas, processingBuffer: (fas.processingBuffer ?? []).filter(b => b.grade !== ejectEntry.grade) }
+          if (fromBuffer) fas.buffer = fas.buffer.filter(b => b.grade !== ejectEntry.grade)
+          else fas.processingBuffer = (fas.processingBuffer ?? []).filter(b => b.grade !== ejectEntry.grade)
         } else {
           // 버퍼 여유 있는 등급이면 벨트에서 먼저 온 것 집어 올림
           const neededGrades = getNeededGrades(fas.buffer)
@@ -688,30 +682,27 @@ export class GameEngine {
             if (idx !== -1) {
               const grabbed = this.items[idx]
               this.items[idx] = this.items[this.items.length - 1]; this.items.pop()
-              this.faStates[key] = { ...fas, grabState: 'GRABBING', grabTimer: 0, grabbed }
+              fas.grabState = 'GRABBING'; fas.grabTimer = 0; fas.grabbed = grabbed
             }
           } else {
             // 모든 재료 버퍼가 꽉 참 → 대기
-            this.faStates[key] = { ...fas, grabState: 'WAITING' }
+            fas.grabState = 'WAITING'
           }
         }
       } else if (fas.grabState === 'WAITING') {
-        if (getNeededGrades(fas.buffer).size > 0) this.faStates[key] = { ...this.faStates[key], grabState: 'IDLE' }
+        if (getNeededGrades(fas.buffer).size > 0) fas.grabState = 'IDLE'
       } else if (fas.grabState === 'GRABBING') {
         // pickTime 경과 후 grabbed 아이템을 buffer에 합산 (waBonus 가중평균)
-        const newTimer = this.faStates[key].grabTimer + delta
-        if (newTimer >= this.pickTime) {
-          const fas2 = this.faStates[key]
-          const { grade, quantity: qty, waBonus: grabbedWaBonus } = fas2.grabbed!
-          const existingEntry = fas2.buffer.find(b => b.grade === grade)
-          const newBuffer = existingEntry
-            ? fas2.buffer.map(b => b.grade === grade
+        fas.grabTimer += delta
+        if (fas.grabTimer >= this.pickTime) {
+          const { grade, quantity: qty, waBonus: grabbedWaBonus } = fas.grabbed!
+          const existingEntry = fas.buffer.find(b => b.grade === grade)
+          fas.buffer = existingEntry
+            ? fas.buffer.map(b => b.grade === grade
                 ? { ...b, count: b.count + qty, waBonus: (b.waBonus * b.count + grabbedWaBonus * qty) / (b.count + qty) }
                 : b)
-            : [...fas2.buffer, { grade, count: qty, waBonus: grabbedWaBonus }]
-          this.faStates[key] = { ...fas2, grabState: 'IDLE', grabTimer: 0, grabbed: null, buffer: newBuffer }
-        } else {
-          this.faStates[key] = { ...this.faStates[key], grabTimer: newTimer }
+            : [...fas.buffer, { grade, count: qty, waBonus: grabbedWaBonus }]
+          fas.grabState = 'IDLE'; fas.grabTimer = 0; fas.grabbed = null
         }
       }
     }
@@ -721,63 +712,76 @@ export class GameEngine {
     {
       const fas = this.faStates[key]
       if (fas.processState === 'IDLE') {
-        let newBuffer = [...fas.buffer]
-        const newProcBuf = [...(fas.processingBuffer ?? [])]
+        // Map으로 변환해 grade별 O(1) 조회/수정
+        const bufMap = new Map<number, { count: number; waBonus: number }>()
+        for (const b of fas.buffer) bufMap.set(b.grade, { count: b.count, waBonus: b.waBonus })
+        const procMap = new Map<number, { count: number; waBonus: number }>()
+        for (const b of fas.processingBuffer ?? []) procMap.set(b.grade, { count: b.count, waBonus: b.waBonus })
+
         let transferred = false
+        let isReady = true
         for (const req of recipe) {
           const need = req.count * outputQuantity
-          const have = newProcBuf.find(b => b.grade === req.grade)?.count ?? 0
+          const proc = procMap.get(req.grade)
+          const have = proc?.count ?? 0
           const remaining = need - have
-          if (remaining <= 0) continue
-          const bufEntry = newBuffer.find(b => b.grade === req.grade)
-          const inBuffer = bufEntry?.count ?? 0
-          if (inBuffer <= 0) continue
-          // 필요량만큼 buffer에서 processingBuffer로 이동 (waBonus 가중평균)
-          const movedWaBonus = bufEntry?.waBonus ?? 0
-          const move = Math.min(inBuffer, remaining)
-          newBuffer = newBuffer.map(b => b.grade === req.grade ? { ...b, count: b.count - move } : b).filter(b => b.count > 0)
-          const existing = newProcBuf.find(b => b.grade === req.grade)
-          if (existing) {
-            const totalCount = existing.count + move
-            existing.waBonus = (existing.waBonus * existing.count + movedWaBonus * move) / totalCount
-            existing.count = totalCount
-          } else {
-            newProcBuf.push({ grade: req.grade, count: move, waBonus: movedWaBonus })
+          if (remaining > 0) {
+            const buf = bufMap.get(req.grade)
+            if (buf && buf.count > 0) {
+              const move = Math.min(buf.count, remaining)
+              // buffer에서 차감
+              buf.count -= move
+              if (buf.count === 0) bufMap.delete(req.grade)
+              // processingBuffer에 합산 (waBonus 가중평균)
+              if (proc) {
+                const totalCount = proc.count + move
+                proc.waBonus = (proc.waBonus * proc.count + buf.waBonus * move) / totalCount
+                proc.count = totalCount
+              } else {
+                procMap.set(req.grade, { count: move, waBonus: buf.waBonus })
+              }
+              transferred = true
+            }
+            // 이관 후에도 충족 여부 재확인
+            if ((procMap.get(req.grade)?.count ?? 0) < need) isReady = false
           }
-          transferred = true
         }
         // 모든 레시피 재료가 processingBuffer에 충족되면 조합 시작
-        const isReady = recipe.every(req =>
-          (newProcBuf.find(b => b.grade === req.grade)?.count ?? 0) >= req.count * outputQuantity
-        )
         if (isReady) {
-          const totalProcCount = newProcBuf.reduce((s, b) => s + b.count, 0)
-          const avgWaBonus = totalProcCount > 0
-            ? newProcBuf.reduce((s, b) => s + b.waBonus * b.count, 0) / totalProcCount : 0
+          let totalProcCount = 0, weightedWaBonus = 0
+          for (const p of procMap.values()) {
+            weightedWaBonus += p.waBonus * p.count
+            totalProcCount += p.count
+          }
+          const avgWaBonus = totalProcCount > 0 ? weightedWaBonus / totalProcCount : 0
           const base = createRecipeOutput(
             factory.grade, factory, animals,
             itemValueLevels,
             materialQuantityLevels[factory.grade - 1] ?? 1,
           )
-          this.faStates[key] = { ...fas, processState: 'PROCESSING', processTimer: 0, processBuffer: { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }, buffer: newBuffer, processingBuffer: [] }
+          fas.processState = 'PROCESSING'; fas.processTimer = 0
+          fas.processBuffer = { ...base, id: crypto.randomUUID(), waBonus: avgWaBonus }
+          fas.buffer = [...bufMap.entries()].map(([grade, { count, waBonus }]) => ({ grade, count, waBonus }))
+          fas.processingBuffer = []
         } else if (transferred) {
-          this.faStates[key] = { ...fas, buffer: newBuffer, processingBuffer: newProcBuf }
+          fas.buffer = [...bufMap.entries()].map(([grade, { count, waBonus }]) => ({ grade, count, waBonus }))
+          fas.processingBuffer = [...procMap.entries()].map(([grade, { count, waBonus }]) => ({ grade, count, waBonus }))
         }
       } else if (fas.processState === 'PROCESSING') {
         const processTime = getFactoryProcessTime(factory.level, outputQuantity)
-        const newTimer = fas.processTimer + delta
-        if (newTimer >= processTime) {
+        fas.processTimer += delta
+        if (fas.processTimer >= processTime) {
           this.config.onFactoryProcess?.(factory.animalId ?? null)
           const safeOutBuf = Array.isArray(fas.outputBuffer) ? fas.outputBuffer : []
           if (safeOutBuf.length < bufferCapacity) {
-            const newOutputBuffer = [...safeOutBuf, fas.processBuffer!]
             const newOutputState = fas.outputState === 'IDLE' ? 'PLACING' : fas.outputState
-            this.faStates[key] = { ...fas, processState: 'IDLE', processTimer: 0, outputState: newOutputState, outputTimer: fas.outputState === 'IDLE' ? 0 : fas.outputTimer, outputBuffer: newOutputBuffer, processBuffer: null }
+            if (fas.outputState === 'IDLE') fas.outputTimer = 0
+            fas.outputBuffer = [...safeOutBuf, fas.processBuffer!]
+            fas.outputState = newOutputState
+            fas.processState = 'IDLE'; fas.processTimer = 0; fas.processBuffer = null
           } else {
-            this.faStates[key] = { ...fas, processState: 'WAITING', processTimer: 0 }
+            fas.processState = 'WAITING'; fas.processTimer = 0
           }
-        } else {
-          this.faStates[key] = { ...fas, processTimer: newTimer }
         }
       }
     }
@@ -786,12 +790,10 @@ export class GameEngine {
     {
       const fas = this.faStates[key]
       if (fas.outputState === 'PLACING') {
-        const newTimer = fas.outputTimer + delta
-        if (newTimer >= this.pickTime) {
+        fas.outputTimer += delta
+        if (fas.outputTimer >= this.pickTime) {
           if (!isOutputOccupied()) placeOutput()
-          else this.faStates[key] = { ...fas, outputState: 'WAITING', outputTimer: 0 }
-        } else {
-          this.faStates[key] = { ...fas, outputTimer: newTimer }
+          else { fas.outputState = 'WAITING'; fas.outputTimer = 0 }
         }
       } else if (fas.outputState === 'WAITING') {
         if (!isOutputOccupied()) placeOutput()
@@ -808,7 +810,7 @@ export class GameEngine {
         this.faStates[key] = { ...DEFAULT_FA_STATE }
       } else if (!Array.isArray(this.faStates[key].outputBuffer)) {
         const old = this.faStates[key].outputBuffer as unknown as Item | null
-        this.faStates[key] = { ...this.faStates[key], outputBuffer: old ? [old] : [] }
+        this.faStates[key].outputBuffer = old ? [old] : []
       }
 
       const inputRow = factory.dir === 'UP_TO_DOWN' ? factory.row - 1 : factory.row + 1
@@ -836,7 +838,11 @@ export class GameEngine {
           nextProcessState = 'IDLE'
           nextProcessBuffer = null
         }
-        this.faStates[key] = { ...fas, outputState: nextOutputState, outputTimer: 0, outputBuffer: nextOutputBuffer, processState: nextProcessState, processBuffer: nextProcessBuffer }
+        fas.outputState = nextOutputState
+        fas.outputTimer = 0
+        fas.outputBuffer = nextOutputBuffer
+        fas.processState = nextProcessState
+        fas.processBuffer = nextProcessBuffer
       }
 
       if (factory.type === 'WA' || factory.type === 'PK') {

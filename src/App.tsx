@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Board from './features/board/Board'
 import Navigation from './features/navigation/Navigation'
 import TabBar from './features/navigation/TabBar'
@@ -35,11 +35,13 @@ import { CONFIG, applyWeekConfig } from './config'
 import { initAdMob } from './utils/admob'
 import { initTossBackEvent, initTossVisibility, closeView, isTossEnvironment } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
-import type { GameState } from './types/gameState'
 import { AnimalSvg } from './features/animal/AnimalSvg'
 import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity, getGoldMultiplierBonus } from './balance'
 import { useUIState } from './hooks/useUIState'
 import { useGameActions } from './hooks/useGameActions'
+import { useGoldStore, goldRef, totalEarnedRef, goldBufferRef, totalEarnedBufferRef, earnedInSecRef } from './stores/goldStore'
+import { useGameStore, gameStateRef, boardRef, mutedRef, goldMultiplierLevelRef } from './stores/gameStore'
+import { useBoostStore, speedBoostRemainingRef, goldBoostRemainingRef } from './stores/boostStore'
 
 // 앱 시작 시 로컬에 저장된 주차 config 즉시 적용
 const cachedWeekConfig = SaveService.loadWeekConfig()
@@ -117,51 +119,46 @@ if(typeof window !== 'undefined' && isTossEnvironment()) {
 export default function App() {
   const [initData] = useState(loadInitialState)
   const [showOldSaveAlert, setShowOldSaveAlert] = useState(initData.hasOldSave)
-  const [board, setBoard] = useState<BoardType>(initData.board)
-  const [resetKey, setResetKey] = useState(0)
-  const [gameState, setGameState] = useState<GameState>(initData.gameState)
-  const [gold, setGold] = useState(() => !localStorage.getItem('tutorialDone') ? Math.max(initData.gameState.gold, 100) : initData.gameState.gold)
-  const [totalEarned, setTotalEarned] = useState(initData.gameState.totalEarned)
-  const [goldPerSec, setGoldPerSec] = useState(0)
-  const [savedAt, setSavedAt] = useState<number | null>(initData.savedAt)
-  const [muted, setMuted] = useState<boolean>(SaveService.loadMuted())
 
-  const gameStateRef = useRef(gameState)
-  useEffect(() => { gameStateRef.current = gameState }, [gameState])
+  // ── store 구독 (컴포넌트별 선택적 리렌더링) ────────────────────────────────
+  const gold = useGoldStore(s => s.gold)
+  const totalEarned = useGoldStore(s => s.totalEarned)
+  const goldPerSec = useGoldStore(s => s.goldPerSec)
+  const gameState = useGameStore(s => s.gameState)
+  const board = useGameStore(s => s.board)
+  const resetKey = useGameStore(s => s.resetKey)
+  const savedAt = useGameStore(s => s.savedAt)
+  const muted = useGameStore(s => s.muted)
+  const speedBoostRemaining = useBoostStore(s => s.speedBoostRemaining)
+  const goldBoostRemaining = useBoostStore(s => s.goldBoostRemaining)
+
+  // ── store 초기화 (최초 1회) ──────────────────────────────────────────────
+  useState(() => {
+    const startGold = !localStorage.getItem('tutorialDone')
+      ? Math.max(initData.gameState.gold, 100)
+      : initData.gameState.gold
+    useGoldStore.getState().setGold(startGold)
+    useGoldStore.getState().setTotalEarned(initData.gameState.totalEarned)
+    useGameStore.getState().init(initData.gameState, initData.board)
+    useGameStore.getState().setSavedAt(initData.savedAt)
+    useGameStore.getState().setMuted(SaveService.loadMuted())
+    useBoostStore.getState().setBoosts(initData.speedBoostRemaining, initData.goldBoostRemaining)
+    // refs 즉시 동기화 (subscribe는 setState 직후 실행되므로 이미 됨)
+  })
+
   useEffect(() => {
     if (gameState.prestigePoints.total > 0) savePrestigeTotal(gameState.prestigePoints.total)
   }, [gameState.prestigePoints.total])
-  const goldRef = useRef(gold)
-  const totalEarnedRef = useRef(totalEarned)
-  const earnedInSecRef = useRef(0)
-  const goldBufferRef = useRef(0)
-  const totalEarnedBufferRef = useRef(0)
-  const bucketHistoryRef = useRef<number[]>([])
+
+  // Board 내부에서 사용하는 clicker ref 등
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const boardSaveRef = useRef<() => void>(() => {})
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
-  const mutedRef = useRef(muted)
-  const boardRef = useRef(board)
-  useEffect(() => { boardRef.current = board }, [board])
+  const goldPerSecRef = useRef(goldPerSec)
+  useEffect(() => { goldPerSecRef.current = goldPerSec }, [goldPerSec])
 
   const BOOST_MS = 10 * 60 * 1000
-  const [speedBoostRemaining, setSpeedBoostRemaining] = useState(initData.speedBoostRemaining)
-  const [goldBoostRemaining, setGoldBoostRemaining] = useState(initData.goldBoostRemaining)
-
-  const goldBoostRemainingRef = useRef(goldBoostRemaining)
-  const speedBoostRemainingRef = useRef(speedBoostRemaining)
-  const goldMultiplierLevelRef = useRef(gameState.goldMultiplierLevel ?? 0)
-  const goldPerSecRef = useRef(goldPerSec)
-  useLayoutEffect(() => {
-    goldRef.current = gold
-    totalEarnedRef.current = totalEarned
-    mutedRef.current = muted
-    goldBoostRemainingRef.current = goldBoostRemaining
-    speedBoostRemainingRef.current = speedBoostRemaining
-    goldMultiplierLevelRef.current = gameState.goldMultiplierLevel ?? 0
-    goldPerSecRef.current = goldPerSec
-  })
 
   const [workData, setWorkData] = useState<WorkData>(() => {
     const saved = SaveService.loadWorkData()
@@ -200,22 +197,20 @@ export default function App() {
 
   // ── 보상 수령 핸들러 ──────────────────────────────────────────────────────
   const pendingRewardsRef = useRef(pendingRewards)
-  useLayoutEffect(() => { pendingRewardsRef.current = pendingRewards })
+  useEffect(() => { pendingRewardsRef.current = pendingRewards })
 
   const handleClaimRewards = useCallback((multiplier = 1) => {
     pendingRewardsRef.current.forEach(r => {
-      if (r.gold) {
-        const gold = r.gold! * multiplier
-        setGold(g => g + gold * getGoldMultiplierBonus(goldMultiplierLevelRef.current) )
-        goldBufferRef.current += gold
-        totalEarnedBufferRef.current += gold
-      }
-      if (r.boostMs) {
-        const boostMs = r.boostMs! * multiplier
-        setSpeedBoostRemaining(prev => prev + boostMs)
-        setGoldBoostRemaining(prev => prev + boostMs)
+      if (r.type === 'offline' || r.type === 'salary') {
+        const earnedGold = r.gold * multiplier
+        useGoldStore.getState().setGold(g => g + earnedGold * getGoldMultiplierBonus(goldMultiplierLevelRef.current))
+        goldBufferRef.current += earnedGold
+        totalEarnedBufferRef.current += earnedGold
       }
       if (r.type === 'breakfast' || r.type === 'lunch' || r.type === 'dinner') {
+        const boostMs = r.boostMs * multiplier
+        useBoostStore.getState().addSpeedBoost(boostMs)
+        useBoostStore.getState().addGoldBoost(boostMs)
         const today = new Date().toISOString().slice(0, 10)
         // ref도 즉시 업데이트하여 다음 틱에서 중복 emit 방지
         workDataRef.current = {
@@ -234,13 +229,9 @@ export default function App() {
 
   // ── Game Actions ──────────────────────────────────────────────────────────
   const actions = useGameActions({
-    goldRef, totalEarnedRef, mutedRef, goldBoostRemainingRef, speedBoostRemainingRef,
-    goldMultiplierLevelRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef,
-    boardSaveRef, boardRef, gameStateRef,
+    boardSaveRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
-    setGold, setTotalEarned, setGoldPerSec, setGameState, setBoard, setResetKey, setSavedAt,
-    setMuted, setSpeedBoostRemaining, setGoldBoostRemaining,
-    goldPerSec, platform,
+    platform,
     setClickerGrade: ui.setClickerGrade,
     setTutorialStep: ui.setTutorialStep,
     setTutorialItemCount: ui.setTutorialItemCount,
@@ -260,10 +251,9 @@ export default function App() {
         salary: { secondsAccumulated: 0 },
       }
       setWorkData(workDataRef.current)
-			goldBufferRef.current = 0
-			totalEarnedBufferRef.current = 0
-			earnedInSecRef.current = 0
-			bucketHistoryRef.current = []
+      goldBufferRef.current = 0
+      totalEarnedBufferRef.current = 0
+      earnedInSecRef.current = 0
     },
     tutorialStep: ui.tutorialStep,
     BOOST_MS,
@@ -302,7 +292,6 @@ export default function App() {
   // ── 저장 인터벌 ──────────────────────────────────────────────────────────
   const lastSavedSnapshotRef = useRef<string>('')
   useEffect(() => {
-    const WINDOW = 600
     const getSnapshot = () => JSON.stringify({
       ...gameStateRef.current,
       gold: goldRef.current,
@@ -311,14 +300,14 @@ export default function App() {
     const save = (force = false) => {
       const snapshot = getSnapshot()
       if (!force && snapshot === lastSavedSnapshotRef.current) return
-      const ok = saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }, {
+      const ok = saveGame(boardRef.current, { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec: goldPerSecRef.current }, {
         speedBoostRemaining: speedBoostRemainingRef.current,
         goldBoostRemaining: goldBoostRemainingRef.current,
       })
       if (!ok) return // 원자저장: 메인 저장 실패 시 엔진 상태 저장 생략
       lastSavedSnapshotRef.current = snapshot
       boardSaveRef.current()
-      setSavedAt(Date.now())
+      useGameStore.getState().setSavedAt(Date.now())
     }
     const onVisibility = () => { if (document.hidden) { save(true); SaveService.saveWorkData(workDataRef.current) } }
     const onUnload = () => save()
@@ -332,25 +321,8 @@ export default function App() {
       // ~1000ms: 초당 골드 계산
       if (now - lastTick >= 1000) {
         lastTick = now
-        const g = goldBufferRef.current
-        const t = totalEarnedBufferRef.current
-        if (g > 0) {
-          goldBufferRef.current = 0
-          totalEarnedBufferRef.current = 0
-          setGold(prev => prev + g)
-          setTotalEarned(prev => prev + t)
-        }
-        
-        if (speedBoostRemainingRef.current > 0) setSpeedBoostRemaining(prev => Math.max(0, prev - 1000))
-        if (goldBoostRemainingRef.current > 0) setGoldBoostRemaining(prev => Math.max(0, prev - 1000))
-
-        const bucket = earnedInSecRef.current
-        earnedInSecRef.current = 0
-        bucketHistoryRef.current.push(bucket)
-        if (bucketHistoryRef.current.length > WINDOW) bucketHistoryRef.current.shift()
-        const nonZero = bucketHistoryRef.current.filter(b => b > 0)
-        const total = nonZero.reduce((a, b) => a + b, 0)
-        setGoldPerSec(nonZero.length > 0 ? Math.round(total / nonZero.length) : 0)
+        useGoldStore.getState().flushTick()
+        useBoostStore.getState().tickBoosts()
 
         // workData 틱
         const newWorkData = tickWorkData(workDataRef.current)
@@ -366,10 +338,11 @@ export default function App() {
         const salaryReward = calcSalaryReward(workDataRef.current, goldPerSecRef.current ?? 0)
         if (salaryReward) {
           // 월급 지급
-          setGold(g => g + salaryReward.gold! * getGoldMultiplierBonus(goldMultiplierLevelRef.current) )
-          goldBufferRef.current += salaryReward.gold!
-          totalEarnedBufferRef.current += salaryReward.gold!
-          setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold!)}`)
+          const salaryGold = salaryReward.gold * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
+          useGoldStore.getState().setGold(g => g + salaryGold)
+          goldBufferRef.current += salaryReward.gold
+          totalEarnedBufferRef.current += salaryReward.gold
+          setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold)}`)
           setShowSalaryToast(true)
           // salary 리셋
           workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
@@ -519,14 +492,14 @@ export default function App() {
         onTabChange={(tab) => {
           ui.setActiveTab(tab)
           saveGame(board, { ...gameState, gold, totalEarned, goldPerSec }, { speedBoostRemaining, goldBoostRemaining })
-          setSavedAt(Date.now())
+          useGameStore.getState().setSavedAt(Date.now())
         }}
         activeTab={ui.activeTab}
         speedBoostRemaining={speedBoostRemaining}
         goldBoostRemaining={goldBoostRemaining}
         onSpeedBoost={() => {
           if (ui.tutorialStep === 4) {
-            setSpeedBoostRemaining(prev => prev + BOOST_MS)
+            useBoostStore.getState().addSpeedBoost(BOOST_MS)
             ui.setTutorialStep(5)
           } else {
             ui.setAdTarget('speed')
@@ -534,7 +507,7 @@ export default function App() {
         }}
         onGoldBoost={() => {
           if (ui.tutorialStep === 5) {
-            setGoldBoostRemaining(prev => prev + BOOST_MS)
+            useBoostStore.getState().addGoldBoost(BOOST_MS)
             ui.setTutorialStep(6)
           } else {
             ui.setAdTarget('gold')
@@ -717,6 +690,7 @@ export default function App() {
             onUpgradeBundleDiscount={actions.handleUpgradeBundleDiscount}
             onUpgradeProducerStart={actions.handleUpgradeProducerStart}
             onUpgradeGoldMultiplier={actions.handleUpgradeGoldMultiplier}
+            onUpgradeInitialGold={actions.handleUpgradeInitialGold}
           />
         )}
         {ui.activeTab === 4 && (
@@ -725,7 +699,7 @@ export default function App() {
             mode={ui.lbMode}
             onNameChange={async name => {
               if (!name.trim()) return
-              setGameState(prev => ({ ...prev, playerName: name }))
+              useGameStore.getState().setGameState(prev => ({ ...prev, playerName: name }))
               await ScoreService.updatePlayerName(SaveService.getDeviceId(), name)
             }}
             onSubmitGold={async () => {

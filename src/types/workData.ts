@@ -23,8 +23,6 @@ export const initialWorkData: WorkData = {
   salary: { secondsAccumulated: 0 },
 }
 
-export interface Reward {
-  type: 'offline' | 'breakfast' | 'lunch' | 'dinner' | 'salary'
-  gold?: number
-  boostMs?: number
-}
+export type GoldReward = { type: 'offline' | 'salary'; gold: number }
+export type MealReward = { type: 'breakfast' | 'lunch' | 'dinner'; boostMs: number }
+export type Reward = GoldReward | MealReward

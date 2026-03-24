@@ -1,14 +1,15 @@
 import { useCallback } from 'react'
 import { saveGame } from '../utils/saveLoad'
 import type { MutableRefObject, Dispatch, SetStateAction } from 'react'
-import type { Board } from '../types/board'
-import type { GameState } from '../types/gameState'
 import type { Factory } from '../types/factory'
 import type { AnimalId } from '../types/animal'
 import type { UpgradeAmount } from '../features/navigation/UpgradeAmountToggle'
 import { CONFIG, applyWeekConfig } from '../config'
 import { initialBoard } from '../data/initialBoard'
 import { initialGameState } from '../types/gameState'
+import { useGoldStore, goldRef, totalEarnedRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef } from '../stores/goldStore'
+import { useGameStore, gameStateRef, boardRef, mutedRef, goldMultiplierLevelRef } from '../stores/gameStore'
+import { useBoostStore, goldBoostRemainingRef, speedBoostRemainingRef } from '../stores/boostStore'
 import {
   getBundleCost,
   getProducerBuildCost,
@@ -33,6 +34,8 @@ import {
   getBundleDiscountCost,
   getProducerStartCost,
   getGoldMultiplierCost,
+  getInitialGold,
+  getInitialGoldCost,
   RECIPES,
 } from '../balance'
 import { soundHamster, soundCoin, soundCat, soundBuild } from '../utils/sound'
@@ -43,35 +46,12 @@ import type { WorkData } from '../types/workData'
 
 // ── Context 타입 ─────────────────────────────────────────────────────────────
 export interface GameActionsCtx {
-  // 핵심 game state refs
-  goldRef: MutableRefObject<number>
-  totalEarnedRef: MutableRefObject<number>
-  mutedRef: MutableRefObject<boolean>
-  goldBoostRemainingRef: MutableRefObject<number>
-  speedBoostRemainingRef: MutableRefObject<number>
-  goldMultiplierLevelRef: MutableRefObject<number>
-  earnedInSecRef: MutableRefObject<number>
-  goldBufferRef: MutableRefObject<number>
-  totalEarnedBufferRef: MutableRefObject<number>
+  // Board 저장 ref (Board 컴포넌트 내부 상태)
   boardSaveRef: MutableRefObject<() => void>
-  boardRef: MutableRefObject<Board>
-  gameStateRef: MutableRefObject<GameState>
   // clicker
   spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
   clickerGradeRef: MutableRefObject<number>
   spawnUnlockTimeRef: MutableRefObject<number>
-  // game state setters
-  setGold: Dispatch<SetStateAction<number>>
-  setTotalEarned: Dispatch<SetStateAction<number>>
-  setGoldPerSec: Dispatch<SetStateAction<number>>
-  setGameState: Dispatch<SetStateAction<GameState>>
-  setBoard: Dispatch<SetStateAction<Board>>
-  setResetKey: Dispatch<SetStateAction<number>>
-  setSavedAt: Dispatch<SetStateAction<number | null>>
-  setMuted: Dispatch<SetStateAction<boolean>>
-  setSpeedBoostRemaining: Dispatch<SetStateAction<number>>
-  setGoldBoostRemaining: Dispatch<SetStateAction<number>>
-  goldPerSec: number
   platform: string
   // UI state setters (cross-cutting concerns)
   setClickerGrade: Dispatch<SetStateAction<number>>
@@ -93,17 +73,20 @@ export interface GameActionsCtx {
 
 export function useGameActions(ctx: GameActionsCtx) {
   const {
-    goldRef, totalEarnedRef, mutedRef, goldBoostRemainingRef,
-    goldMultiplierLevelRef, earnedInSecRef, goldBufferRef, totalEarnedBufferRef,
-    boardSaveRef, boardRef, gameStateRef,
+    boardSaveRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
-    setGold, setTotalEarned, setGoldPerSec, setGameState, setBoard, setResetKey, setSavedAt,
-    setMuted, setSpeedBoostRemaining, setGoldBoostRemaining,
-    goldPerSec, platform,
+    platform,
     setClickerGrade, setTutorialStep, setTutorialItemCount, setSelectedFactory,
     setShowPrestigeModal, setShowPrestigeKeepModal, setShowSplash,
     adTarget, setAdTarget, workDataRef, setWorkData, onRewardClaim, resetSalary, tutorialStep, BOOST_MS,
   } = ctx
+
+  // store actions (렌더링과 무관하게 최신 값 접근)
+  const setGameState = useGameStore.getState().setGameState
+  const setBoard = useGameStore.getState().setBoard
+  const setResetKey = useGameStore.getState().setResetKey
+  const setMuted = useGameStore.getState().setMuted
+  const setGold = useGoldStore.getState().setGold
 
   // ── 골드 획득 ────────────────────────────────────────────────────────────
   const handleGoldEarned = useCallback((amount: number) => {
@@ -470,6 +453,14 @@ export function useGameActions(ctx: GameActionsCtx) {
     })
   }, [setGameState])
 
+  const handleUpgradeInitialGold = useCallback(() => {
+    setGameState(prev => {
+      const cost = getInitialGoldCost(prev.initialGoldLevel ?? 0)
+      if (prev.prestigePoints.current < cost) return prev
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, initialGoldLevel: (prev.initialGoldLevel ?? 0) + 1 }
+    })
+  }, [setGameState])
+
   // ── 환생 ────────────────────────────────────────────────────────────────
   const doPrestige = useCallback(async (multiplier = 1) => {
     const safeMultiplier = isFinite(multiplier) && multiplier > 0 ? multiplier : 1
@@ -482,11 +473,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     setResetKey(k => k + 1)
     setBoard(initialBoard)
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
-    setGold(0)
-    setTotalEarned(0)
-    setGoldPerSec(0)
     // 제출용 값 사전 계산 (state updater 밖에서)
     const prevState = gameStateRef.current
+    const startGold = getInitialGold(prevState.initialGoldLevel ?? 0)
+    useGoldStore.getState().reset(startGold)
     const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
     const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
     const newPrestigeCount = prevState.prestigeCount + 1
@@ -497,8 +487,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     }
     setGameState(() => ({
       ...initialGameState,
+      gold: startGold,
       playerName: prevState.playerName,
       producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prevState.producerStartLevel ?? 0)) })),
+      initialGoldLevel: prevState.initialGoldLevel,
       prestigeCount: newPrestigeCount,
       prestigePoints: { current: newTotal, total: newTotal },
       currentWeek: CONFIG.WEEK,
@@ -520,11 +512,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     setBoard(initialBoard)
     const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
-    setGold(0)
-    setTotalEarned(0)
-    setGoldPerSec(0)
     // 제출용 값 사전 계산 (state updater 밖에서)
     const prevState = gameStateRef.current
+    const startGold = getInitialGold(prevState.initialGoldLevel ?? 0)
+    useGoldStore.getState().reset(startGold)
     const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
     const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
     const newPrestigeCount = prevState.prestigeCount + 1
@@ -538,12 +529,14 @@ export function useGameActions(ctx: GameActionsCtx) {
     }
     setGameState(() => ({
       ...initialGameState,
+      gold: startGold,
       playerName: prevState.playerName,
       producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prevState.producerStartLevel ?? 0)) })),
       buildDiscountLevel: prevState.buildDiscountLevel,
       bundleDiscountLevel: prevState.bundleDiscountLevel,
       producerStartLevel: prevState.producerStartLevel,
       goldMultiplierLevel: prevState.goldMultiplierLevel,
+      initialGoldLevel: prevState.initialGoldLevel,
       rsBufferLevel: prevState.rsBufferLevel,
       faBufferLevel: prevState.faBufferLevel,
       railSpeedLevel: prevState.railSpeedLevel,
@@ -554,12 +547,12 @@ export function useGameActions(ctx: GameActionsCtx) {
       currentWeek: CONFIG.WEEK,
     }))
 	setTimeout(() => {
-		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPreSec: 0 }
+		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPerSec: 0 }
 		saveGame(boardRef.current, fullState, {
-			speedBoostRemaining: ctx.speedBoostRemainingRef.current,
+			speedBoostRemaining: speedBoostRemainingRef.current,
 			goldBoostRemaining: goldBoostRemainingRef.current,
 		})
-	}, 0)	
+	}, 0)
 
     resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
@@ -584,9 +577,9 @@ export function useGameActions(ctx: GameActionsCtx) {
     setAdTarget(null)
     ScoreService.recordAd(SaveService.getDeviceId())
     if (target === 'speed') {
-      setSpeedBoostRemaining(prev => prev + BOOST_MS)
+      useBoostStore.getState().addSpeedBoost(BOOST_MS)
     } else if (target === 'gold') {
-      setGoldBoostRemaining(prev => prev + BOOST_MS)
+      useBoostStore.getState().addGoldBoost(BOOST_MS)
     } else if (target === 'prestige') {
       setShowPrestigeModal(false)
       doPrestige(2)
@@ -600,7 +593,9 @@ export function useGameActions(ctx: GameActionsCtx) {
 
   // ── 설정 ─────────────────────────────────────────────────────────────────
   const handleToggleMute = useCallback(() => {
-    setMuted(prev => { SaveService.saveMuted(!prev); return !prev })
+    const next = !mutedRef.current
+    SaveService.saveMuted(next)
+    setMuted(next)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleHardReset = useCallback(() => {
@@ -610,11 +605,9 @@ export function useGameActions(ctx: GameActionsCtx) {
     localStorage.removeItem('animal-union-week-config')
     setBoard(initialBoard)
     setGameState({ ...initialGameState, playerName: `Player${Date.now().toString(36).toUpperCase()}` })
-    setGold(100)
-    setTotalEarned(0)
-    setGoldPerSec(0)
+    useGoldStore.getState().reset(100)
     setResetKey(k => k + 1)
-    setSavedAt(null)
+    useGameStore.getState().setSavedAt(null)
     setTutorialStep(0)
     setTutorialItemCount(0)
     setShowSplash(true)
@@ -623,14 +616,15 @@ export function useGameActions(ctx: GameActionsCtx) {
   // ── 클라우드 ──────────────────────────────────────────────────────────────
   const handleCloudSave = useCallback(async (): Promise<boolean> => {
     boardSaveRef.current?.()
-    const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec }
+    const goldState = useGoldStore.getState()
+    const fullState = { ...gameStateRef.current, gold: goldRef.current, totalEarned: totalEarnedRef.current, goldPerSec: goldState.goldPerSec }
     const engineState = SaveService.loadEngineState()
     return await CloudService.save(gameStateRef.current.playerName, fullState, boardRef.current, platform, {
-      boosts: { speedBoostRemaining: ctx.speedBoostRemainingRef.current, goldBoostRemaining: goldBoostRemainingRef.current },
+      boosts: { speedBoostRemaining: speedBoostRemainingRef.current, goldBoostRemaining: goldBoostRemainingRef.current },
       workData: workDataRef.current,
       ...engineState,
     })
-  }, [platform, goldPerSec]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [platform]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await CloudService.load()
@@ -643,8 +637,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       prStates: data.prStates,
     })
     if (data.boosts) {
-      setSpeedBoostRemaining(data.boosts.speedBoostRemaining ?? 0)
-      setGoldBoostRemaining(data.boosts.goldBoostRemaining ?? 0)
+      useBoostStore.getState().setBoosts(data.boosts.speedBoostRemaining ?? 0, data.boosts.goldBoostRemaining ?? 0)
     }
     if (data.workData) {
       workDataRef.current = data.workData
@@ -653,9 +646,8 @@ export function useGameActions(ctx: GameActionsCtx) {
     }
     setBoard(data.board)
     setGameState(data.gameState)
-    setGold(data.gameState.gold ?? 0)
-    setTotalEarned(data.gameState.totalEarned ?? 0)
-    setGoldPerSec(data.gameState.goldPerSec ?? 0)
+    useGoldStore.getState().setGold(data.gameState.gold ?? 0)
+    useGoldStore.getState().setTotalEarned(data.gameState.totalEarned ?? 0)
     setResetKey(k => k + 1)
     return true
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -687,6 +679,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     handleUpgradeBundleDiscount,
     handleUpgradeProducerStart,
     handleUpgradeGoldMultiplier,
+    handleUpgradeInitialGold,
     doPrestige,
     doPrestigeKeepPoints,
     handlePrestige,

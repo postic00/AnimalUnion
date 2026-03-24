@@ -1,5 +1,5 @@
 import type { GameState } from '../../types/gameState'
-import { canPrestige, getPrestigePoints, getItemValueLevelCost, getEffectiveItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost } from '../../balance'
+import { canPrestige, getPrestigePoints, getItemValueLevelCost, getEffectiveItemValue, getBufferUpgradeCost, getRsBufferCapacity, getFaBufferCapacity, getRailSpeedUpgradeCost, getRailMoveSpeed, getBuildCostDiscount, getBundleCostDiscount, getGoldMultiplierBonus, getBuildDiscountCost, getBundleDiscountCost, getProducerStartCost, getGoldMultiplierCost, getInitialGold, getInitialGoldCost } from '../../balance'
 import { formatGold } from '../../utils/formatGold'
 import { CONFIG } from '../../config'
 import coinIcon from '../../assets/coin.svg'
@@ -21,9 +21,10 @@ interface Props {
   onUpgradeBundleDiscount: () => void
   onUpgradeProducerStart: () => void
   onUpgradeGoldMultiplier: () => void
+  onUpgradeInitialGold: () => void
 }
 
-export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer, onUpgradeRailSpeed, onUpgradeBuildDiscount, onUpgradeBundleDiscount, onUpgradeProducerStart, onUpgradeGoldMultiplier }: Props) {
+export default function PrestigeTab({ gameState, section, onPrestige, onPrestigeKeepPoints, onLevelUpItemValue, onUpgradeRsBuffer, onUpgradeFaBuffer, onUpgradeRailSpeed, onUpgradeBuildDiscount, onUpgradeBundleDiscount, onUpgradeProducerStart, onUpgradeGoldMultiplier, onUpgradeInitialGold }: Props) {
   const { totalEarned, itemValueLevels, rsBufferLevel, faBufferLevel } = gameState
   const prestigePoints = gameState.prestigePoints.current
   const railSpeedLevel = gameState.railSpeedLevel ?? 1
@@ -31,6 +32,7 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
   const bundleDiscountLevel = gameState.bundleDiscountLevel ?? 0
   const producerStartLevel = gameState.producerStartLevel ?? 0
   const goldMultiplierLevel = gameState.goldMultiplierLevel ?? 0
+  const initialGoldLevel = gameState.initialGoldLevel ?? 0
   const possible = canPrestige(totalEarned)
   const earnPoints = getPrestigePoints(totalEarned)
   return (
@@ -108,6 +110,21 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
                 ⭐ {formatGold(getGoldMultiplierCost(goldMultiplierLevel))}
               </button>
             )}
+          </div>
+          <div className={styles.card}>
+            <div className={styles.cardLeft}>
+              <span className={styles.cardEmoji}>💵</span>
+              <div className={styles.cardInfo}>
+                <div className={styles.cardNameRow}>
+                  <span className={styles.cardName}>초기 골드</span>
+                  <span className={styles.levelBadge}>Lv.{initialGoldLevel}</span>
+                </div>
+                <span className={styles.cardSub}>환생 후 {formatGold(getInitialGold(initialGoldLevel))}G 지급</span>
+              </div>
+            </div>
+            <button className={styles.starBtn} onClick={onUpgradeInitialGold} disabled={prestigePoints < getInitialGoldCost(initialGoldLevel)}>
+              ⭐ {formatGold(getInitialGoldCost(initialGoldLevel))}
+            </button>
           </div>
           <div className={styles.card}>
             <div className={styles.cardLeft}>

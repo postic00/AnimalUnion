@@ -88,6 +88,10 @@ export const CONFIG = {
   PF_GM_PROC_BASE: 0.002, PF_GM_PROC_RATE: 1, PF_GM_PROC_EXP: 1, PF_GM_PROC_ACC: 1, PF_GM_PROC_MAX: 100,
   PF_GM_COST_BASE: 10,    PF_GM_COST_RATE: 1.5, PF_GM_COST_EXP: 3, PF_GM_COST_ACC: 0.05,
 
+  // PF_IG (초기 골드)
+  PF_IG_PROC_BASE: 1000,
+  PF_IG_COST_BASE: 10,    PF_IG_COST_RATE: 1.5, PF_IG_COST_EXP: 3, PF_IG_COST_ACC: 0.05,
+
   // WR (근무 보상)
   WR_OFFLINE_MAX_SECONDS: 4 * 60 * 60,  // 휴게 보상 최대 오프라인 시간 (초, 4시간)
   WR_OFFLINE_RATE: 0.3,          // 휴게 보상 비율 (goldPerSec 대비, 30%)

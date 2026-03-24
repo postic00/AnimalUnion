@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ScoreService } from '../../services/ScoreService'
 import type { LeaderboardEntry } from '../../services/ScoreService'
+import { SaveService } from '../../services/SaveService'
 import { formatGold } from '../../utils/formatGold'
 import { CONFIG } from '../../config'
 import styles from './LeaderboardTab.module.css'
@@ -16,10 +17,12 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
   const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<'top' | 'around'>('top')
+  const [startRank, setStartRank] = useState(1)
 
   const myIndex = entries.findIndex(e => e.player_name === playerName)
   const myEntry = myIndex >= 0 ? entries[myIndex] : null
-  const myRank = myIndex >= 0 ? myIndex + 1 : null
+  const myRank = myIndex >= 0 ? startRank + myIndex : null
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(playerName)
 
@@ -27,9 +30,18 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
     setLoading(true)
     try {
       if (mode === 'gold') await onSubmitGold?.()
-      const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
-      const data = await fetch()
-      setEntries(data)
+      if (view === 'top') {
+        const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
+        const data = await fetch(10)
+        setEntries(data)
+        setStartRank(1)
+      } else {
+        const deviceId = SaveService.getDeviceId()
+        const fetch = mode === 'prestige' ? ScoreService.fetchPrestigeAround : ScoreService.fetchGoldAround
+        const result = await fetch(deviceId)
+        setEntries(result.entries)
+        setStartRank(result.startRank)
+      }
     } catch {}
     finally { setLoading(false) }
   }
@@ -38,7 +50,7 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
 
   useEffect(() => {
     doFetch()
-  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mode, view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameSave = () => {
     const trimmed = nameInput.trim()
@@ -84,15 +96,31 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
             <span className={styles.myRankScore}>{formatGold(myEntry.score)}</span>
           </div>
         )}
-        {!myEntry && !loading && hasPrestigedThisWeek && (
+        {!myEntry && !loading && view === 'around' && hasPrestigedThisWeek && (
           <span className={styles.myRankNone}>미등록</span>
         )}
       </div>
 
-      {/* 새로고침 */}
-      <button className={styles.refreshBtn} onClick={refresh} disabled={loading}>
-        {loading ? '...' : '↻ 새로고침'}
-      </button>
+      {/* 뷰 전환 + 새로고침 */}
+      <div className={styles.viewRow}>
+        <button
+          className={`${styles.viewBtn} ${view === 'top' ? styles.viewBtnActive : ''}`}
+          onClick={() => setView('top')}
+          disabled={loading}
+        >
+          TOP 10
+        </button>
+        <button
+          className={`${styles.viewBtn} ${view === 'around' ? styles.viewBtnActive : ''}`}
+          onClick={() => setView('around')}
+          disabled={loading}
+        >
+          내 주변
+        </button>
+        <button className={styles.refreshBtn} onClick={refresh} disabled={loading}>
+          {loading ? '...' : '↻'}
+        </button>
+      </div>
 
       {/* 리더보드 */}
       {hasPrestigedThisWeek ? (
@@ -104,7 +132,7 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
           ) : entries.map((e, i) => (
             <div key={e.id} className={`${styles.row} ${e.player_name === playerName ? styles.myRow : ''}`}>
               <span className={styles.rank}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                {startRank + i === 1 ? '🥇' : startRank + i === 2 ? '🥈' : startRank + i === 3 ? '🥉' : `${startRank + i}`}
               </span>
               <span className={styles.name}>{e.player_name}</span>
               <span className={styles.score}>{mode === 'prestige' ? '⭐' : '💰'} {formatGold(e.score)}</span>

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config'
-import type { WorkData, Reward } from '../types/workData'
+import type { WorkData, GoldReward, MealReward } from '../types/workData'
 
 export function getCurrentMealType(): 'breakfast' | 'lunch' | 'dinner' | null {
   const hour = new Date().getHours()
@@ -9,7 +9,7 @@ export function getCurrentMealType(): 'breakfast' | 'lunch' | 'dinner' | null {
   return null
 }
 
-export function calcOfflineReward(workData: WorkData, goldPerSec: number): Reward | null {
+export function calcOfflineReward(workData: WorkData, goldPerSec: number): GoldReward | null {
   const elapsedSec = Math.min((Date.now() - workData.lastWorked) / 1000, CONFIG.WR_OFFLINE_MAX_SECONDS)
   if (elapsedSec < 300) return null
   const gold = Math.floor(goldPerSec * elapsedSec * CONFIG.WR_OFFLINE_RATE)
@@ -17,7 +17,7 @@ export function calcOfflineReward(workData: WorkData, goldPerSec: number): Rewar
   return { type: 'offline', gold }
 }
 
-export function calcMealReward(workData: WorkData): Reward | null {
+export function calcMealReward(workData: WorkData): MealReward | null {
   const type = getCurrentMealType()
   if (!type) return null
   const today = new Date().toISOString().slice(0, 10)
@@ -25,7 +25,7 @@ export function calcMealReward(workData: WorkData): Reward | null {
   return { type, boostMs: CONFIG.WR_MEAL_BOOST_MS }
 }
 
-export function calcSalaryReward(workData: WorkData, goldPerSec: number): Reward | null {
+export function calcSalaryReward(workData: WorkData, goldPerSec: number): GoldReward | null {
   if (workData.salary.secondsAccumulated < CONFIG.WR_SALARY_SECONDS) return null
   const gold = Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)
   if (gold <= 0) return null

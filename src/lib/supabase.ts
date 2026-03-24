@@ -65,7 +65,7 @@ export async function submitGoldScore(deviceId: string, playerName: string, scor
   return !error
 }
 
-export async function fetchPrestigeLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
+export async function fetchPrestigeLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from('leaderboard')
     .select('*')
@@ -75,7 +75,7 @@ export async function fetchPrestigeLeaderboard(limit = 100): Promise<Leaderboard
   return data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[]
 }
 
-export async function fetchGoldLeaderboard(limit = 100): Promise<LeaderboardEntry[]> {
+export async function fetchGoldLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from('leaderboard_gold')
     .select('*')
@@ -84,4 +84,31 @@ export async function fetchGoldLeaderboard(limit = 100): Promise<LeaderboardEntr
     .limit(Math.max(1, limit))
   if (error || !Array.isArray(data)) return []
   return data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[]
+}
+
+export interface AroundResult {
+  entries: LeaderboardEntry[]
+  startRank: number
+}
+
+export async function fetchPrestigeAround(deviceId: string, range = 5): Promise<AroundResult> {
+  const { data: myData } = await supabase.from('leaderboard').select('score').eq('id', deviceId).single()
+  if (!myData) return { entries: [], startRank: 1 }
+  const { count } = await supabase.from('leaderboard').select('*', { count: 'exact', head: true }).gt('score', myData.score)
+  const rank = (count ?? 0) + 1
+  const offset = Math.max(0, rank - range - 1)
+  const { data, error } = await supabase.from('leaderboard').select('*').order('score', { ascending: false }).range(offset, offset + range * 2)
+  if (error || !Array.isArray(data)) return { entries: [], startRank: rank }
+  return { entries: data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[], startRank: offset + 1 }
+}
+
+export async function fetchGoldAround(deviceId: string, range = 5): Promise<AroundResult> {
+  const { data: myData } = await supabase.from('leaderboard_gold').select('score').eq('id', deviceId).eq('week', CONFIG.CURRENT_WEEK).single()
+  if (!myData) return { entries: [], startRank: 1 }
+  const { count } = await supabase.from('leaderboard_gold').select('*', { count: 'exact', head: true }).eq('week', CONFIG.CURRENT_WEEK).gt('score', myData.score)
+  const rank = (count ?? 0) + 1
+  const offset = Math.max(0, rank - range - 1)
+  const { data, error } = await supabase.from('leaderboard_gold').select('*').eq('week', CONFIG.CURRENT_WEEK).order('score', { ascending: false }).range(offset, offset + range * 2)
+  if (error || !Array.isArray(data)) return { entries: [], startRank: rank }
+  return { entries: data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[], startRank: offset + 1 }
 }

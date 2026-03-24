@@ -167,8 +167,11 @@ export default function App() {
   const workDataRef = useRef(workData)
   const [rewardQueue, setRewardQueue] = useState<Reward[][]>([])
   const pendingRewards = rewardQueue[0] ?? []
-  const [salaryToast, setSalaryToast] = useState<string>('')
-  const [showSalaryToast, setShowSalaryToast] = useState(false)
+  const [toasts, setToasts] = useState<{ id: number; message: string }[]>([])
+  const toastIdRef = useRef(0)
+  const addToast = useCallback((message: string) => {
+    setToasts(prev => [...prev, { id: ++toastIdRef.current, message }])
+  }, [])
 
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
@@ -179,7 +182,7 @@ export default function App() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkData(prev => ({ ...prev, lastActivityDate: today }))
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 앱 시작 시 휴게 보상 계산 ─────────────────────────────────────────────
   useEffect(() => {
@@ -194,7 +197,7 @@ export default function App() {
       if (queue.length > 0) setRewardQueue(queue)
     }
     // lastWorked 갱신
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setWorkData(prev => ({ ...prev, lastWorked: Date.now() }))
   }, [])
 
@@ -224,7 +227,7 @@ export default function App() {
       }
     })
     setRewardQueue(prev => prev.slice(1))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   // ── UI State ──────────────────────────────────────────────────────────────
   const ui = useUIState()
@@ -344,8 +347,7 @@ export default function App() {
           useGoldStore.getState().setGold(g => g + salaryGold)
           goldBufferRef.current += salaryReward.gold
           totalEarnedBufferRef.current += salaryReward.gold
-          setSalaryToast(`💰 월급 +${formatGold(salaryReward.gold)}`)
-          setShowSalaryToast(true)
+          addToast(`💰 월급 +${formatGold(salaryReward.gold)}`)
           // salary 리셋
           workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
           setWorkData(workDataRef.current)
@@ -370,7 +372,7 @@ export default function App() {
       window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addToast])
 
   // ── 크로스커팅 핸들러 ─────────────────────────────────────────────────────
   const { setSelectedFactory, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
@@ -396,7 +398,7 @@ export default function App() {
     setWorkData(workDataRef.current)
     setRewardQueue([])
     localStorage.removeItem('animal-union-prestige-total')
-  }, [actionsHardReset, setActiveTab]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [actionsHardReset, setActiveTab])  
 
   const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
 
@@ -847,8 +849,9 @@ export default function App() {
         <WorkRewardModal rewards={pendingRewards} onClaim={handleClaimRewards} onWatchAd={() => ui.setAdTarget('reward')} />
       )}
 
-      {/* 월급 토스트 */}
-      <Toast message={salaryToast} visible={showSalaryToast} onHide={() => setShowSalaryToast(false)} />
+      {toasts.map((t, i) => (
+        <Toast key={t.id} message={t.message} index={i} onHide={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
+      ))}
     </div>
   )
 }

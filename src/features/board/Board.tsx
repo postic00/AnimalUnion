@@ -112,7 +112,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
           <div key={rowIdx} className={styles.row}>
             {row.map((cell, colIdx) => (
               <Cell
-                key={colIdx}
+                key={`${rowIdx}-${colIdx}`}
                 cell={cell}
                 size={cellSize}
                 factory={cell.type === 'FA' ? factoriesByPos.get(`${rowIdx}-${colIdx}`) : undefined}

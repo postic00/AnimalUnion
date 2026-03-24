@@ -1,23 +1,32 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import styles from './Toast.module.css'
 
 interface Props {
   message: string
-  visible: boolean
   onHide: () => void
+  index?: number
 }
 
-export default function Toast({ message, visible, onHide }: Props) {
+export default function Toast({ message, onHide, index = 0 }: Props) {
+  const [visible, setVisible] = useState(false)
+
   useEffect(() => {
-    if (!visible) return
-    const timer = setTimeout(() => {
-      onHide()
+    const showRaf = requestAnimationFrame(() => setVisible(true))
+    const hideTimer = setTimeout(() => {
+      setVisible(false)
+      setTimeout(onHide, 300)
     }, 2500)
-    return () => clearTimeout(timer)
-  }, [visible])
+    return () => {
+      cancelAnimationFrame(showRaf)
+      clearTimeout(hideTimer)
+    }
+  }, [onHide])
 
   return (
-    <div className={`${styles.toast} ${visible ? styles.visible : ''}`}>
+    <div
+      className={`${styles.toast} ${visible ? styles.visible : ''}`}
+      style={{ bottom: `calc(${80 + index * 56}px + env(safe-area-inset-bottom, 0px))` }}
+    >
       {message}
     </div>
   )

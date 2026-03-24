@@ -98,7 +98,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     goldBufferRef.current += earned
     totalEarnedBufferRef.current += earned
     if (!mutedRef.current) soundCoin()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── 클릭커 ───────────────────────────────────────────────────────────────
   const handleClickerClick = useCallback(() => {

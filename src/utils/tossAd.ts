@@ -1,6 +1,5 @@
 import { loadFullScreenAd, showFullScreenAd } from '@apps-in-toss/web-framework'
 
-// TODO: 앱인토스 콘솔에서 발급받은 광고 그룹 ID로 교체
 const AD_GROUP_ID = 'ait.v2.live.93ce2a2ea05b4289'
 
 export function isTossAdSupported(): boolean {

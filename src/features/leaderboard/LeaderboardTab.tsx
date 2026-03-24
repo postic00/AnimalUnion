@@ -42,7 +42,7 @@ export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmi
         setEntries(result.entries)
         setStartRank(result.startRank)
       }
-    } catch {}
+    } catch { /* ignore */ }
     finally { setLoading(false) }
   }
 

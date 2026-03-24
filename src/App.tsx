@@ -176,9 +176,10 @@ export default function App() {
     const today = new Date().toISOString().slice(0, 10)
     if (workData.lastActivityDate !== today) {
       ScoreService.recordSession(SaveService.getDeviceId(), platform)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkData(prev => ({ ...prev, lastActivityDate: today }))
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── 앱 시작 시 휴게 보상 계산 ─────────────────────────────────────────────
   useEffect(() => {
@@ -189,11 +190,13 @@ export default function App() {
       if (offlineReward) queue.push([offlineReward])
       const mealReward = calcMealReward(saved)
       if (mealReward) queue.push([mealReward])
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (queue.length > 0) setRewardQueue(queue)
     }
     // lastWorked 갱신
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWorkData(prev => ({ ...prev, lastWorked: Date.now() }))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── 보상 수령 핸들러 ──────────────────────────────────────────────────────
   const pendingRewardsRef = useRef(pendingRewards)
@@ -216,7 +219,6 @@ export default function App() {
         workDataRef.current = {
           ...workDataRef.current,
           meals: { ...workDataRef.current.meals, [r.type]: today },
-          mealWindow: { type: workDataRef.current.mealWindow.type, seconds: 0 },
         }
         setWorkData(workDataRef.current)
       }
@@ -449,7 +451,7 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workDataRef.current.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
+      {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && ui.tutorialStep === 6 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
       )}

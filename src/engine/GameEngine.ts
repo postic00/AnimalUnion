@@ -496,7 +496,7 @@ export class GameEngine {
           const frow = Math.round(item.targetY / cellSize - 0.5)
           const fcell = getCell(board, frow, fcol)
           if (fcell?.type !== 'RE' && fcell?.type !== 'FA') {
-            this.items.splice(i, 1)
+            this.items[i] = this.items[this.items.length - 1]; this.items.pop()
             this.hasDerailed = true
           }
         }
@@ -512,16 +512,16 @@ export class GameEngine {
     const { board, cellSize } = this.config
     for (let i = this.items.length - 1; i >= 0; i--) {
       const item = this.items[i]
-      if (!isFinite(item.x) || !isFinite(item.y)) { this.items.splice(i, 1); this.hasDerailed = true; continue }
+      if (!isFinite(item.x) || !isFinite(item.y)) { this.items[i] = this.items[this.items.length - 1]; this.items.pop(); this.hasDerailed = true; continue }
       const col = Math.round(item.x / cellSize - 0.5)
       const row = Math.round(item.y / cellSize - 0.5)
       const cell = getCell(board, row, col)
-      if (!cell) { this.items.splice(i, 1); this.hasDerailed = true; continue }
+      if (!cell) { this.items[i] = this.items[this.items.length - 1]; this.items.pop(); this.hasDerailed = true; continue }
       const type = cell.type
       if (!(type === 'RLN' || type === 'RRN' || type === 'RUN' || type === 'RDN'
         || type === 'RS' || type === 'RE' || type === 'FA'
         || type === 'RDR' || type === 'RLR' || type === 'RDL' || type === 'RRL')) {
-        this.items.splice(i, 1)
+        this.items[i] = this.items[this.items.length - 1]; this.items.pop()
         this.hasDerailed = true
       }
     }
@@ -900,7 +900,7 @@ export class GameEngine {
       if (dist(item.x, item.y, center.x, center.y) > cellSize * SNAP_RADIUS) continue
       this.config.onGoldEarned(getFinalGold(item), center.x, center.y)
       this.lastGoldTime = Date.now()
-      this.items.splice(i, 1)
+      this.items[i] = this.items[this.items.length - 1]; this.items.pop()
     }
   }
 }

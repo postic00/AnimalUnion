@@ -197,7 +197,7 @@ export function getSavedAt(): number | null {
 const PRESTIGE_TOTAL_KEY = 'animal-union-prestige-total'
 
 export function savePrestigeTotal(total: number): void {
-  try { localStorage.setItem(PRESTIGE_TOTAL_KEY, String(total)) } catch {}
+  try { localStorage.setItem(PRESTIGE_TOTAL_KEY, String(total)) } catch { /* ignore */ }
 }
 
 export function loadPrestigeTotal(): number {
@@ -212,7 +212,7 @@ export function loadPrestigeTotal(): number {
 const WORK_DATA_KEY = 'animal-union-work-data'
 
 export function saveWorkData(data: unknown): void {
-  try { localStorage.setItem(WORK_DATA_KEY, JSON.stringify(data)) } catch {}
+  try { localStorage.setItem(WORK_DATA_KEY, JSON.stringify(data)) } catch { /* ignore */ }
 }
 
 export function loadWorkData(): unknown | null {

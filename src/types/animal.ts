@@ -13,12 +13,19 @@ type DogId = 'dog1' | 'dog2' | 'dog3' | 'dog4' | 'dog5'
   | 'dog11' | 'dog12' | 'dog13' | 'dog14' | 'dog15'
   | 'dog16' | 'dog17' | 'dog18' | 'dog19' | 'dog20'
 
-export type AnimalId = HamsterId | CatId | DogId
+export type FriendId = 'friend1' | 'friend2' | 'friend3' | 'friend4' | 'friend5'
+  | 'friend6' | 'friend7' | 'friend8' | 'friend9' | 'friend10'
+  | 'friend11' | 'friend12' | 'friend13' | 'friend14' | 'friend15'
+  | 'friend16' | 'friend17' | 'friend18' | 'friend19' | 'friend20'
+
+export type AnimalId = HamsterId | CatId | DogId | FriendId
 
 export interface Animal {
   id: AnimalId
   level: number      // 업그레이드 레벨 (1+)
   unlocked: boolean
+  name?: string      // 기본 동물은 ANIMAL_NAMES로 조회, 친구는 playerName
+  rank?: number      // 친구 전용: 지난 시즌 순위 (없으면 동물로 취급)
 }
 
 export const ANIMAL_IDS: AnimalId[] = [

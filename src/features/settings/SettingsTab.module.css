@@ -114,3 +114,55 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* 기기 이전 */
+.transferRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transferLabel {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #6b21a8;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.codeBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codeText {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: #581c87;
+}
+
+.codeTimer {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #9333ea;
+}
+
+.codeInput {
+  width: 80px;
+  padding: 7px 10px;
+  border: 1.5px solid #d8b4fe;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 2px;
+  color: #581c87;
+  background: #fff;
+  outline: none;
+}
+
+.codeInput:focus {
+  border-color: #7c3aed;
+}

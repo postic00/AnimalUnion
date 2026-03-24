@@ -21,7 +21,7 @@ export function useUIState() {
 
   // ── 바텀시트 섹션 ──────────────────────────────────────────────────────────
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
-  const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog'>('hamster')
+  const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog' | 'friend'>('hamster')
   const [prestigeSection, setPrestigeSection] = useState<'item' | 'buffer'>('item')
   const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
   const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)

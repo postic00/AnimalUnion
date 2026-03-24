@@ -136,13 +136,18 @@ export function getFinalGold(item: Item): number {
   return item.value * item.quantity * (1 + item.waBonus) * (1 + item.paBonus) * (1 + item.pkBonus)
 }
 
+function resolveAnimalBonus(animal: Animal | null | undefined): number {
+  if (!animal) return 0
+  return animal.rank !== undefined ? getFriendStat(animal.rank) : getAnimalStat(animal.level)
+}
+
 // WA 보너스 적용
 export function applyWaBonus(item: Item, factory: Factory, animals: Animal[]): Item {
   const { grade } = factory
   if (grade === 0) return item
   if (item.waGrades.includes(grade)) return item
   const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
-  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const animalBonus = resolveAnimalBonus(animal)
   const bonus = getFactoryBonus('WA', grade) + animalBonus
   return { ...item, waBonus: item.waBonus + bonus, waGrades: [...item.waGrades, grade] }
 }
@@ -152,7 +157,7 @@ export function applyPkBonus(item: Item, factory: Factory, animals: Animal[]): I
   if (grade === 0) return item
   if (item.pkGrades.includes(grade)) return item
   const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
-  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const animalBonus = resolveAnimalBonus(animal)
   const bonus = getFactoryBonus('PK', grade) + animalBonus
   return { ...item, pkBonus: item.pkBonus + bonus, pkGrades: [...item.pkGrades, grade] }
 }
@@ -168,7 +173,7 @@ export function createRecipeOutput(
   const quantity = getMaterialQuantity(materialQuantityLevel)
   const value = getEffectiveItemValue(outputGrade, itemValueLevels)
   const animal = factory.animalId ? animals.find(a => a.id === factory.animalId && a.unlocked) : null
-  const animalBonus = animal ? getAnimalStat(animal.level) : 0
+  const animalBonus = resolveAnimalBonus(animal)
   const bonus = getFactoryBonus(factory.type, factory.grade) + animalBonus
   const paBonus = factory.type === 'PA' ? bonus : 0
   const pkBonus = factory.type === 'PK' ? bonus : 0
@@ -259,6 +264,15 @@ export function getAnimalUpgradeCost(level: number): number {
 // 동물 stat
 export function getAnimalStat(level: number): number {
   return calcProc(CONFIG.AM_PROC_BASE, CONFIG.AM_PROC_EXP, CONFIG.AM_PROC_ACC, level)
+}
+
+// 친구 순위 stat (bonus - 1 을 반환, 예: 5.0 → 4.0)
+export function getFriendStat(rank: number): number {
+  const tiers = CONFIG.FR_RANK_TIERS
+  for (const tier of tiers) {
+    if (rank <= tier.maxRank) return tier.bonus - 1
+  }
+  return CONFIG.FR_DEFAULT_BONUS - 1
 }
 
 // 아이템 가치 초기화 시 환급 포인트

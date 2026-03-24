@@ -2,7 +2,8 @@ import { useCallback } from 'react'
 import { saveGame } from '../utils/saveLoad'
 import type { MutableRefObject, Dispatch, SetStateAction } from 'react'
 import type { Factory } from '../types/factory'
-import type { AnimalId } from '../types/animal'
+import type { AnimalId, FriendId } from '../types/animal'
+import type { Friend } from '../types/gameState'
 import type { UpgradeAmount } from '../features/navigation/UpgradeAmountToggle'
 import { CONFIG, applyWeekConfig } from '../config'
 import { initialBoard } from '../data/initialBoard'
@@ -329,6 +330,61 @@ export function useGameActions(ctx: GameActionsCtx) {
     }))
   }, [setGameState])
 
+  // ── 친구 ─────────────────────────────────────────────────────────────────
+  const handleIssueInviteCode = useCallback(async (): Promise<string | null> => {
+    return CloudService.issueInviteCode()
+  }, [])
+
+  // B가 A 코드 입력 → friend_requests 삽입 + B 목록에 A 추가 (rank 포함)
+  const handleSendFriendRequest = useCallback(async (code: string): Promise<boolean> => {
+    const myState = gameStateRef.current
+    const myDeviceId = SaveService.getDeviceId()
+    const result = await CloudService.sendFriendRequest(code, myDeviceId, myState.playerName)
+    if (!result) return false
+    setGameState(prev => {
+      if (prev.friends.length >= 20) return prev
+      if (prev.friends.some(f => f.deviceId === result.deviceId)) return prev
+      const nextId = `friend${prev.friends.length + 1}` as FriendId
+      const newFriend: Friend = { id: nextId, deviceId: result.deviceId, playerName: result.playerName, rank: result.rank }
+      return { ...prev, friends: [...prev.friends, newFriend] }
+    })
+    return true
+  }, [setGameState])
+
+  // A가 pending 요청 수락 → A 목록에 B 추가 (rank 조회 포함)
+  const handleAcceptFriendRequest = useCallback(async (requestId: string, fromDeviceId: string, fromPlayerName: string): Promise<boolean> => {
+    const rank = await CloudService.acceptFriendRequest(requestId, fromDeviceId)
+    if (rank === null) return false
+    setGameState(prev => {
+      if (prev.friends.length >= 20) return prev
+      if (prev.friends.some(f => f.deviceId === fromDeviceId)) return prev
+      const nextId = `friend${prev.friends.length + 1}` as FriendId
+      const newFriend: Friend = { id: nextId, deviceId: fromDeviceId, playerName: fromPlayerName, rank }
+      return { ...prev, friends: [...prev.friends, newFriend] }
+    })
+    return true
+  }, [setGameState])
+
+  const handleRejectFriendRequest = useCallback(async (requestId: string): Promise<boolean> => {
+    return CloudService.rejectFriendRequest(requestId)
+  }, [])
+
+
+  const handleRecallFriend = useCallback((id: FriendId) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
+    }))
+  }, [setGameState])
+
+  const handleRemoveFriend = useCallback((id: FriendId) => {
+    setGameState(prev => ({
+      ...prev,
+      factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
+      friends: prev.friends.filter(f => f.id !== id),
+    }))
+  }, [setGameState])
+
   // ── 재료 / 아이템 가치 ────────────────────────────────────────────────────
   const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
@@ -494,6 +550,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       prestigeCount: newPrestigeCount,
       prestigePoints: { current: newTotal, total: newTotal },
       currentWeek: CONFIG.WEEK,
+      friends: prevState.friends ?? [],
     }))
     resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
@@ -545,6 +602,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       prestigeCount: newPrestigeCount,
       prestigePoints: { current: keptCurrent, total: newTotal },
       currentWeek: CONFIG.WEEK,
+      friends: prevState.friends ?? [],
     }))
 	setTimeout(() => {
 		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPerSec: 0 }
@@ -626,6 +684,49 @@ export function useGameActions(ctx: GameActionsCtx) {
     })
   }, [platform]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleTransferSave = useCallback(async (): Promise<string | null> => {
+    // 클라우드 저장 후 코드 발급
+    const fullState = useGameStore.getState().gameState
+    const { speedBoostRemaining, goldBoostRemaining } = useBoostStore.getState()
+    const ok = await CloudService.save(fullState.playerName, fullState, boardRef.current, platform, {
+      boosts: { speedBoostRemaining, goldBoostRemaining },
+      workData: workDataRef.current ?? undefined,
+      items: SaveService.loadItems() ?? [],
+      faStates: SaveService.loadFaStates() ?? {},
+      rsQueues: (SaveService.loadRsQueues() ?? {}) as Record<string, unknown[]>,
+      produceTimers: SaveService.loadProduceTimers() ?? {},
+      prStates: SaveService.loadPrStates() ?? {},
+    })
+    if (!ok) return null
+    return CloudService.issueTransferCode()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTransferLoad = useCallback(async (code: string): Promise<boolean> => {
+    const data = await CloudService.loadByTransferCode(code)
+    if (!data || !Array.isArray(data.board) || !data.gameState) return false
+    SaveService.saveEngineState({
+      items: data.items,
+      faStates: data.faStates,
+      rsQueues: data.rsQueues as Record<string, unknown[]> | undefined,
+      produceTimers: data.produceTimers,
+      prStates: data.prStates,
+    })
+    if (data.boosts) {
+      useBoostStore.getState().setBoosts(data.boosts.speedBoostRemaining ?? 0, data.boosts.goldBoostRemaining ?? 0)
+    }
+    if (data.workData) {
+      workDataRef.current = data.workData
+      setWorkData(data.workData)
+      SaveService.saveWorkData(data.workData)
+    }
+    setBoard(data.board)
+    setGameState(data.gameState)
+    useGoldStore.getState().setGold(data.gameState.gold ?? 0)
+    useGoldStore.getState().setTotalEarned(data.gameState.totalEarned ?? 0)
+    setResetKey(k => k + 1)
+    return true
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await CloudService.load()
     if (!data || !Array.isArray(data.board) || !data.gameState) return false
@@ -689,5 +790,13 @@ export function useGameActions(ctx: GameActionsCtx) {
     handleHardReset,
     handleCloudSave,
     handleCloudLoad,
+    handleTransferSave,
+    handleTransferLoad,
+    handleIssueInviteCode,
+    handleSendFriendRequest,
+    handleAcceptFriendRequest,
+    handleRejectFriendRequest,
+    handleRecallFriend,
+    handleRemoveFriend,
   }
 }

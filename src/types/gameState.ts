@@ -1,8 +1,15 @@
 import type { Producer } from './producer'
 import type { Clicker } from './clicker'
 import type { Factory } from './factory'
-import { type Animal, initialAnimals } from './animal'
+import { type Animal, type FriendId, initialAnimals } from './animal'
 import { CONFIG } from '../config'
+
+export interface Friend {
+  id: FriendId
+  deviceId: string
+  playerName: string
+  rank: number   // 지난 시즌 환생 순위 (없으면 9999)
+}
 
 export interface GameState {
   playerName: string
@@ -20,6 +27,7 @@ export interface GameState {
   itemValueLevels: number[]  // 인덱스 = 아이템 등급-1, 값 = 가치 레벨
   materialQuantityLevels: number[]  // 등급별 재료 수량 레벨 (환생 시 리셋)
   animals: Animal[]          // 환생 유지
+  friends: Friend[]          // 친구 목록 (환생 유지, 최대 20명)
   rsBufferLevel: number      // RS 버퍼 레벨 (환생 유지)
   faBufferLevel: number      // FA 버퍼 레벨 (환생 유지)
   railSpeedLevel: number     // 레일 속도 레벨 (환생 유지)
@@ -49,6 +57,7 @@ export const initialGameState: GameState = {
   itemValueLevels: Array(20).fill(0),
   materialQuantityLevels: Array(20).fill(1),
   animals: initialAnimals,
+  friends: [],
   rsBufferLevel: 0,
   faBufferLevel: 0,
   railSpeedLevel: 0,

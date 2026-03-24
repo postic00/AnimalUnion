@@ -92,6 +92,16 @@ export const CONFIG = {
   PF_IG_PROC_BASE: 1000,
   PF_IG_COST_BASE: 10,    PF_IG_COST_RATE: 1.5, PF_IG_COST_EXP: 3, PF_IG_COST_ACC: 0.05,
 
+  // FR (친구 순위 보너스 티어) — maxRank 이하이면 해당 bonus 적용
+  FR_RANK_TIERS: [
+    { maxRank: 1,   bonus: 5.0 },
+    { maxRank: 10,  bonus: 4.3 },
+    { maxRank: 30,  bonus: 3.6 },
+    { maxRank: 60,  bonus: 2.9 },
+    { maxRank: 100, bonus: 2.3 },
+  ] as { maxRank: number; bonus: number }[],
+  FR_DEFAULT_BONUS: 2.0, // 101위 이하 기본값
+
   // WR (근무 보상)
   WR_OFFLINE_MAX_SECONDS: 4 * 60 * 60,  // 휴게 보상 최대 오프라인 시간 (초, 4시간)
   WR_OFFLINE_RATE: 0.3,          // 휴게 보상 비율 (goldPerSec 대비, 30%)

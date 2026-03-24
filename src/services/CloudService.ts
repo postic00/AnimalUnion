@@ -5,7 +5,15 @@ import {
   fetchAndSaveWeekConfig as _fetchAndSaveWeekConfig,
   saveToCloud as _saveToCloud,
   loadFromCloud as _loadFromCloud,
+  issueTransferCode as _issueTransferCode,
+  loadByTransferCode as _loadByTransferCode,
+  issueInviteCode as _issueInviteCode,
+  sendFriendRequest as _sendFriendRequest,
+  getPendingFriendRequests as _getPendingFriendRequests,
+  acceptFriendRequest as _acceptFriendRequest,
+  rejectFriendRequest as _rejectFriendRequest,
 } from '../lib/userProfile'
+import type { FriendRequestRow } from '../lib/userProfile'
 
 export interface CloudExtras {
   boosts?: { speedBoostRemaining: number; goldBoostRemaining: number }
@@ -36,5 +44,35 @@ export const CloudService = {
 
   load() {
     return _loadFromCloud()
+  },
+
+  // ── 기기 이전 ─────────────────────────────────────────────────────────────
+  issueTransferCode(): Promise<string | null> {
+    return _issueTransferCode()
+  },
+
+  loadByTransferCode(code: string) {
+    return _loadByTransferCode(code)
+  },
+
+  // ── 친구 요청 ─────────────────────────────────────────────────────────────
+  issueInviteCode(): Promise<string | null> {
+    return _issueInviteCode()
+  },
+
+  sendFriendRequest(inviteCode: string, myDeviceId: string, myPlayerName: string) {
+    return _sendFriendRequest(inviteCode, myDeviceId, myPlayerName)
+  },
+
+  getPendingFriendRequests(): Promise<FriendRequestRow[]> {
+    return _getPendingFriendRequests()
+  },
+
+  acceptFriendRequest(requestId: string, fromDeviceId: string): Promise<number | null> {
+    return _acceptFriendRequest(requestId, fromDeviceId)
+  },
+
+  rejectFriendRequest(requestId: string): Promise<boolean> {
+    return _rejectFriendRequest(requestId)
   },
 }

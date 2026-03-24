@@ -105,7 +105,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
 
 const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
 
-export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
+export default function FactoryTab({ board, factories, gold, animals, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -199,7 +199,9 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
                         <span className={styles.levelBadge} style={{ background: meta.sub }}>Lv.{factory.level}</span>
                       </div>
                       {factory.animalId && (
-                        <span className={styles.animalLabel}>{ANIMAL_NAMES[factory.animalId]}</span>
+                        <span className={styles.animalLabel}>
+                          {ANIMAL_NAMES[factory.animalId] ?? animals.find(a => a.id === factory.animalId)?.name ?? factory.animalId}
+                        </span>
                       )}
                     </div>
                   </div>

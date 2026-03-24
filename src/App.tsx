@@ -18,6 +18,7 @@ import WorkRewardModal from './features/reward/WorkRewardModal'
 import Toast from './features/common/Toast'
 import { SaveService } from './services/SaveService'
 import { ScoreService } from './services/ScoreService'
+import { CloudService } from './services/CloudService'
 import SplashScreen from './features/tutorial/SplashScreen'
 import FactoryInfoModal from './features/factory/FactoryInfoModal'
 import FactoryBuildModal from './features/factory/FactoryBuildModal'
@@ -171,6 +172,12 @@ export default function App() {
   const toastIdRef = useRef(0)
   const addToast = useCallback((message: string) => {
     setToasts(prev => [...prev, { id: ++toastIdRef.current, message }])
+  }, [])
+
+  // ── 친구 요청 ─────────────────────────────────────────────────────────────
+  const [pendingFriendRequests, setPendingFriendRequests] = useState<import('./lib/userProfile').FriendRequestRow[]>([])
+  useEffect(() => {
+    CloudService.getPendingFriendRequests().then(setPendingFriendRequests)
   }, [])
 
   const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
@@ -466,7 +473,10 @@ export default function App() {
         canAddBundle={gold >= bundleCost}
         producers={gameState.producers}
         factories={gameState.factories}
-        animals={gameState.animals}
+        animals={[
+          ...gameState.animals,
+          ...(gameState.friends ?? []).map(f => ({ id: f.id, level: 1, unlocked: true, name: f.playerName, rank: f.rank })),
+        ]}
         levelConfig={{
           materialQuantityLevels: gameState.materialQuantityLevels,
           itemValueLevels: gameState.itemValueLevels,
@@ -572,6 +582,18 @@ export default function App() {
                       {label}
                     </button>
                   ))}
+                  <button
+                    onClick={() => ui.setAnimalType('friend')}
+                    style={{
+                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
+                      borderColor: ui.animalType === 'friend' ? '#059669' : '#e5e7eb',
+                      background: ui.animalType === 'friend' ? '#ecfdf5' : '#fff',
+                      color: ui.animalType === 'friend' ? '#059669' : '#9ca3af',
+                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                    }}
+                  >
+                    👥 친구
+                  </button>
                 </div>
               </div>
               <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
@@ -657,7 +679,10 @@ export default function App() {
             onSetGrade={actions.handleSetFactoryGrade}
             onUpgradeLevel={(row, col) => actions.handleUpgradeFactoryLevel(row, col, ui.upgradeAmount)}
             onSetAnimal={actions.handleSetFactoryAnimal}
-            animals={gameState.animals}
+            animals={[
+              ...gameState.animals,
+              ...(gameState.friends ?? []).map(f => ({ id: f.id, level: 1, unlocked: true, name: f.playerName, rank: f.rank })),
+            ]}
             maxGrade={20}
             focusFactory={ui.focusFactory}
             onFocusConsumed={() => ui.setFocusFactory(null)}
@@ -678,6 +703,19 @@ export default function App() {
             onUpgradeAnimal={(id) => actions.handleUpgradeAnimal(id, ui.upgradeAmount)}
             onStartPlacing={ui.handleStartPlacing}
             onRecallAnimal={actions.handleRecallAnimal}
+            onIssueInviteCode={actions.handleIssueInviteCode}
+            onSendFriendRequest={actions.handleSendFriendRequest}
+            pendingFriendRequests={pendingFriendRequests}
+            onAcceptFriendRequest={async (id, devId, name) => {
+              const ok = await actions.handleAcceptFriendRequest(id, devId, name)
+              if (ok) setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
+            }}
+            onRejectFriendRequest={async (id) => {
+              await actions.handleRejectFriendRequest(id)
+              setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
+            }}
+            onRecallFriend={actions.handleRecallFriend}
+            onRemoveFriend={actions.handleRemoveFriend}
           />
         )}
         {ui.activeTab === 3 && (
@@ -719,6 +757,8 @@ export default function App() {
             onToggleMute={actions.handleToggleMute}
             onCloudSave={actions.handleCloudSave}
             onCloudLoad={actions.handleCloudLoad}
+            onTransferSave={actions.handleTransferSave}
+            onTransferLoad={actions.handleTransferLoad}
             onHardReset={() => ui.setShowResetConfirm(true)}
           />
         )}

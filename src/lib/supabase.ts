@@ -112,3 +112,11 @@ export async function fetchGoldAround(deviceId: string, range = 5): Promise<Arou
   if (error || !Array.isArray(data)) return { entries: [], startRank: rank }
   return { entries: data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[], startRank: offset + 1 }
 }
+
+// 특정 deviceId의 환생 순위 조회 (없으면 9999)
+export async function fetchPrestigeRank(deviceId: string): Promise<number> {
+  const { data: myData } = await supabase.from("leaderboard").select("score").eq("id", deviceId).single()
+  if (!myData) return 9999
+  const { count } = await supabase.from("leaderboard").select("*", { count: "exact", head: true }).gt("score", myData.score)
+  return (count ?? 0) + 1
+}

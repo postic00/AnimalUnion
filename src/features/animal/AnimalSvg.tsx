@@ -208,5 +208,6 @@ export function getSpeciesFromId(animalId: string | null): AnimalSpecies {
   if (!animalId) return 'robot'
   if (animalId.startsWith('hamster')) return 'hamster'
   if (animalId.startsWith('cat')) return 'cat'
-  return 'dog'
+  if (animalId.startsWith('dog')) return 'dog'
+  return 'robot'
 }

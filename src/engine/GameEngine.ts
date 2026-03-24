@@ -647,12 +647,13 @@ export class GameEngine {
     const outputQuantity = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
     const bufferCapacity = getFaBufferCapacity(this.config.faBufferLevel)
 
-    // 레시피 재료 중 아직 buffer가 꽉 차지 않은 첫 번째 등급 반환
-    const getNeededGrade = (buf: { grade: number; count: number }[]): number | null => {
+    // 버퍼 여유 있는 모든 등급 반환 (벨트에 오는 것 먼저 수집)
+    const getNeededGrades = (buf: { grade: number; count: number }[]): Set<number> => {
+      const needed = new Set<number>()
       for (const req of recipe) {
-        if ((buf.find(b => b.grade === req.grade)?.count ?? 0) < bufferCapacity) return req.grade
+        if ((buf.find(b => b.grade === req.grade)?.count ?? 0) < bufferCapacity) needed.add(req.grade)
       }
-      return null
+      return needed
     }
 
     // GRAB: 벨트에서 재료 흡수 → buffer에 적재
@@ -677,11 +678,11 @@ export class GameEngine {
             ? { ...fas, buffer: fas.buffer.filter(b => b.grade !== ejectEntry.grade) }
             : { ...fas, processingBuffer: (fas.processingBuffer ?? []).filter(b => b.grade !== ejectEntry.grade) }
         } else {
-          // 부족한 등급의 재료를 벨트에서 집어 올림
-          const neededGrade = getNeededGrade(fas.buffer)
-          if (neededGrade !== null) {
+          // 버퍼 여유 있는 등급이면 벨트에서 먼저 온 것 집어 올림
+          const neededGrades = getNeededGrades(fas.buffer)
+          if (neededGrades.size > 0) {
             const idx = this.items.findIndex(it =>
-              it.grade === neededGrade && it.pkGrades.length === 0 &&
+              neededGrades.has(it.grade) && it.pkGrades.length === 0 &&
               dist(it.x, it.y, inputCenter.x, inputCenter.y) <= cellSize * SNAP_RADIUS
             )
             if (idx !== -1) {
@@ -695,7 +696,7 @@ export class GameEngine {
           }
         }
       } else if (fas.grabState === 'WAITING') {
-        if (getNeededGrade(fas.buffer) !== null) this.faStates[key] = { ...this.faStates[key], grabState: 'IDLE' }
+        if (getNeededGrades(fas.buffer).size > 0) this.faStates[key] = { ...this.faStates[key], grabState: 'IDLE' }
       } else if (fas.grabState === 'GRABBING') {
         // pickTime 경과 후 grabbed 아이템을 buffer에 합산 (waBonus 가중평균)
         const newTimer = this.faStates[key].grabTimer + delta

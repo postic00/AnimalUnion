@@ -485,27 +485,24 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGold(0)
     setTotalEarned(0)
     setGoldPerSec(0)
-    setGameState(prev => {
-      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const oldTotal = prev.prestigePoints.total
-      const newTotal = isNewSeason ? Math.floor(oldTotal * weekRate) + earned : oldTotal + earned
-      const newPrestigeCount = prev.prestigeCount + 1
-      if (prev.playerName) {
-        const deviceId = SaveService.getDeviceId()
-        ScoreService.submitPrestige(deviceId, prev.playerName, newTotal, newPrestigeCount)
-        ScoreService.submitGold(deviceId, prev.playerName, 0)
-      }
-      // initialGameState 기반: 새 필드 추가 시 자동으로 리셋됨
-      return {
-        ...initialGameState,
-        playerName: prev.playerName,
-        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        // 환생 카운터
-        prestigeCount: newPrestigeCount,
-        prestigePoints: { current: newTotal, total: newTotal },
-				currentWeek: CONFIG.WEEK,
-      }
-    })
+    // 제출용 값 사전 계산 (state updater 밖에서)
+    const prevState = gameStateRef.current
+    const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
+    const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
+    const newPrestigeCount = prevState.prestigeCount + 1
+    if (prevState.playerName) {
+      const deviceId = SaveService.getDeviceId()
+      ScoreService.submitPrestige(deviceId, prevState.playerName, newTotal, newPrestigeCount)
+      ScoreService.submitGold(deviceId, prevState.playerName, 0)
+    }
+    setGameState(() => ({
+      ...initialGameState,
+      playerName: prevState.playerName,
+      producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prevState.producerStartLevel ?? 0)) })),
+      prestigeCount: newPrestigeCount,
+      prestigePoints: { current: newTotal, total: newTotal },
+      currentWeek: CONFIG.WEEK,
+    }))
     resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)
@@ -526,42 +523,36 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGold(0)
     setTotalEarned(0)
     setGoldPerSec(0)
-    setGameState(prev => {
-      const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
-      const oldTotal = prev.prestigePoints.total
-      const newTotal = isNewSeason ? Math.floor(oldTotal * weekRate) + earned : oldTotal + earned
-      const newPrestigeCount = prev.prestigeCount + 1
-      if (prev.playerName) {
-        const deviceId = SaveService.getDeviceId()
-        ScoreService.submitPrestige(deviceId, prev.playerName, newTotal, newPrestigeCount)
-        ScoreService.submitGold(deviceId, prev.playerName, 0)
-      }
-      const keptCurrent = isNewSeason
-        ? Math.floor(prev.prestigePoints.current * weekRate) + earned
-        : prev.prestigePoints.current + earned
-      // initialGameState 기반: 새 필드 추가 시 자동으로 리셋됨
-      return {
-        ...initialGameState,
-        playerName: prev.playerName,
-        producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) })),
-        // 환생 유지 (prestige buff)
-        buildDiscountLevel: prev.buildDiscountLevel,
-        bundleDiscountLevel: prev.bundleDiscountLevel,
-        producerStartLevel: prev.producerStartLevel,
-        goldMultiplierLevel: prev.goldMultiplierLevel,
-        // 포인트 유지 전용: 버퍼/레일 유지
-        rsBufferLevel: prev.rsBufferLevel,
-        faBufferLevel: prev.faBufferLevel,
-        railSpeedLevel: prev.railSpeedLevel,
-		// 포인트 구매 항목 유지
-        animals: prev.animals,
-        itemValueLevels: prev.itemValueLevels,
-        // 환생 카운터
-        prestigeCount: newPrestigeCount,
-        prestigePoints: { current: keptCurrent, total: newTotal },
-				currentWeek: CONFIG.WEEK,
-      }
-    })
+    // 제출용 값 사전 계산 (state updater 밖에서)
+    const prevState = gameStateRef.current
+    const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
+    const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
+    const newPrestigeCount = prevState.prestigeCount + 1
+    const keptCurrent = isNewSeason
+      ? Math.floor(prevState.prestigePoints.current * weekRate) + earned
+      : prevState.prestigePoints.current + earned
+    if (prevState.playerName) {
+      const deviceId = SaveService.getDeviceId()
+      ScoreService.submitPrestige(deviceId, prevState.playerName, newTotal, newPrestigeCount)
+      ScoreService.submitGold(deviceId, prevState.playerName, 0)
+    }
+    setGameState(() => ({
+      ...initialGameState,
+      playerName: prevState.playerName,
+      producers: initialGameState.producers.map(p => ({ ...p, level: Math.max(1, getProducerStartLevel(prevState.producerStartLevel ?? 0)) })),
+      buildDiscountLevel: prevState.buildDiscountLevel,
+      bundleDiscountLevel: prevState.bundleDiscountLevel,
+      producerStartLevel: prevState.producerStartLevel,
+      goldMultiplierLevel: prevState.goldMultiplierLevel,
+      rsBufferLevel: prevState.rsBufferLevel,
+      faBufferLevel: prevState.faBufferLevel,
+      railSpeedLevel: prevState.railSpeedLevel,
+      animals: prevState.animals,
+      itemValueLevels: prevState.itemValueLevels,
+      prestigeCount: newPrestigeCount,
+      prestigePoints: { current: keptCurrent, total: newTotal },
+      currentWeek: CONFIG.WEEK,
+    }))
 	setTimeout(() => {
 		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPreSec: 0 }
 		saveGame(boardRef.current, fullState, {

@@ -728,6 +728,10 @@ export default function App() {
               setGameState(prev => ({ ...prev, playerName: name }))
               await ScoreService.updatePlayerName(SaveService.getDeviceId(), name)
             }}
+            onSubmitGold={async () => {
+              const { playerName } = gameStateRef.current
+              if (playerName) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+            }}
           />
         )}
         {ui.activeTab === 5 && (

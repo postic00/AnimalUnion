@@ -9,9 +9,10 @@ interface Props {
   playerName: string
   mode: 'prestige' | 'gold'
   onNameChange: (name: string) => void
+  onSubmitGold?: () => Promise<void>
 }
 
-export default function LeaderboardTab({ playerName, mode, onNameChange }: Props) {
+export default function LeaderboardTab({ playerName, mode, onNameChange, onSubmitGold }: Props) {
   const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,24 +23,22 @@ export default function LeaderboardTab({ playerName, mode, onNameChange }: Props
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(playerName)
 
-  const refresh = () => {
+  const doFetch = async () => {
     setLoading(true)
-    const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
-    fetch()
-      .then(data => { setEntries(data) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    try {
+      if (mode === 'gold') await onSubmitGold?.()
+      const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
+      const data = await fetch()
+      setEntries(data)
+    } catch {}
+    finally { setLoading(false) }
   }
 
+  const refresh = () => { doFetch() }
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true)
-    const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
-    fetch()
-      .then(data => { setEntries(data) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [mode])
+    doFetch()
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameSave = () => {
     const trimmed = nameInput.trim()

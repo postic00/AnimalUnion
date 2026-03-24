@@ -14,20 +14,11 @@
    npx cap sync android
    ```
 
-3. **안드로이드 빌드** (JAVA_HOME 필요)
-   ```
-   JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
-     cd android && ./gradlew assembleDebug
-   ```
-
-4. **APK 확인 및 복사**
-   ```
-   cp android/app/build/outputs/apk/debug/app-debug.apk public/app-debug.apk
-   ```
-
-5. **커밋 & 푸시**
+3. **커밋 & 푸시**
    ```
    git add ...
    git commit -m "..."
    git push
    ```
+
+> 안드로이드 빌드(assembleDebug) 및 APK 복사는 더 이상 하지 않는다.

@@ -22,7 +22,7 @@
 
 /* 빈 셀 */
 .EM {
-  background-color: rgba(255, 236, 210, 0.35);
+  background-color: transparent;
   color: transparent;
 }
 

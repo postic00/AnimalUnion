@@ -14,6 +14,8 @@ import { useGameLoop } from '../../hooks/useGameLoop'
 import { SaveService } from '../../services/SaveService'
 import type { FAState, FALiveStates, PRState } from '../../hooks/useGameLoop'
 import coinIcon from '../../assets/coin.svg'
+import bgSandWater from '../../assets/01_bg_sand_water.png'
+import addLineBg from '../../assets/54_add_line_bg.png'
 import styles from './Board.module.css'
 
 export interface LevelConfig {
@@ -107,7 +109,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
 
   return (
     <div className={styles.board}>
-      <div className={styles.grid} style={{ position: 'relative' }}>
+      <div className={styles.grid} style={{ position: 'relative', backgroundImage: `url(${bgSandWater})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         {board.map((row, rowIdx) => (
           <div key={rowIdx} className={styles.row}>
             {row.map((cell, colIdx) => (
@@ -163,7 +165,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
       <button
         onClick={onAddBundle}
         className={styles.addButton}
-        style={{ width: cellSize * 7 }}
+        style={{ width: cellSize * 7, backgroundImage: `url(${addLineBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         disabled={!canAddBundle}
       >
         <div className={styles.addButtonLeft}>

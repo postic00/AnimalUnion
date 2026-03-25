@@ -2,6 +2,19 @@ import type { Clicker } from '../../types/clicker'
 import { GradeIcon } from '../common/GradeIcon'
 import styles from './TabBar.module.css'
 
+import tabFactory  from '../../assets/39_tab_factory.png'
+import tabMaterial from '../../assets/40_tab_material.png'
+import tabAnimal   from '../../assets/41_tab_animal.png'
+import tabRebirth  from '../../assets/42_tab_rebirth.png'
+import tabRanking  from '../../assets/43_tab_ranking.png'
+import tabSettings from '../../assets/44_tab_settings.png'
+import boostSpeed    from '../../assets/55_boost_speed.png'
+import boostSpeedOff from '../../assets/56_boost_speed_off.png'
+import boostGold     from '../../assets/57_boost_gold.png'
+import boostGoldOff  from '../../assets/58_boost_gold_off.png'
+import clickerImg    from '../../assets/59_clicker.png'
+import clickerFull   from '../../assets/60_clicker_full.png'
+
 const BOOST_DURATION = 10 * 60 * 1000 // 10분
 
 interface Props {
@@ -25,12 +38,12 @@ function formatRemain(ms: number): string {
 }
 
 const TABS = [
-  { label: '공장', icon: '🌱' },
-  { label: '재료', icon: '📦' },
-  { label: '동물', icon: '🐾' },
-  { label: '환생', icon: '⭐' },
-  { label: '순위', icon: '🏆' },
-  { label: '설정', icon: '🔧' },
+  { label: '공장',   img: tabFactory },
+  { label: '재료',   img: tabMaterial },
+  { label: '동물',   img: tabAnimal },
+  { label: '환생',   img: tabRebirth },
+  { label: '순위',   img: tabRanking },
+  { label: '설정',   img: tabSettings },
 ]
 
 export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabChange, activeTab, speedBoostRemaining, goldBoostRemaining, onSpeedBoost, onGoldBoost, tutorialHighlightTab }: Props) {
@@ -59,13 +72,13 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
 
   return (
     <div className={styles.tabBar}>
-      {TABS.map(({ label, icon }, i) => (
+      {TABS.map(({ label, img }, i) => (
         <div
           key={i}
           className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''} ${tutorialHighlightTab === i ? styles.tabHighlight : ''}`}
           onClick={() => handleTab(i)}
         >
-          <span className={styles.tabIcon}>{icon}</span>
+          <img src={img} className={styles.tabIcon} alt={label}/>
           <span className={styles.tabLabel}>{label}</span>
           {activeTab === i && <span className={styles.tabIndicator} />}
         </div>
@@ -82,7 +95,10 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
           <circle cx="28" cy="28" r={radius} className={styles.ringFill} strokeDasharray={circumference} strokeDashoffset={dashOffset} />
         </svg>
         <span className={styles.clickerIcon}>
-          {clickerGrade > 0 ? <GradeIcon size={28} grade={clickerGrade}/> : '👆'}
+          {clickerGrade > 0
+            ? <GradeIcon size={28} grade={clickerGrade}/>
+            : <img src={isFull ? clickerFull : clickerImg} width={28} height={28} style={{ objectFit: 'contain' }} alt=""/>
+          }
         </span>
       </button>
 
@@ -97,7 +113,7 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
           {speedRemain > 0 && <circle cx="28" cy="28" r={radius} className={styles.boostRingFill} strokeDasharray={circumference} strokeDashoffset={speedDash} />}
         </svg>
         <div className={styles.boostInner}>
-          <span className={styles.boostIcon}>⚡</span>
+          <img src={speedRemain > 0 ? boostSpeed : boostSpeedOff} className={styles.boostIcon} alt="speed"/>
           {speedRemain > 0 && <span className={styles.boostTime}>{formatRemain(speedRemain)}</span>}
         </div>
       </button>
@@ -113,7 +129,7 @@ export default function TabBar({ clicker, clickerGrade, onClickerClick, onTabCha
           {goldRemain > 0 && <circle cx="28" cy="28" r={radius} className={styles.boostRingFill} strokeDasharray={circumference} strokeDashoffset={goldDash} />}
         </svg>
         <div className={styles.boostInner}>
-          <span className={styles.boostIcon}>💰</span>
+          <img src={goldRemain > 0 ? boostGold : boostGoldOff} className={styles.boostIcon} alt="gold"/>
           {goldRemain > 0 && <span className={styles.boostTime}>{formatRemain(goldRemain)}</span>}
         </div>
       </button>

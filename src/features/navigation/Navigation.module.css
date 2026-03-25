@@ -3,7 +3,9 @@
   top: 0;
   z-index: var(--z-nav);
   width: 100%;
-  background: #fff8f0;
+  background-image: url('../../assets/53_top_bg.png');
+  background-size: cover;
+  background-position: center;
   border-bottom: 1px solid rgba(184, 134, 11, 0.25);
   display: flex;
   align-items: center;

@@ -4,7 +4,9 @@
   left: 0;
   right: 0;
   z-index: var(--z-bottom-sheet);
-  background: #ffffff;
+  background-image: url('../../assets/51_panel_bg.png');
+  background-size: cover;
+  background-position: top center;
   border-radius: 16px 16px 0 0;
   height: 40vh;
   overflow: hidden;
@@ -19,6 +21,9 @@
   align-items: flex-start;
   padding: 9px 8px 7px 16px;
   border-bottom: 1px solid var(--c-gray-100);
+  background-image: url('../../assets/52_panel_header.png');
+  background-size: cover;
+  background-position: center;
 }
 
 .sheetHeaderContent {

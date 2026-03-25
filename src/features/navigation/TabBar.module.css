@@ -4,7 +4,9 @@
   left: 0;
   right: 0;
   z-index: var(--z-nav);
-  background: #fffcf5;
+  background-image: url('../../assets/50_tab_bg.png');
+  background-size: cover;
+  background-position: center;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
@@ -34,7 +36,9 @@
 }
 
 .tabIcon {
-  font-size: var(--text-xl);
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
   line-height: 1;
   transition: transform 0.15s ease;
   opacity: 0.5;
@@ -165,7 +169,9 @@
 }
 
 .boostIcon {
-  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
   line-height: 1;
 }
 

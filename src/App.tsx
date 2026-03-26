@@ -588,7 +588,6 @@ export default function App() {
               <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
                 <button onClick={() => ui.setLbMode('prestige')} className={ui.lbMode === 'prestige' ? 'aqua-btn-active' : 'aqua-btn'}>⭐ 환생</button>
                 <button onClick={() => ui.setLbMode('gold')} className={ui.lbMode === 'gold' ? 'aqua-btn-active' : 'aqua-btn'}>💰 골드</button>
-                <button onClick={() => ui.setLbMode('friend')} className={ui.lbMode === 'friend' ? 'aqua-btn-active' : 'aqua-btn'}>👥 친구</button>
               </div>
             </div>
           ) : (

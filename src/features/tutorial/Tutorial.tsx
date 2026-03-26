@@ -121,9 +121,10 @@ export default function Tutorial({ step, clickCount, onSkip, onNext }: Props) {
     return (
       <div className={styles.tutorialOverlay}>
         <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
-        <div className={styles.boardCenterTooltip}>
+        <div className={styles.faSpotlight} />
+        <div className={styles.faTooltip}>
           <p className={styles.tooltipText}>공장 자리를 탭해보세요!</p>
-          <p className={styles.tooltipSub}>보드에서 🏗️ 공장 부지를 탭하면{'\n'}공장을 건설할 수 있어요.</p>
+          <p className={styles.tooltipSub}>🏗️ 공장 부지를 탭하면{'\n'}공장을 건설할 수 있어요.</p>
         </div>
       </div>
     )
@@ -142,8 +143,35 @@ export default function Tutorial({ step, clickCount, onSkip, onNext }: Props) {
     )
   }
 
-  /* ── Step 8: 완료 팝업 ── */
+  /* ── Step 8: PR 생산자 탭 안내 ── */
   if (step === 8) {
+    return (
+      <div className={styles.tutorialOverlay}>
+        <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
+        <div className={styles.prSpotlight} />
+        <div className={styles.prTooltip}>
+          <p className={styles.tooltipText}>생산자를 탭해보세요!</p>
+          <p className={styles.tooltipSub}>🏗️ 생산자를 탭하면{'\n'}재료 생산 정보를 볼 수 있어요.</p>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Step 9: PR 모달 건설 안내 ── */
+  if (step === 9) {
+    return (
+      <div className={styles.tutorialOverlay} style={{ zIndex: 600 }}>
+        <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
+        <div className={styles.buildGuideTooltip}>
+          <p className={styles.tooltipText}>생산자를 건설해요!</p>
+          <p className={styles.tooltipSub}>건설하면 재료를{'\n'}자동으로 생산해요.</p>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Step 10: 완료 팝업 ── */
+  if (step === 10) {
     return (
       <div className={styles.tutorialOverlay} style={{ background: 'rgba(0,0,0,0.7)', pointerEvents: 'all' }}>
         <div className={styles.donePopup}>

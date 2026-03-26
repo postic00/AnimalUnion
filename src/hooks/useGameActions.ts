@@ -106,14 +106,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     if (!mutedRef.current) soundHamster()
     const now = performance.now()
     setGameState(prev => {
-      const { clickCount, threshold, level } = prev.clicker
-      if (clickCount >= threshold) {
-        if (now < spawnUnlockTimeRef.current) return prev
-        spawnClickerItemRef.current?.(clickerGradeRef.current)
-        setTutorialItemCount(c => c + 1)
-        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CM_CLICKER_THRESHOLD } }
-      }
-      const next = clickCount + 1
+      const { clickCount, level } = prev.clicker
       if (clickCount === 0) {
         const builtGrades = prev.producers.filter(p => p.built).map(p => p.grade)
         const grade = builtGrades.length > 0
@@ -125,7 +118,14 @@ export function useGameActions(ctx: GameActionsCtx) {
       const grade = clickerGradeRef.current
       const quantity = getMaterialQuantity(prev.materialQuantityLevels[grade - 1] ?? 1)
       const newThreshold = getClickerThreshold(quantity, level)
-      if (next >= newThreshold) spawnUnlockTimeRef.current = now + 250
+      const next = clickCount + 1
+      if (next >= newThreshold) {
+        if (now < spawnUnlockTimeRef.current) return prev
+        spawnUnlockTimeRef.current = now + 250
+        spawnClickerItemRef.current?.(grade)
+        setTutorialItemCount(c => c + 1)
+        return { ...prev, clicker: { ...prev.clicker, clickCount: 0, threshold: CONFIG.CM_CLICKER_THRESHOLD } }
+      }
       return { ...prev, clicker: { ...prev.clicker, clickCount: next, threshold: newThreshold } }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -151,6 +151,9 @@ export function useGameActions(ctx: GameActionsCtx) {
       producers[index] = { ...producers[index], built: true, level: Math.max(1, getProducerStartLevel(prev.producerStartLevel ?? 0)) }
       return { ...prev, producers }
     })
+    if (tutorialStep === 9) {
+      setTutorialStep(10)
+    }
   }, [tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleProducerGradeChange = useCallback((index: number, grade: number) => {

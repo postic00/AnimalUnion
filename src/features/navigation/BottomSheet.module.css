@@ -5,8 +5,7 @@
   right: 0;
   z-index: var(--z-bottom-sheet);
   background-image: url('../../assets/51_panel_bg.png');
-  background-size: cover;
-  background-position: top center;
+  background-size: 100% 100%;
   border-radius: 16px 16px 0 0;
   height: 40vh;
   overflow: hidden;
@@ -17,13 +16,35 @@
 
 .sheetHeader {
   flex-shrink: 0;
-  display: flex;
-  align-items: flex-start;
-  padding: 9px 8px 7px 16px;
+  height: 90px;
+  position: relative;
   border-bottom: 1px solid var(--c-gray-100);
   background-image: url('../../assets/52_panel_header.png');
-  background-size: cover;
-  background-position: center;
+  background-size: 100% 100%;
+}
+
+.sheetHeaderTop {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px 0 17px;
+}
+
+.sheetHeaderBottom {
+  position: absolute;
+  top: 27px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 16px;
+  min-width: 0;
 }
 
 .sheetHeaderContent {
@@ -33,18 +54,19 @@
 
 .closeBtn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: none;
   border: none;
   font-size: 16px;
-  color: var(--c-gray-400);
+  font-weight: 900;
+  color: #fff;
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  margin-top: 1px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6);
+  line-height: 1;
 }
 
 .sheetBody {

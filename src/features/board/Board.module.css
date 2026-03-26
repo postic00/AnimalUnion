@@ -7,67 +7,74 @@
   display: flex;
 }
 
+.addButtonWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  pointer-events: auto;
+}
+
 .addButton {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 80px;
-  padding: 0 24px;
-  background: #fff8f0;
-  border: none;
-  border-radius: 28px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.1);
-}
-
-.addButtonLeft {
-  display: flex;
-  align-items: center;
   gap: 10px;
+  height: 35px;
+  padding: 0 22px;
+  background: transparent;
+  border: 2px solid #a06830;
+  border-radius: 8px;
+  box-shadow: inset 0 5px 10px rgba(60,30,0,0.55), inset 0 2px 4px rgba(0,0,0,0.4);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.addButtonPlus {
-  font-size: 28px;
+.addButtonLabel {
+  font-size: 15px;
   font-weight: 900;
-  color: #DAA520;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8);
+  letter-spacing: 0.5px;
   line-height: 1;
-  flex-shrink: 0;
-}
-
-.addButtonText {
-  font-size: var(--text-lg);
-  font-weight: 800;
-  color: #7c2d12;
-  letter-spacing: -0.5px;
-}
-
-.addButtonCostIcon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
 }
 
 .addButtonCost {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: var(--text-md);
+  gap: 3px;
+  font-size: 13px;
   font-weight: 800;
-  color: #0c4a6e;
-  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
-  border: 2.5px solid #0ea5e9;
-  border-radius: var(--radius-xl);
-  padding: 6px 16px;
-  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8);
+  line-height: 1;
 }
 
-.addButton:active .addButtonPlus {
-  color: #B8860B;
+.addButtonCostIcon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.addButton:active {
+  box-shadow: inset 0 7px 14px rgba(60,30,0,0.65), inset 0 3px 6px rgba(0,0,0,0.5);
 }
 
 .addButton:disabled {
-  opacity: 0.45;
+  opacity: 1;
+  background: transparent;
+  box-shadow: inset 0 5px 10px rgba(60,30,0,0.55), inset 0 2px 4px rgba(0,0,0,0.4);
   cursor: default;
+}
+
+.addButton:disabled .addButtonLabel {
+  color: #888;
+  text-shadow: none;
+}
+
+.addButton:disabled .addButtonCost {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9), 0 2px 6px rgba(0,0,0,0.8);
 }
 
 .goldFloat {

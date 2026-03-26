@@ -15,7 +15,7 @@ import { SaveService } from '../../services/SaveService'
 import type { FAState, FALiveStates, PRState } from '../../hooks/useGameLoop'
 import coinIcon from '../../assets/coin.svg'
 import bgSandWater from '../../assets/01_bg_sand_water.png'
-import addLineBg from '../../assets/54_add_line_bg.png'
+import addLineBg from '../../assets/53_top_bg.png'
 import styles from './Board.module.css'
 
 export interface LevelConfig {
@@ -104,6 +104,14 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     new Map(factories.map(f => [`${f.row}-${f.col}`, f])),
     [factories]
   )
+  const firstFAPos = useMemo(() => {
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[r].length; c++) {
+        if (board[r][c].type === 'FA') return { row: r, col: c }
+      }
+    }
+    return null
+  }, [board])
 
   if (cellSize === 0) return null
 
@@ -123,7 +131,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
                 bufferInfo={bufferCounts[`${rowIdx}-${colIdx}`]}
                 placing={!!placingAnimalId && cell.type === 'FA'}
                 tutorialHighlight={
-                  (tutorialHighlight === 'fa' && cell.type === 'FA') ||
+                  (tutorialHighlight === 'fa' && cell.type === 'FA' && firstFAPos?.row === rowIdx && firstFAPos?.col === colIdx) ||
                   (tutorialHighlight === 'rs' && cell.type === 'PR')
                 }
                 onClick={
@@ -162,18 +170,22 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
           </div>
         </div>
       )}
-      <button
-        onClick={onAddBundle}
-        className={styles.addButton}
-        style={{ width: cellSize * 7, backgroundImage: `url(${addLineBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-        disabled={!canAddBundle}
+      <div
+        className={styles.addButtonWrap}
+        style={{ width: cellSize * 7, backgroundImage: `url(${addLineBg})`, backgroundSize: '100% 100%' }}
       >
-        <div className={styles.addButtonLeft}>
-          <span className={styles.addButtonPlus}>+</span>
-          <span className={styles.addButtonText}>라인 추가</span>
-        </div>
-        <span className={styles.addButtonCost}><img src={coinIcon} className={styles.addButtonCostIcon} alt="gold" />{formatGold(bundleCost)}</span>
-      </button>
+        <button
+          onClick={onAddBundle}
+          className={styles.addButton}
+          disabled={!canAddBundle}
+        >
+          <span className={styles.addButtonLabel}>라인 추가</span>
+          <span className={styles.addButtonCost}>
+            <img src={coinIcon} className={styles.addButtonCostIcon} alt="gold" />
+            {formatGold(bundleCost)}
+          </span>
+        </button>
+      </div>
     </div>
   )
 })

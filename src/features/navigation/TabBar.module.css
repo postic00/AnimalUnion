@@ -6,7 +6,7 @@
   z-index: var(--z-nav);
   background-image: url('../../assets/50_tab_bg.png');
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   height: calc(68px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
@@ -36,21 +36,23 @@
 }
 
 .tabIcon {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
   line-height: 1;
   transition: transform 0.15s ease;
-  opacity: 0.5;
+  opacity: 1;
 }
 
 .tabLabel {
-  font-size: var(--text-base);
-  font-weight: 800;
-  color: #adb5bd;
-  letter-spacing: -0.3px;
-  transition: color 0.15s ease;
-  margin-top: -4px;
+  display: none;
+}
+
+.tabActive {
+  background: transparent;
+  border: 2px solid #f0c070;
+  border-radius: 6px;
+  box-shadow: inset 0 5px 10px rgba(60,30,0,0.55), inset 0 2px 4px rgba(0,0,0,0.4), inset 0 -1px 2px rgba(255,200,80,0.25);
 }
 
 .tabActive .tabIcon {
@@ -58,37 +60,58 @@
   opacity: 1;
 }
 
-.tabActive .tabLabel {
-  color: #f97316;
+
+
+.clickerWrap {
+  position: fixed;
+  right: 14px;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-tab-bar);
+  transition: bottom 0.25s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
-.tabIndicator {
+.boostWrap {
+  position: fixed;
+  left: 14px;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-tab-bar);
+  transition: bottom 0.25s ease;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.outerRing {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 3px;
-  background: #f97316;
-  border-radius: 2px 2px 0 0;
+  width: 70px;
+  height: 70px;
+  transform: rotate(-90deg);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .clickerButton {
-  position: fixed;
-  right: 14px;
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: var(--c-blue);
+  background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(49, 130, 246, 0.45);
   padding: 0;
-  z-index: var(--z-tab-bar);
-  transition: bottom 0.25s ease;
 }
 
 .clickerButton:active {
@@ -96,19 +119,13 @@
 }
 
 .clickerButtonFull {
-  box-shadow: 0 4px 24px rgba(49, 130, 246, 0.75), 0 0 0 5px rgba(49, 130, 246, 0.2);
+  box-shadow: none;
 }
 
-.clickerRing {
-  position: absolute;
-  width: 58px;
-  height: 58px;
-  transform: rotate(-90deg);
-}
 
 .ringBg {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.25);
+  stroke: rgba(0, 0, 0, 0.2);
   stroke-width: 4;
 }
 
@@ -127,21 +144,17 @@
 
 /* 부스트 버튼 */
 .boostButton {
-  position: fixed;
-  left: 14px;
+  position: relative;
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: var(--c-gray-700);
+  background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   padding: 0;
-  z-index: var(--z-tab-bar);
-  transition: bottom 0.25s ease;
 }
 
 .boostButton:active {
@@ -149,13 +162,12 @@
 }
 
 .boostActive {
-  background: #1d4ed8;
-  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.45);
+  background: transparent;
 }
 
 .boostRingFill {
   fill: none;
-  stroke: #ffffff;
+  stroke: #4ade80;
   stroke-width: 4;
   stroke-linecap: round;
 }
@@ -169,16 +181,25 @@
 }
 
 .boostIcon {
-  width: 22px;
-  height: 22px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   line-height: 1;
 }
 
 .boostTime {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 9px;
   font-weight: 800;
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.45);
+  border-radius: 4px;
+  padding: 1px 4px;
+  white-space: nowrap;
   line-height: 1;
   margin-top: 1px;
 }

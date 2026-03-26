@@ -6,9 +6,9 @@ import type { Producer } from '../../types/producer'
 import type { AnimalId } from '../../types/animal'
 import { formatQuantity } from '../../utils/formatGold'
 
-import { ProcessAnimation } from '../factory/ProcessAnimation'
-import { FactoryTypeIcon } from '../factory/FactoryTypeIcon'
+import { ProcessAnimation, ProcessOverlay } from '../factory/ProcessAnimation'
 import styles from './Cell.module.css'
+
 
 export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
 
@@ -85,7 +85,7 @@ interface Props {
 }
 
 import { GradeIcon } from '../common/GradeIcon'
-import { ProducerAnimation } from '../production/ProducerIcon'
+import { ProducerAnimation, ProducerOverlay } from '../production/ProducerIcon'
 import { RailIcon } from './RailIcon'
 
 const FA_STYLE: Record<string, CSSProperties> = {
@@ -181,7 +181,6 @@ const LABEL_STYLE_RIGHT: CSSProperties = {
 }
 
 const ICON_BOTTOM_LEFT: CSSProperties = { position: 'absolute', bottom: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
-const ICON_BOTTOM_RIGHT: CSSProperties = { position: 'absolute', bottom: 2, right: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
 const ICON_TOP_LEFT: CSSProperties = { position: 'absolute', top: 2, left: 2, zIndex: 5, pointerEvents: 'none', lineHeight: 1 }
 
 const HAT_COLORS = [
@@ -207,7 +206,7 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
   const isActivePR = cell.type === 'PR' && producer?.built
   const iconSm = Math.round(size * 0.36)
 
-  const cellStyle = useMemo<CSSProperties>(() => ({
+const cellStyle = useMemo<CSSProperties>(() => ({
     width: size, height: size,
     cursor: placing ? 'pointer' : undefined,
     position: 'relative',
@@ -220,7 +219,7 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
 
   return (
     <div
-      className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''} ${tutorialHighlight ? styles.tutorialHighlight : ''}`}
+      className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''} ${tutorialHighlight ? styles.tutorialHighlight : ''} ${(isActiveFA || isActivePR) ? styles.shake : ''}`}
       style={cellStyle}
       onClick={onClick}
     >
@@ -228,8 +227,10 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
         <>
           {/* 가운데: 판다 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
           <span style={animStyle}>
-            <ProducerAnimation grade={producer!.grade ?? 1} size={Math.round(size * 0.85)}/>
+            <ProducerAnimation grade={producer!.grade ?? 1} size={size}/>
           </span>
+          {/* SVG 오버레이: opacity 1 고정 */}
+          <ProducerOverlay grade={producer!.grade ?? 1} size={size}/>
           {/* 좌측 하단: 생산 아이템 등급 */}
           <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={producer!.grade ?? 1}/>
@@ -239,8 +240,10 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
         <>
           {/* 가운데: 처리 애니메이션 (progress에 따라 투명도 0.3~1.0) */}
           <span style={animStyle}>
-            <ProcessAnimation type={factory!.type} species={getSpecies(factory!.animalId ?? null)} size={Math.round(size * 0.7)}/>
+            <ProcessAnimation type={factory!.type} species={getSpecies(factory!.animalId ?? null)} size={size}/>
           </span>
+          {/* SVG 오버레이: opacity 1 고정 */}
+          <ProcessOverlay type={factory!.type} size={size}/>
           {/* 좌측 상단: 동물 번호 */}
           {factory!.animalId && (() => {
             const num = parseInt(factory!.animalId.match(/(\d+)$/)?.[1] ?? '1')
@@ -254,10 +257,6 @@ export default memo(function Cell({ cell, size, factory, producer, progress, buf
           {/* 좌측 하단: 아이템 등급 */}
           <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={factory!.grade}/>
-          </span>
-          {/* 우측 하단: 공장 타입 */}
-          <span style={ICON_BOTTOM_RIGHT}>
-            <FactoryTypeIcon type={factory!.type} size={iconSm}/>
           </span>
         </>
       ) : (

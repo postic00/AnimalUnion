@@ -34,7 +34,7 @@ export default function Navigation({ gold, goldPerSec, prestigePoints, totalPres
         <span className={styles.prestigeIcon}>⭐</span>
         <div className={styles.prestigeInfo}>
           <span className={styles.prestigeAmount}>{formatGold(totalPrestigePoints)}</span>
-          <span className={styles.prestigeLabel}>미사용 {formatGold(prestigePoints)}</span>
+          <span className={styles.prestigeLabel}>잔여 {formatGold(prestigePoints)}</span>
         </div>
       </div>
       <div className={styles.salaryCard}>

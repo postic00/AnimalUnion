@@ -36,7 +36,6 @@ import { CONFIG, applyWeekConfig } from './config'
 import { initAdMob } from './utils/admob'
 import { initTossBackEvent, initTossVisibility, closeView, isTossEnvironment } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
-import { AnimalSvg } from './features/animal/AnimalSvg'
 import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity, getGoldMultiplierBonus } from './balance'
 import { useUIState } from './hooks/useUIState'
 import { useGameActions } from './hooks/useGameActions'
@@ -279,7 +278,11 @@ export default function App() {
   useEffect(() => {
     const s = ui.tutorialStep
     if (s === null) return
-    if ([3, 4, 5, 6].includes(s)) ui.setActiveTab(null)
+    if ([3, 4, 5, 6, 7, 8].includes(s)) ui.setActiveTab(null)
+    // 공장이 이미 있으면 6·7 스킵
+    if ((s === 6 || s === 7) && gameState.factories.some(f => f.built)) ui.setTutorialStep(8)
+    // 생산자가 이미 있으면 8·9 스킵
+    if ((s === 8 || s === 9) && gameState.producers.some(p => p.built)) ui.setTutorialStep(10)
   }, [ui.tutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── AdMob / Toss ──────────────────────────────────────────────────────────
@@ -385,6 +388,12 @@ export default function App() {
   const { setSelectedFactory, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
   const { handlePlaceAnimal: actionsPlaceAnimal, handleHardReset: actionsHardReset } = actions
 
+  // 생산자 클릭: 튜토리얼 8→9 연동
+  const handleProducerClick = useCallback((row: number, col: number) => {
+    ui.setSelectedProducer({ row, col })
+    if (tutorialStep === 8) setTutorialStep(9)
+  }, [ui.setSelectedProducer, tutorialStep, setTutorialStep])
+
   // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
     setSelectedFactory({ row, col })
@@ -448,7 +457,7 @@ export default function App() {
         step={ui.tutorialStep}
         clickCount={ui.tutorialItemCount}
         onNext={() => {
-          if (ui.tutorialStep === 8) {
+          if (ui.tutorialStep === 10) {
             localStorage.setItem('tutorialDone', '1')
             ui.setTutorialStep(null)
           } else {
@@ -461,10 +470,7 @@ export default function App() {
         }}
       />}
       {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
-      {!ui.showSplash && ui.tutorialStep === 6 && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 23, background: 'rgba(0,0,0,0.65)', pointerEvents: 'none' }} />
-      )}
-      {!ui.showSplash && <div style={ui.tutorialStep === 6 ? { position: 'relative', zIndex: 24 } : undefined}><Board
+      {!ui.showSplash && <Board
         key={resetKey}
         board={board}
         onAddBundle={actions.handleAddBundle}
@@ -492,13 +498,13 @@ export default function App() {
         muted={muted}
         speedMultiplier={speedBoostRemaining > 0 ? 2 : 1}
         onFactoryClick={handleFactoryClick}
-        onProducerClick={ui.handleProducerClick}
+        onProducerClick={handleProducerClick}
         onRsClick={ui.handleRsClick}
         onFaLiveStateChange={ui.handleFaLiveStateChange}
         onProducerProgressChange={ui.handleProducerProgressChange}
-        tutorialHighlight={ui.tutorialStep === 6 ? 'fa' : undefined}
+        tutorialHighlight={undefined}
         disableDerail={ui.tutorialStep !== null}
-      /></div>}
+      />}
       {!ui.showSplash && <TabBar
         clicker={gameState.clicker}
         clickerGrade={ui.clickerGrade}
@@ -532,125 +538,53 @@ export default function App() {
         open={ui.activeTab !== null}
         onClose={() => { ui.setActiveTab(null) }}
         scrollKey={ui.activeTab}
+        topBar={[0, 1, 2, 3].includes(ui.activeTab ?? -1) ? <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} /> : undefined}
         header={
           ui.activeTab === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>공장</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
-                    <button
-                      key={sec}
-                      onClick={() => { ui.setProdSection(sec) }}
-                      style={{
-                        padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: ui.prodSection === sec ? '#16a34a' : '#e5e7eb',
-                        background: ui.prodSection === sec ? '#f0fdf4' : '#fff',
-                        color: ui.prodSection === sec ? '#16a34a' : '#9ca3af',
-                        fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                      }}
-                    >{label}</button>
-                  ))}
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>공장</h2>
+              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
+                {([['production', '🌱 생산'], ['factory', '⚙️ 가공']] as const).map(([sec, label]) => (
+                  <button key={sec} onClick={() => { ui.setProdSection(sec) }} className={ui.prodSection === sec ? 'aqua-btn-active' : 'aqua-btn'}>{label}</button>
+                ))}
               </div>
-              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
           ) : ui.activeTab === 1 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>재료 관리</h2>
-              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>재료</h2>
+              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }} />
             </div>
           ) : ui.activeTab === 2 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>동물</h2>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {([['hamster', '햄스터'], ['cat', '고양이'], ['dog', '강아지']] as const).map(([type, label]) => (
-                    <button
-                      key={type}
-                      onClick={() => ui.setAnimalType(type)}
-                      style={{
-                        padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: ui.animalType === type ? '#6366f1' : '#e5e7eb',
-                        background: ui.animalType === type ? '#eef2ff' : '#fff',
-                        color: ui.animalType === type ? '#6366f1' : '#9ca3af',
-                        fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 4,
-                      }}
-                    >
-                      <AnimalSvg species={type} size={18}/>
-                      {label}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => ui.setAnimalType('friend')}
-                    style={{
-                      padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                      borderColor: ui.animalType === 'friend' ? '#059669' : '#e5e7eb',
-                      background: ui.animalType === 'friend' ? '#ecfdf5' : '#fff',
-                      color: ui.animalType === 'friend' ? '#059669' : '#9ca3af',
-                      fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                    }}
-                  >
-                    👥 친구
-                  </button>
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>동물</h2>
+              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
+                {([['hamster', '🐹 햄스터'], ['cat', '🐱 고양이'], ['dog', '🐶 강아지'], ['friend', '👥 친구']] as const).map(([type, label]) => (
+                  <button key={type} onClick={() => ui.setAnimalType(type as typeof ui.animalType)} className={ui.animalType === type ? 'aqua-btn-active' : 'aqua-btn'}>{label}</button>
+                ))}
               </div>
-              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
           ) : ui.activeTab === 3 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>환생</h2>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {([['item', '📦 아이템'], ['buffer', '🔧 기타']] as const).map(([sec, label]) => (
-                    <button
-                      key={sec}
-                      onClick={() => ui.setPrestigeSection(sec)}
-                      style={{
-                        padding: '4px 10px', borderRadius: 10, border: '1.5px solid',
-                        borderColor: ui.prestigeSection === sec ? '#f59e0b' : '#e5e7eb',
-                        background: ui.prestigeSection === sec ? '#fffbeb' : '#fff',
-                        color: ui.prestigeSection === sec ? '#d97706' : '#9ca3af',
-                        fontSize: 12, fontWeight: 800, cursor: 'pointer',
-                      }}
-                    >{label}</button>
-                  ))}
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>환생</h2>
+              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
+                {([['item', '📦 아이템'], ['buffer', '🔧 기타']] as const).map(([sec, label]) => (
+                  <button key={sec} onClick={() => ui.setPrestigeSection(sec)} className={ui.prestigeSection === sec ? 'aqua-btn-active' : 'aqua-btn'}>{label}</button>
+                ))}
               </div>
-              <UpgradeAmountToggle value={ui.upgradeAmount} onChange={ui.setUpgradeAmount} />
             </div>
           ) : ui.activeTab === 4 ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#6b7280' }}>{CONFIG.CURRENT_WEEK}시즌</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, whiteSpace: 'nowrap' }}>
+                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280' }}>{CONFIG.CURRENT_WEEK}시즌</span>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => ui.setLbMode('prestige')}
-                  style={{
-                    padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                    borderColor: ui.lbMode === 'prestige' ? '#6366f1' : '#e5e7eb',
-                    background: ui.lbMode === 'prestige' ? '#eef2ff' : '#fff',
-                    color: ui.lbMode === 'prestige' ? '#6366f1' : '#9ca3af',
-                    fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                  }}
-                >⭐ 환생</button>
-                <button
-                  onClick={() => ui.setLbMode('gold')}
-                  style={{
-                    padding: '4px 12px', borderRadius: 10, border: '1.5px solid',
-                    borderColor: ui.lbMode === 'gold' ? '#6366f1' : '#e5e7eb',
-                    background: ui.lbMode === 'gold' ? '#eef2ff' : '#fff',
-                    color: ui.lbMode === 'gold' ? '#6366f1' : '#9ca3af',
-                    fontSize: 13, fontWeight: 800, cursor: 'pointer',
-                  }}
-                >💰 골드</button>
+              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
+                <button onClick={() => ui.setLbMode('prestige')} className={ui.lbMode === 'prestige' ? 'aqua-btn-active' : 'aqua-btn'}>⭐ 환생</button>
+                <button onClick={() => ui.setLbMode('gold')} className={ui.lbMode === 'gold' ? 'aqua-btn-active' : 'aqua-btn'}>💰 골드</button>
               </div>
             </div>
           ) : (
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>
               {['공장', '재료 관리', '동물', '환생', '', '설정'][ui.activeTab ?? 0]}
             </h2>
           )
@@ -823,6 +757,7 @@ export default function App() {
             onGradeChange={(grade) => actions.handleProducerGradeChange(producerIndex, grade)}
             producerProgressesRef={ui.producerProgressesRef}
             progressKey={`${ui.selectedProducer.row}-${ui.selectedProducer.col}`}
+            tutorialHighlightBuild={ui.tutorialStep === 9}
           />
         )
       })()}

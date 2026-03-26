@@ -89,15 +89,15 @@ import { ProducerAnimation, ProducerOverlay } from '../production/ProducerIcon'
 import { RailIcon } from './RailIcon'
 
 const FA_STYLE: Record<string, CSSProperties> = {
-  WA: { background: 'transparent', border: 'none', color: '#1e40af' },
-  PA: { background: 'transparent', border: 'none', color: '#5b21b6' },
-  PK: { background: 'transparent', border: 'none', color: '#9a3412' },
+  WA: { background: '#000', border: 'none', color: '#1e40af' },
+  PA: { background: '#000', border: 'none', color: '#5b21b6' },
+  PK: { background: '#000', border: 'none', color: '#9a3412' },
 }
 
 const PR_STYLE: CSSProperties[] = [
-  { background: 'transparent', border: 'none', color: '#991b1b' },
-  { background: 'transparent', border: 'none', color: '#6b21a8' },
-  { background: 'transparent', border: 'none', color: '#14532d' },
+  { background: '#000', border: 'none', color: '#991b1b' },
+  { background: '#000', border: 'none', color: '#6b21a8' },
+  { background: '#000', border: 'none', color: '#14532d' },
 ]
 
 function getDynamicStyle(cell: CellType, factory?: Factory, producer?: Producer): CSSProperties {

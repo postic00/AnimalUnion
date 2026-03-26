@@ -63,21 +63,23 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
         <div className={styles.list}>
           {Array.from({ length: CONFIG.CM_GRADE_MAX }, (_, i) => {
             const grade = i + 1
+            const mat = getGradeData(grade)
             const level = itemValueLevels[i] ?? 1
             const cost = getItemValueLevelCost(level)
             return (
-              <div key={grade} className={styles.card}>
-                <div className={styles.cardLeft}>
-                  <GradeIcon size={32} grade={grade}/>
-                  <div className={styles.cardInfo}>
-                    <div className={styles.cardNameRow}>
-                      <span className={styles.cardName}>{getGradeData(grade).name}</span>
-                      <span className={styles.levelBadge}>Lv.{level}</span>
-                    </div>
-                    <span className={styles.cardSub}>
+              <div key={grade} className={styles.card} >
+                <div className={styles.iconArea}><GradeIcon size={36} grade={grade}/></div>
+                <div className={styles.cardInfo}>
+                  <div className={styles.nameRow}>
+                    <span className={styles.cardName}>{mat.name}</span>
+                    <span className={styles.levelBadge}>Lv.{level}</span>
+                    <span className={styles.cardStat}>
                       <img src={coinIcon} className={styles.subIcon} alt="" />
                       {formatGold(getEffectiveItemValue(grade, itemValueLevels))}
                     </span>
+                  </div>
+                  <div className={styles.bottomRow}>
+                    <span className={styles.cardSub}>아이템 판매 가치 증가</span>
                   </div>
                 </div>
                 <button className={styles.starBtn} onClick={() => onLevelUpItemValue(i)} disabled={prestigePoints < cost}>
@@ -92,142 +94,37 @@ export default function PrestigeTab({ gameState, section, onPrestige, onPrestige
       {/* 기타 */}
       {section === 'buffer' && (
         <div className={styles.list}>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>💰</span>
+          {[
+            { icon: '💰', name: '골드 배율', level: `${goldMultiplierLevel}/${CONFIG.PF_GM_PROC_MAX}`, stat: `×${getGoldMultiplierBonus(goldMultiplierLevel).toFixed(1)}`, desc: '획득 골드에 배율 적용', isMax: goldMultiplierLevel >= CONFIG.PF_GM_PROC_MAX, cost: getGoldMultiplierCost(goldMultiplierLevel), onUpgrade: onUpgradeGoldMultiplier },
+            { icon: '💵', name: '초기 골드', level: `${initialGoldLevel}`, stat: `${formatGold(getInitialGold(initialGoldLevel))}G`, desc: '환생 후 시작 골드 지급', isMax: false, cost: getInitialGoldCost(initialGoldLevel), onUpgrade: onUpgradeInitialGold },
+            { icon: '🏗️', name: '건설 비용 할인', level: `${buildDiscountLevel}/${CONFIG.PF_BC_PROC_MAX}`, stat: `-${Math.round(getBuildCostDiscount(buildDiscountLevel) * 100)}%`, desc: '모든 건설 비용 할인율', isMax: buildDiscountLevel >= CONFIG.PF_BC_PROC_MAX, cost: getBuildDiscountCost(buildDiscountLevel), onUpgrade: onUpgradeBuildDiscount },
+            { icon: '📦', name: '라인 비용 할인', level: `${bundleDiscountLevel}/${CONFIG.PF_LC_PROC_MAX}`, stat: `-${Math.round(getBundleCostDiscount(bundleDiscountLevel) * 100)}%`, desc: '라인 추가 비용 할인율', isMax: bundleDiscountLevel >= CONFIG.PF_LC_PROC_MAX, cost: getBundleDiscountCost(bundleDiscountLevel), onUpgrade: onUpgradeBundleDiscount },
+            { icon: '🌱', name: '생산자 시작 레벨', level: `${producerStartLevel}`, stat: `Lv.${producerStartLevel + 1}`, desc: '생산자 건설 시 시작 레벨', isMax: false, cost: getProducerStartCost(producerStartLevel), onUpgrade: onUpgradeProducerStart },
+            { icon: '🚄', name: '레일 속도', level: `${railSpeedLevel}/${CONFIG.RAIL_SPEED_MAX_LEVEL}`, stat: `${Math.round(getRailMoveSpeed(railSpeedLevel))}ms/칸`, desc: '아이템 레일 이동 속도', isMax: railSpeedLevel >= CONFIG.RAIL_SPEED_MAX_LEVEL, cost: getRailSpeedUpgradeCost(railSpeedLevel), onUpgrade: onUpgradeRailSpeed },
+            { icon: '▶', name: '생산 저장소', level: `${rsBufferLevel}`, stat: `×${getRsBufferCapacity(rsBufferLevel)}`, desc: '생산자 버퍼 최대 용량', isMax: false, cost: getBufferUpgradeCost(rsBufferLevel), onUpgrade: onUpgradeRsBuffer },
+            { icon: '🏭', name: '공장 저장소', level: `${faBufferLevel}`, stat: `×${getFaBufferCapacity(faBufferLevel)}`, desc: '공장 버퍼 최대 용량', isMax: false, cost: getBufferUpgradeCost(faBufferLevel), onUpgrade: onUpgradeFaBuffer },
+          ].map(({ icon, name, level, stat, desc, isMax, cost, onUpgrade }) => (
+            <div key={name} className={styles.card}>
+              <div className={styles.iconArea}>{icon}</div>
               <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>골드 배율</span>
-                  <span className={styles.levelBadge}>Lv.{goldMultiplierLevel}/{CONFIG.PF_GM_PROC_MAX}</span>
+                <div className={styles.nameRow}>
+                  <span className={styles.cardName}>{name}</span>
+                  <span className={styles.levelBadge}>Lv.{level}</span>
+                  <span className={styles.cardStat}>{stat}</span>
                 </div>
-                <span className={styles.cardSub}>×{getGoldMultiplierBonus(goldMultiplierLevel).toFixed(1)}</span>
-              </div>
-            </div>
-            {goldMultiplierLevel >= CONFIG.PF_GM_PROC_MAX ? (
-              <span className={styles.levelBadge}>MAX</span>
-            ) : (
-              <button className={styles.starBtn} onClick={onUpgradeGoldMultiplier} disabled={prestigePoints < getGoldMultiplierCost(goldMultiplierLevel)}>
-                ⭐ {formatGold(getGoldMultiplierCost(goldMultiplierLevel))}
-              </button>
-            )}
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>💵</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>초기 골드</span>
-                  <span className={styles.levelBadge}>Lv.{initialGoldLevel}</span>
+                <div className={styles.bottomRow}>
+                  <span className={styles.cardSub}>{desc}</span>
                 </div>
-                <span className={styles.cardSub}>환생 후 {formatGold(getInitialGold(initialGoldLevel))}G 지급</span>
               </div>
+              {isMax ? (
+                <span className={styles.maxBadge}>MAX</span>
+              ) : (
+                <button className={styles.starBtn} onClick={onUpgrade} disabled={prestigePoints < cost}>
+                  ⭐ {formatGold(cost)}
+                </button>
+              )}
             </div>
-            <button className={styles.starBtn} onClick={onUpgradeInitialGold} disabled={prestigePoints < getInitialGoldCost(initialGoldLevel)}>
-              ⭐ {formatGold(getInitialGoldCost(initialGoldLevel))}
-            </button>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>🏗️</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>건설 비용 할인</span>
-                  <span className={styles.levelBadge}>Lv.{buildDiscountLevel}/{CONFIG.PF_BC_PROC_MAX}</span>
-                </div>
-                <span className={styles.cardSub}>-{Math.round(getBuildCostDiscount(buildDiscountLevel) * 100)}%</span>
-              </div>
-            </div>
-            {buildDiscountLevel >= CONFIG.PF_BC_PROC_MAX ? (
-              <span className={styles.levelBadge}>MAX</span>
-            ) : (
-              <button className={styles.starBtn} onClick={onUpgradeBuildDiscount} disabled={prestigePoints < getBuildDiscountCost(buildDiscountLevel)}>
-                ⭐ {formatGold(getBuildDiscountCost(buildDiscountLevel))}
-              </button>
-            )}
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>📦</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>라인 비용 할인</span>
-                  <span className={styles.levelBadge}>Lv.{bundleDiscountLevel}/{CONFIG.PF_LC_PROC_MAX}</span>
-                </div>
-                <span className={styles.cardSub}>-{Math.round(getBundleCostDiscount(bundleDiscountLevel) * 100)}%</span>
-              </div>
-            </div>
-            {bundleDiscountLevel >= CONFIG.PF_LC_PROC_MAX ? (
-              <span className={styles.levelBadge}>MAX</span>
-            ) : (
-              <button className={styles.starBtn} onClick={onUpgradeBundleDiscount} disabled={prestigePoints < getBundleDiscountCost(bundleDiscountLevel)}>
-                ⭐ {formatGold(getBundleDiscountCost(bundleDiscountLevel))}
-              </button>
-            )}
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>🌱</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>생산자 시작 레벨</span>
-                  <span className={styles.levelBadge}>Lv.{producerStartLevel}</span>
-                </div>
-                <span className={styles.cardSub}>건설 시 Lv.{producerStartLevel + 1}로 시작</span>
-              </div>
-            </div>
-            <button className={styles.starBtn} onClick={onUpgradeProducerStart} disabled={prestigePoints < getProducerStartCost(producerStartLevel)}>
-              ⭐ {formatGold(getProducerStartCost(producerStartLevel))}
-            </button>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>🚄</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>레일 속도</span>
-                  <span className={styles.levelBadge}>Lv.{railSpeedLevel}/{CONFIG.RAIL_SPEED_MAX_LEVEL}</span>
-                </div>
-                <span className={styles.cardSub}>{Math.round(getRailMoveSpeed(railSpeedLevel))}ms/칸</span>
-              </div>
-            </div>
-            {railSpeedLevel >= CONFIG.RAIL_SPEED_MAX_LEVEL ? (
-              <span className={styles.levelBadge}>MAX</span>
-            ) : (
-              <button className={styles.starBtn} onClick={onUpgradeRailSpeed} disabled={prestigePoints < getRailSpeedUpgradeCost(railSpeedLevel)}>
-                ⭐ {formatGold(getRailSpeedUpgradeCost(railSpeedLevel))}
-              </button>
-            )}
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>▶</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>생산 저장소</span>
-                  <span className={styles.levelBadge}>Lv.{rsBufferLevel}</span>
-                </div>
-                <span className={styles.cardSub}>용량 ×{getRsBufferCapacity(rsBufferLevel)}</span>
-              </div>
-            </div>
-            <button className={styles.starBtn} onClick={onUpgradeRsBuffer} disabled={prestigePoints < getBufferUpgradeCost(rsBufferLevel)}>
-              ⭐ {formatGold(getBufferUpgradeCost(rsBufferLevel))}
-            </button>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardLeft}>
-              <span className={styles.cardEmoji}>🏭</span>
-              <div className={styles.cardInfo}>
-                <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>공장 저장소</span>
-                  <span className={styles.levelBadge}>Lv.{faBufferLevel}</span>
-                </div>
-                <span className={styles.cardSub}>용량 ×{getFaBufferCapacity(faBufferLevel)}</span>
-              </div>
-            </div>
-            <button className={styles.starBtn} onClick={onUpgradeFaBuffer} disabled={prestigePoints < getBufferUpgradeCost(faBufferLevel)}>
-              ⭐ {formatGold(getBufferUpgradeCost(faBufferLevel))}
-            </button>
-          </div>
+          ))}
         </div>
       )}
     </div>

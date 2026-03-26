@@ -75,7 +75,7 @@ export class GameEngine {
   produceTimers: Record<string, number> = {}
   prStates: Record<string, PRState> = {}
   hasDerailed = false
-  lastGoldTime = Date.now()
+  gameTimeSinceLastGold = 0
 
   private prRoundRobin: Record<string, number> = {}
   private spatialHash: Map<string, Item[]> = new Map()
@@ -120,7 +120,7 @@ export class GameEngine {
     if (data.produceTimers) this.produceTimers = data.produceTimers
     if (data.prStates) this.prStates = data.prStates
     this.lastTime = 0
-    this.lastGoldTime = Date.now()
+    this.gameTimeSinceLastGold = 0
   }
 
   // ── 상태 내보내기 (저장용) ───────────────────────────────────────────────
@@ -147,17 +147,17 @@ export class GameEngine {
   clearItems(): void {
     this.items = []
     this.hasDerailed = false
-    this.lastGoldTime = Date.now()
+    this.gameTimeSinceLastGold = 0
   }
 
   dismissDerail(): void {
     this.hasDerailed = false
-    this.lastGoldTime = Date.now()
+    this.gameTimeSinceLastGold = 0
   }
 
   resetLastTime(): void {
     this.lastTime = 0
-    this.lastGoldTime = Date.now()
+    this.gameTimeSinceLastGold = 0
   }
 
   // ── 단일 틱 ──────────────────────────────────────────────────────────────
@@ -167,6 +167,7 @@ export class GameEngine {
     const delta = Math.min(now - this.lastTime, MAX_DELTA_MS) * (this.config.speedMultiplier ?? 1)
     this.lastTime = now
 
+    this.gameTimeSinceLastGold += delta
     this.tickProducers(delta)
     this.tickRsDispatch()
     this.tickRsRelease()
@@ -258,7 +259,7 @@ export class GameEngine {
           return Math.max(max, getProducerInterval(p2.level) * qty)
         }, 0)
         const threshold = Math.max(60000, maxPrInterval * 2)
-        if (Date.now() - this.lastGoldTime > threshold) {
+        if (this.gameTimeSinceLastGold > threshold) {
           this.hasDerailed = true
         }
       }
@@ -899,7 +900,8 @@ export class GameEngine {
       const center = getCellCenter(row, col, cellSize)
       if (dist(item.x, item.y, center.x, center.y) > cellSize * SNAP_RADIUS) continue
       this.config.onGoldEarned(getFinalGold(item), center.x, center.y)
-      this.lastGoldTime = Date.now()
+      this.gameTimeSinceLastGold = 0
+
       this.items[i] = this.items[this.items.length - 1]; this.items.pop()
     }
   }

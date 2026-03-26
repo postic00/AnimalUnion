@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 4px 0;
+  padding: 0;
 }
 
 .title {
@@ -16,96 +16,118 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .card {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  padding: 14px 14px 14px 12px;
+  height: 60px;
+  padding: 0 5px;
   border-radius: var(--radius-lg);
-  border: 1.5px solid;
+  border: 1px solid #93c5fd;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  overflow: hidden;
+  background-image: url("../../assets/surfboard-bg.png");
+  background-size: 100% 100%;
+  background-position: center;
 }
 
 .cardLeft {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .gradeEmoji {
-  font-size: 32px;
-  line-height: 1;
+  width: 50px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .cardInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
 
 .cardNameRow {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
 .cardName {
+  flex: 1;
   font-size: var(--text-md);
   font-weight: 800;
+  color: var(--c-bg-dark);
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .levelBadge {
+  flex: 1;
   font-size: 10px;
   font-weight: 700;
   color: #fff;
-  width: 40px;
+  background: var(--c-aqua);
   height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  flex-shrink: 0;
+}
+
+.cardStat {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-aqua);
+  text-align: right;
+  padding-right: 3px;
 }
 
 .cardSub {
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.buildBtn {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  background: var(--c-gray-500);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--text-base);
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--c-gray-500);
 }
 
+.buildBtn,
 .upgradeBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 8px 14px;
-  color: #fff;
+  width: 65px;
+  height: 36px;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--text-base);
   font-weight: 700;
+  color: #fff;
   cursor: pointer;
   flex-shrink: 0;
+  align-self: center;
+  background: var(--btn-aqua);
+}
+
+.buildBtn {
+  background: var(--c-gray-400);
 }
 
 .buildBtn:disabled,
@@ -123,11 +145,13 @@
 .gradeSelector {
   display: flex;
   gap: 4px;
-  margin-top: 4px;
+  width: 100%;
+  margin-bottom: 2px;
 }
 
 .gradePill {
-  padding: 2px 8px;
+  flex: 1;
+  padding: 2px 0;
   border-radius: 10px;
   border: 1.5px solid currentColor;
   background: transparent;
@@ -135,6 +159,7 @@
   cursor: pointer;
   line-height: 1.4;
   opacity: 0.5;
+  text-align: center;
 }
 
 .gradePillActive {

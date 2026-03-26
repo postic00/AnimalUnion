@@ -25,30 +25,25 @@ export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Prop
           const cost = getMaterialQuantityLevelCost(level)
 
           return (
-            <div key={grade} className={styles.card} style={{ background: mat.bg, borderColor: mat.border }}>
-              <div className={styles.cardLeft}>
-                <span className={styles.emoji}><GradeIcon size={36} grade={grade}/></span>
-                <div className={styles.info}>
-                  <div className={styles.nameRow}>
-                    <span className={styles.name} style={{ color: mat.color }}>{mat.name}</span>
-                    <span className={styles.levelBadge} style={{ background: mat.sub }}>Lv.{level}</span>
-                    <span className={styles.quantity} style={{ color: mat.sub }}>×{formatQuantity(quantity)}</span>
-                  </div>
-                  {RECIPES[grade] && (
-                    <div className={styles.recipe}>
-                      {RECIPES[grade].map((r, ri) => (
-                        <span key={ri} className={styles.ingredient} style={{ borderColor: mat.border }}>
-                          <GradeIcon size={28} grade={r.grade}/>
-                          <span className={styles.ingredientCount} style={{ color: mat.color }}>×{r.count}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+            <div key={grade} className={styles.card} >
+              <span className={styles.emoji}><GradeIcon size={36} grade={grade}/></span>
+              <div className={styles.info}>
+                <div className={styles.nameRow}>
+                  <span className={styles.name}>{mat.name}</span>
+                  <span className={styles.levelBadge}>Lv.{level}</span>
+                  <span className={styles.quantity}>×{formatQuantity(quantity)}</span>
+                </div>
+                <div className={styles.recipe}>
+                  {RECIPES[grade]?.map((r, ri) => (
+                    <span key={ri} className={styles.ingredient} style={{ borderColor: mat.border }}>
+                      <GradeIcon size={18} grade={r.grade}/>
+                      <span className={styles.ingredientCount}>×{r.count}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
               <button
                 className={styles.upgradeBtn}
-                style={{ background: mat.sub }}
                 onClick={() => onUpgradeQuantity(i)}
                 disabled={gold < cost}
               >

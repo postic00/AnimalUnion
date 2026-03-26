@@ -1,49 +1,95 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 4px 0;
+  gap: 4px;
+  padding: 0;
 }
 
+/* 기본 카드 (60px 고정) */
 .card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 14px 14px 12px;
+  align-items: stretch;
+  height: 60px;
+  padding: 0 5px;
   border-radius: var(--radius-lg);
-  border: 1.5px solid;
+  border: 1px solid #93c5fd;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-.cardLeft {
+/* 기기 변경 카드는 높이 자동 */
+.cardTall {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid #93c5fd;
+  gap: 12px;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.iconArea {
+  width: 50px;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-}
-
-.cardIcon {
-  font-size: 32px;
-  line-height: 1;
+  justify-content: center;
   flex-shrink: 0;
+  font-size: 28px;
+  line-height: 1;
 }
 
 .cardInfo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
 
+.nameRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.bottomRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .cardName {
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: 800;
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cardSub {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 액션 버튼 영역 */
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 /* 토글 스위치 */
@@ -57,6 +103,7 @@
   flex-shrink: 0;
   transition: background 0.2s ease;
   padding: 0;
+  align-self: center;
 }
 
 .toggleOn {
@@ -86,39 +133,51 @@
   left: 3px;
 }
 
-/* 초기화 버튼 */
-.resetBtn {
-  padding: 8px 16px;
-  background: #e11d48;
+/* 버튼 */
+.actionBtn {
+  height: 36px;
+  min-width: 65px;
+  padding: 0 8px;
+  background: var(--btn-aqua);
   color: #fff;
   border: none;
   border-radius: var(--radius-md);
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.resetBtnConfirm {
-  background: #9f1239;
-}
-
-.cancelBtn {
-  width: 100%;
-  padding: 12px;
-  background: var(--c-gray-100);
-  color: var(--c-gray-500);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 /* 기기 이전 */
+.cardTallHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cardTallIcon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cardTallInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .transferRow {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -127,10 +186,31 @@
   font-weight: 700;
   color: #6b21a8;
   white-space: nowrap;
-  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.transferBtn {
+  width: 72px;
+  height: 36px;
+  padding: 0;
+  background: var(--btn-aqua);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.transferBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .codeBox {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -150,7 +230,8 @@
 }
 
 .codeInput {
-  width: 80px;
+  flex: 1;
+  min-width: 0;
   padding: 7px 10px;
   border: 1.5px solid #d8b4fe;
   border-radius: var(--radius-md);

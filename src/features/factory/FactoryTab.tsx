@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import type { Board } from '../../types/board'
 import type { Factory } from '../../types/factory'
 import type { Animal, AnimalId } from '../../types/animal'
-import { ANIMAL_NAMES } from '../../types/animal'
 import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES } from '../../balance'
 import { formatGold } from '../../utils/formatGold'
 import coinIcon from '../../assets/coin.svg'
@@ -105,7 +104,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
 
 const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
 
-export default function FactoryTab({ board, factories, gold, animals, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
+export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -159,8 +158,16 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
 
             if (!factory || !factory.built) {
               return (
-                <div key={i} ref={el => { cardRefs.current[`${row}-${col}`] = el }} className={styles.emptyCard}>
-                  <span className={styles.emptyLabel}>공장 {i + 1} · 미건설</span>
+                <div key={i} ref={el => { cardRefs.current[`${row}-${col}`] = el }} className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
+                  <div className={styles.iconStack}>
+                    <span className={styles.typeIcon}>🏭</span>
+                  </div>
+                  <div className={styles.cardInfo}>
+                    <div className={styles.nameRow}>
+                      <span className={styles.cardName} style={{ color: '#6b7280' }}>공장 {i + 1}</span>
+                      <span className={styles.levelBadge} style={{ background: 'var(--c-gray-300)' }}>미건설</span>
+                    </div>
+                  </div>
                   <button className={styles.buildBtn} onClick={() => onBuild(row, col)} disabled={gold < buildCost}>
                     <img src={coinIcon} className={styles.btnIcon} alt="" />
                     {formatGold(buildCost)}
@@ -181,63 +188,48 @@ export default function FactoryTab({ board, factories, gold, animals, onBuild, o
             ]
             const cardKey = `${row}-${col}`
             return (
-              <div key={i} ref={el => { cardRefs.current[cardKey] = el }} className={styles.card} style={{ background: meta.bg, borderColor: meta.border }}>
-                <div className={styles.cardBody}>
-                  {/* 좌측: 아이콘 + 동물 + 이름 + 레벨 */}
-                  <div className={styles.cardLeft}>
-                    <div className={styles.iconStack}>
-                      <span className={styles.typeIcon}>{meta.icon}</span>
-                      <span className={styles.animalBadge}>
-                        {factory.animalId
-                          ? <AnimalSvg species={getSpeciesFromId(factory.animalId)} size={22}/>
-                          : <span className={styles.noAnimal}>✕</span>}
+              <div key={i} ref={el => { cardRefs.current[cardKey] = el }} className={styles.card} >
+                <div className={styles.iconStack}>
+                  <span className={styles.typeIcon}>{meta.icon}</span>
+                  <span className={styles.animalBadge}>
+                    {factory.animalId
+                      ? <AnimalSvg species={getSpeciesFromId(factory.animalId)} size={18}/>
+                      : <span className={styles.noAnimal}>✕</span>}
+                  </span>
+                </div>
+                <div className={styles.cardInfo}>
+                  <div className={styles.nameRow}>
+                    <span className={styles.cardName}>공장 {i + 1}</span>
+                    <span className={styles.levelBadge}>Lv.{factory.level}</span>
+                    <div className={styles.gradeControl}>
+                      <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= (factory.type === 'PA' ? PA_MIN_GRADE : 1)}>‹</button>
+                      <span className={styles.gradeVal}>
+                        <GradeIcon size={20} grade={factory.grade}/>
                       </span>
-                    </div>
-                    <div className={styles.cardInfo}>
-                      <div className={styles.nameRow}>
-                        <span className={styles.cardName} style={{ color: meta.color }}>공장 {i + 1}</span>
-                        <span className={styles.levelBadge} style={{ background: meta.sub }}>Lv.{factory.level}</span>
-                      </div>
-                      {factory.animalId && (
-                        <span className={styles.animalLabel}>
-                          {ANIMAL_NAMES[factory.animalId] ?? animals.find(a => a.id === factory.animalId)?.name ?? factory.animalId}
-                        </span>
-                      )}
+                      <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>›</button>
                     </div>
                   </div>
-                  {/* 우측: 2행 컨트롤 */}
-                  <div className={styles.cardRight}>
-                    <div className={styles.controlRow}>
-                      <div className={styles.gradeControl}>
-                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= (factory.type === 'PA' ? PA_MIN_GRADE : 1)}>‹</button>
-                        <span className={styles.gradeVal} style={{ color: meta.color }}>
-                          <GradeIcon size={24} grade={factory.grade}/>
-                        </span>
-                        <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade + 1)} disabled={factory.grade >= maxGrade}>›</button>
-                      </div>
-                      <button className={styles.upgradeBtn} style={{ background: meta.sub }} onClick={() => onUpgradeLevel(row, col)} disabled={gold < levelCost}>
-                        <img src={coinIcon} className={styles.btnIcon} alt="" />
-                        {formatGold(levelCost)}
-                      </button>
-                    </div>
-                    <div className={styles.controlRow}>
-                      <ComboBox
-                        label={`${meta.icon} ${meta.label}`}
-                        options={typeOptions}
-                        selected={factory.type}
-                        onSelect={v => onSetType(row, col, v as Factory['type'])}
-                        color={meta.sub}
-                      />
-                      <ComboBox
-                        label={factory.dir === 'UP_TO_DOWN' ? '↓ 하행' : '↑ 상행'}
-                        options={dirOptions}
-                        selected={factory.dir}
-                        onSelect={v => onSetDir(row, col, v as Factory['dir'])}
-                        color={meta.sub}
-                      />
-                    </div>
+                  <div className={styles.bottomRow}>
+                    <ComboBox
+                      label={`${meta.icon} ${meta.label}`}
+                      options={typeOptions}
+                      selected={factory.type}
+                      onSelect={v => onSetType(row, col, v as Factory['type'])}
+                      color={meta.sub}
+                    />
+                    <ComboBox
+                      label={factory.dir === 'UP_TO_DOWN' ? '↓ 하행' : '↑ 상행'}
+                      options={dirOptions}
+                      selected={factory.dir}
+                      onSelect={v => onSetDir(row, col, v as Factory['dir'])}
+                      color={meta.sub}
+                    />
                   </div>
                 </div>
+                <button className={styles.upgradeBtn} onClick={() => onUpgradeLevel(row, col)} disabled={gold < levelCost}>
+                  <img src={coinIcon} className={styles.btnIcon} alt="" />
+                  {formatGold(levelCost)}
+                </button>
               </div>
             )
           })}

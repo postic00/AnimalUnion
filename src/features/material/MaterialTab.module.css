@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 4px 0;
+  padding: 0;
 }
 
 .title {
@@ -16,48 +16,52 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .card {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  padding: 12px 14px;
+  height: 60px;
+  padding: 0 5px;
   border-radius: var(--radius-lg);
-  border: 1.5px solid;
-}
-
-.cardLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
+  border: 1px solid #93c5fd;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .emoji {
-  font-size: 32px;
-  line-height: 1;
+  width: 50px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  flex: 1;
   min-width: 0;
 }
 
 .nameRow {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 
 .name {
+  flex: 1;
   font-size: 14px;
   font-weight: 800;
+  color: var(--c-bg-dark);
   letter-spacing: -0.3px;
   white-space: nowrap;
   overflow: hidden;
@@ -65,45 +69,47 @@
 }
 
 .levelBadge {
+  flex: 1;
   font-size: 10px;
   font-weight: 700;
   color: #fff;
-  width: 40px;
+  background: var(--c-aqua);
   height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  flex-shrink: 0;
 }
 
 .quantity {
+  flex: 1;
   font-size: var(--text-sm);
   font-weight: 700;
-  flex-shrink: 0;
+  color: var(--c-aqua);
+  text-align: right;
+  padding-right: 3px;
 }
 
 .recipe {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 2px;
+  gap: 4px;
 }
 
 .ingredient {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   background: rgba(255,255,255,0.7);
-  border: 1.5px solid;
-  border-radius: 10px;
-  padding: 3px 7px 3px 4px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 1px 4px 1px 2px;
   flex-shrink: 0;
 }
 
 .ingredientCount {
-  font-size: var(--text-sm);
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -112,7 +118,7 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 90px;
+  width: 65px;
   height: 36px;
   border: none;
   border-radius: var(--radius-md);
@@ -121,6 +127,8 @@
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
+  align-self: center;
+  background: var(--btn-aqua);
 }
 
 .upgradeBtn:disabled {

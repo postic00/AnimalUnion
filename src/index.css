@@ -17,6 +17,11 @@
   --c-amber: #f59e0b;
   --c-red: #ef4444;
   --c-green: #22c55e;
+  --c-aqua: #0891b2;
+  --c-aqua-light: #22d3ee;
+
+  /* 공통 버튼 */
+  --btn-aqua: linear-gradient(135deg, #22d3ee 0%, #0891b2 100%);
 
   /* Overlay */
   --overlay-dark: rgba(0, 0, 0, 0.5);

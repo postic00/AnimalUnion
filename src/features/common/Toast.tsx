@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from './Toast.module.css'
 
 interface Props {
@@ -9,18 +9,20 @@ interface Props {
 
 export default function Toast({ message, onHide, index = 0 }: Props) {
   const [visible, setVisible] = useState(false)
+  const onHideRef = useRef(onHide)
+  onHideRef.current = onHide
 
   useEffect(() => {
     const showRaf = requestAnimationFrame(() => setVisible(true))
     const hideTimer = setTimeout(() => {
       setVisible(false)
-      setTimeout(onHide, 300)
+      setTimeout(() => onHideRef.current(), 300)
     }, 2500)
     return () => {
       cancelAnimationFrame(showRaf)
       clearTimeout(hideTimer)
     }
-  }, [onHide])
+  }, [])
 
   return (
     <div

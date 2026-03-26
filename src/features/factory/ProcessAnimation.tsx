@@ -27,7 +27,7 @@ const ANIM_IMGS: Record<string, Record<Factory['type'], string>> = {
   robot:   { WA: robotWA,   PA: robotPA,   PK: robotPK },
 }
 
-const OVL: CSSProperties = { position: 'absolute', bottom: 0, right: 0, pointerEvents: 'none', transform: 'scale(0.66)', transformOrigin: 'bottom right' }
+const OVL: CSSProperties = { position: 'absolute', bottom: 0, right: 0, zIndex: 2, pointerEvents: 'none', transform: 'scale(0.66)', transformOrigin: 'bottom right' }
 
 // WA: 스폰지로 닦기
 function SpongeOverlay({ s }: { s: number }) {

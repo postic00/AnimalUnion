@@ -7,7 +7,7 @@ import { formatGold, formatNumber } from '../../utils/formatGold'
 import { AnimalSvg } from './AnimalSvg'
 import type { AnimalSpecies } from './AnimalSvg'
 import type { FriendRequestRow } from '../../lib/userProfile'
-import styles from '../prestige/PrestigeTab.module.css'
+import styles from './AnimalTab.module.css'
 
 const ANIMAL_TYPE_NAME: Record<string, string> = { hamster: '햄스터', cat: '고양이', dog: '강아지' }
 
@@ -131,34 +131,40 @@ function FriendView({ gameState, onIssueInviteCode, onSendFriendRequest, pending
       )}
 
       {/* 내 코드 발급 */}
-      <div className={styles.card} style={{ background: '#ecfdf5', borderColor: '#86efac' }}>
-        <div className={styles.cardLeft}>
-          <span style={{ fontSize: 28 }}>🔗</span>
-          <div className={styles.cardInfo}>
+      <div className={styles.card}>
+        <div className={styles.iconArea}><span style={{ fontSize: 28 }}>🔗</span></div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}>
             <span className={styles.cardName} style={{ color: '#14532d' }}>내 코드 발급</span>
+          </div>
+          <div className={styles.bottomRow}>
             <span className={styles.cardSub} style={{ color: '#16a34a' }}>{inviteCode ?? '친구에게 전달할 초대 코드'}</span>
           </div>
         </div>
-        <button
-          className={styles.starBtn}
-          style={{ background: '#059669', color: '#fff', opacity: issuing ? 0.6 : 1, padding: '6px 14px', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', flexShrink: 0 }}
-          onClick={handleIssue}
-          disabled={issuing}
-        >
-          {issuing ? '...' : inviteCode ? '재발급' : '발급 & 공유'}
-        </button>
+        <div className={styles.cardBtns}>
+          <button
+            className={styles.placeBtn}
+            style={{ background: '#059669', opacity: issuing ? 0.6 : 1 }}
+            onClick={handleIssue}
+            disabled={issuing}
+          >
+            {issuing ? '...' : inviteCode ? '재발급' : '발급 & 공유'}
+          </button>
+        </div>
       </div>
 
       {/* 코드 입력 */}
-      <div className={styles.card} style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
-        <div className={styles.cardLeft}>
-          <span style={{ fontSize: 28 }}>➕</span>
-          <div className={styles.cardInfo}>
+      <div className={styles.card}>
+        <div className={styles.iconArea}><span style={{ fontSize: 28 }}>➕</span></div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}>
             <span className={styles.cardName} style={{ color: '#1e40af' }}>코드 입력</span>
+          </div>
+          <div className={styles.bottomRow}>
             <span className={styles.cardSub} style={{ color: '#2563eb' }}>친구 코드 6자리</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+        <div className={styles.cardBtns}>
           <input
             type="tel"
             inputMode="numeric"
@@ -166,11 +172,11 @@ function FriendView({ gameState, onIssueInviteCode, onSendFriendRequest, pending
             placeholder="123456"
             value={inputCode}
             onChange={e => setInputCode(e.target.value.replace(/\D/g, ''))}
-            style={{ width: 72, padding: '6px 8px', border: '1.5px solid #93c5fd', borderRadius: 8, fontSize: 14, fontWeight: 700, textAlign: 'center', letterSpacing: 2, color: '#1e40af', background: '#fff', outline: 'none' }}
+            style={{ width: 60, padding: '4px 6px', border: '1.5px solid #93c5fd', borderRadius: 8, fontSize: 13, fontWeight: 700, textAlign: 'center', letterSpacing: 2, color: '#1e40af', background: '#fff', outline: 'none' }}
           />
           <button
-            className={styles.starBtn}
-            style={{ background: '#2563eb', color: '#fff', opacity: (adding || inputCode.length !== 6) ? 0.6 : 1, padding: '6px 12px', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+            className={styles.placeBtn}
+            style={{ background: '#2563eb', opacity: (adding || inputCode.length !== 6) ? 0.6 : 1 }}
             onClick={handleAdd}
             disabled={adding || inputCode.length !== 6}
           >
@@ -184,25 +190,25 @@ function FriendView({ gameState, onIssueInviteCode, onSendFriendRequest, pending
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: '#d97706' }}>친구 요청 {pendingFriendRequests.length}건</span>
           {pendingFriendRequests.map(req => (
-            <div key={req.id} className={styles.card} style={{ background: '#fffbeb', borderColor: '#fcd34d' }}>
-              <div className={styles.cardLeft}>
-                <span style={{ fontSize: 28 }}>👤</span>
-                <div className={styles.cardInfo}>
+            <div key={req.id} className={styles.card}>
+              <div className={styles.iconArea}><span style={{ fontSize: 28 }}>👤</span></div>
+              <div className={styles.cardInfo}>
+                <div className={styles.nameRow}>
                   <span className={styles.cardName} style={{ color: '#92400e' }}>{req.from_player_name}</span>
+                </div>
+                <div className={styles.bottomRow}>
                   <span className={styles.cardSub} style={{ color: '#b45309' }}>친구 추가 요청</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <div className={styles.cardBtns}>
                 <button
+                  className={styles.placeBtn}
+                  style={{ background: '#059669' }}
                   onClick={() => onAcceptFriendRequest(req.id, req.from_device_id, req.from_player_name)}
-                  style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
                 >
                   수락
                 </button>
-                <button
-                  onClick={() => onRejectFriendRequest(req.id)}
-                  style={{ padding: '6px 10px', background: '#fee2e2', color: '#e11d48', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
-                >
+                <button className={styles.deleteBtn} onClick={() => onRejectFriendRequest(req.id)}>
                   거절
                 </button>
               </div>
@@ -224,13 +230,15 @@ function FriendView({ gameState, onIssueInviteCode, onSendFriendRequest, pending
             const rankLabel = friend.rank >= 9999 ? '순위 없음' : `${friend.rank}위`
             return (
               <div key={friend.id} className={styles.card}>
-                <div className={styles.cardLeft}>
+                <div className={styles.iconArea}>
                   <span style={{ fontSize: 36 }}>👤</span>
-                  <div className={styles.cardInfo}>
-                    <div className={styles.cardNameRow}>
-                      <span className={styles.cardName}>{friend.playerName}</span>
-                      <span className={styles.levelBadge}>{rankLabel}</span>
-                    </div>
+                </div>
+                <div className={styles.cardInfo}>
+                  <div className={styles.nameRow}>
+                    <span className={styles.cardName}>{friend.playerName}</span>
+                    <span className={styles.levelBadge}>{rankLabel}</span>
+                  </div>
+                  <div className={styles.bottomRow}>
                     <span className={styles.cardSub}>+{formatNumber(bonus * 100)}% 가치</span>
                   </div>
                 </div>
@@ -241,10 +249,7 @@ function FriendView({ gameState, onIssueInviteCode, onSendFriendRequest, pending
                   >
                     {isPlaced ? '회수' : '배치'}
                   </button>
-                  <button
-                    onClick={() => onRemoveFriend(friend.id)}
-                    style={{ padding: '6px 10px', background: '#fee2e2', color: '#e11d48', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
-                  >
+                  <button className={styles.deleteBtn} onClick={() => onRemoveFriend(friend.id)}>
                     삭제
                   </button>
                 </div>
@@ -288,37 +293,38 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
           const isPlaced = factories.some(f => f.animalId === id)
           return (
             <div key={id} className={`${styles.card} ${!animal.unlocked ? styles.cardLocked : ''}`}>
-              <div className={styles.cardLeft}>
+              <div className={styles.iconArea}>
                 <AnimalIcon id={id} />
-                <div className={styles.cardInfo}>
-                  <div className={styles.cardNameRow}>
-                    <span className={styles.cardName}>{getAnimalTypeName(id)}</span>
-                    {animal.unlocked && <span className={styles.levelBadge}>Lv.{formatNumber(animal.level)}</span>}
-                  </div>
+              </div>
+              <div className={styles.cardInfo}>
+                <div className={styles.nameRow}>
+                  <span className={styles.cardName}>{getAnimalTypeName(id)}</span>
+                  {animal.unlocked && <span className={styles.levelBadge}>Lv.{formatNumber(animal.level)}</span>}
+                  {animal.unlocked && <span className={styles.cardStat}>+{formatNumber(getAnimalStat(animal.level) * 100)}%</span>}
+                </div>
+                <div className={styles.bottomRow}>
                   {animal.unlocked && (
-                    <span className={styles.cardSub}>+{formatNumber(getAnimalStat(animal.level) * 100)}% 가치</span>
+                    <>
+                      {isPlaced && <span className={styles.placedLabel}>{(() => { const f = factories.find(f => f.animalId === id); return f ? `${f.row + 1}행 ${f.col + 1}열` : '' })()} 배치중</span>}
+                      <button
+                        className={`${styles.placeBtn} ${isPlaced ? styles.placeBtnRecall : ''}`}
+                        onClick={() => isPlaced ? onRecallAnimal(id) : onStartPlacing(id)}
+                      >
+                        {isPlaced ? '회수' : '배치'}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
-              <div className={styles.cardBtns}>
-                {animal.unlocked ? (
-                  <>
-                    <button
-                      className={`${styles.placeBtn} ${isPlaced ? styles.placeBtnRecall : ''}`}
-                      onClick={() => isPlaced ? onRecallAnimal(id) : onStartPlacing(id)}
-                    >
-                      {isPlaced ? '회수' : '배치'}
-                    </button>
-                    <button className={styles.starBtn} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
-                      ⭐ {formatGold(upgradeCost)}
-                    </button>
-                  </>
-                ) : (
-                  <button className={styles.unlockBtn} onClick={() => onUnlockAnimal(id)} disabled={prestigePoints < unlockCost}>
-                    🔓 {formatGold(unlockCost)}
-                  </button>
-                )}
-              </div>
+              {animal.unlocked ? (
+                <button className={styles.starBtn} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
+                  ⭐ {formatGold(upgradeCost)}
+                </button>
+              ) : (
+                <button className={styles.unlockBtn} onClick={() => onUnlockAnimal(id)} disabled={prestigePoints < unlockCost}>
+                  🔓 {formatGold(unlockCost)}
+                </button>
+              )}
             </div>
           )
         })}

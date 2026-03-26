@@ -135,86 +135,67 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
     <div className={styles.container}>
 
       {/* 정보 */}
-      <div className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>ℹ️</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#374151' }}>동물노동조합</span>
-            <span className={styles.cardSub} style={{ color: '#6b7280' }}>v0.9.0</span>
-          </div>
+      <div className={styles.card}>
+        <div className={styles.iconArea}>ℹ️</div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}><span className={styles.cardName} style={{ color: '#374151' }}>동물노동조합</span></div>
+          <div className={styles.bottomRow}><span className={styles.cardSub} style={{ color: '#6b7280' }}>v1.7</span></div>
         </div>
       </div>
 
       {/* 데이터 */}
-      <div className={styles.card} style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>💾</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#1e40af' }}>마지막 저장</span>
-            <span className={styles.cardSub} style={{ color: '#2563eb' }}>{savedAt ? formatDate(savedAt) : '저장 없음'}</span>
-          </div>
+      <div className={styles.card}>
+        <div className={styles.iconArea}>💾</div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}><span className={styles.cardName} style={{ color: '#1e40af' }}>마지막 저장</span></div>
+          <div className={styles.bottomRow}><span className={styles.cardSub} style={{ color: '#2563eb' }}>{savedAt ? formatDate(savedAt) : '저장 없음'}</span></div>
         </div>
       </div>
 
       {/* 소리 */}
-      <div className={styles.card} style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>🔊</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#14532d' }}>음소거</span>
-            <span className={styles.cardSub} style={{ color: '#16a34a' }}>{muted ? '소리 꺼짐' : '소리 켜짐'}</span>
-          </div>
+      <div className={styles.card}>
+        <div className={styles.iconArea}>🔊</div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}><span className={styles.cardName} style={{ color: '#14532d' }}>음소거</span></div>
+          <div className={styles.bottomRow}><span className={styles.cardSub} style={{ color: '#16a34a' }}>{muted ? '소리 꺼짐' : '소리 켜짐'}</span></div>
         </div>
-        <button
-          className={`${styles.toggle} ${muted ? styles.toggleOn : styles.toggleOff}`}
-          onClick={onToggleMute}
-        >
+        <button className={`${styles.toggle} ${muted ? styles.toggleOn : styles.toggleOff}`} onClick={onToggleMute}>
           <span className={styles.toggleThumb} />
         </button>
       </div>
 
       {/* 클라우드 저장 */}
-      <div className={styles.card} style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>☁️</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#0c4a6e' }}>클라우드 저장</span>
+      <div className={styles.card}>
+        <div className={styles.iconArea}>☁️</div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}><span className={styles.cardName} style={{ color: '#0c4a6e' }}>클라우드 저장</span></div>
+          <div className={styles.bottomRow}>
             <span className={styles.cardSub} style={{ color: cloudMsg ? (cloudMsg.ok ? '#16a34a' : '#e11d48') : '#0284c7' }}>
               {cloudMsg ? cloudMsg.text : '서버에 현재 상태를 저장해요'}
             </span>
           </div>
         </div>
-        <button
-          className={styles.resetBtn}
-          style={{ background: '#0ea5e9', opacity: loading ? 0.6 : 1 }}
-          onClick={handleSave}
-          disabled={!!loading}
-        >
-          {loading === 'save' ? '...' : '저장'}
-        </button>
-        <button
-          className={styles.resetBtn}
-          style={{ background: '#6366f1', marginLeft: 8, opacity: loading ? 0.6 : 1 }}
-          onClick={handleLoad}
-          disabled={!!loading}
-        >
-          {loading === 'load' ? '...' : '불러오기'}
-        </button>
+        <div className={styles.cardActions}>
+          <button className={styles.actionBtn} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleSave} disabled={!!loading}>
+            {loading === 'save' ? '...' : '저장'}
+          </button>
+          <button className={styles.actionBtn} style={{ opacity: loading ? 0.6 : 1 }} onClick={handleLoad} disabled={!!loading}>
+            {loading === 'load' ? '...' : '불러오기'}
+          </button>
+        </div>
       </div>
 
       {/* 기기 변경 */}
-      <div className={styles.card} style={{ background: '#fdf4ff', borderColor: '#e9d5ff', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>📱</span>
-          <div className={styles.cardInfo}>
+      <div className={styles.cardTall}>
+        <div className={styles.cardTallHeader}>
+          <span className={styles.cardTallIcon}>📱</span>
+          <div className={styles.cardTallInfo}>
             <span className={styles.cardName} style={{ color: '#581c87' }}>기기 변경</span>
             <span className={styles.cardSub} style={{ color: transferMsg ? (transferMsg.ok ? '#16a34a' : '#e11d48') : '#7c3aed' }}>
               {transferMsg ? transferMsg.text : '코드로 다른 기기에 데이터를 옮겨요'}
             </span>
           </div>
         </div>
-
-        {/* 코드 발급 (구기기) */}
         <div className={styles.transferRow}>
           <span className={styles.transferLabel}>이 기기 코드 발급</span>
           {transferCode && countdown > 0 ? (
@@ -222,8 +203,7 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
               <span className={styles.codeText}>{transferCode}</span>
               <span className={styles.codeTimer}>{formatCountdown(countdown)}</span>
               <button
-                className={styles.resetBtn}
-                style={{ background: '#7c3aed', marginLeft: 4 }}
+                className={styles.transferBtn}
                 onClick={async () => {
                   const text = `기기 이전 코드: ${transferCode}\n(15분 이내 입력)`
                   if (navigator.share) {
@@ -233,23 +213,14 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
                     showTransferMsg('클립보드에 복사됐어요', true)
                   }
                 }}
-              >
-                공유
-              </button>
+              >공유</button>
             </div>
           ) : (
-            <button
-              className={styles.resetBtn}
-              style={{ background: '#7c3aed', opacity: transferLoading ? 0.6 : 1 }}
-              onClick={handleIssueCode}
-              disabled={!!transferLoading}
-            >
+            <button className={styles.transferBtn} style={{ opacity: transferLoading ? 0.6 : 1 }} onClick={handleIssueCode} disabled={!!transferLoading}>
               {transferLoading === 'issue' ? '...' : '코드 받기'}
             </button>
           )}
         </div>
-
-        {/* 코드 입력 (신기기) */}
         <div className={styles.transferRow}>
           <span className={styles.transferLabel}>코드 입력</span>
           <input
@@ -262,8 +233,8 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
             onChange={e => setInputCode(e.target.value.replace(/\D/g, ''))}
           />
           <button
-            className={styles.resetBtn}
-            style={{ background: '#059669', opacity: (transferLoading || inputCode.length !== 6) ? 0.6 : 1, marginLeft: 8 }}
+            className={styles.transferBtn}
+            style={{ opacity: (transferLoading || inputCode.length !== 6) ? 0.6 : 1 }}
             onClick={handleApplyCode}
             disabled={!!transferLoading || inputCode.length !== 6}
           >
@@ -273,17 +244,15 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
       </div>
 
       {/* 초기화 */}
-      <div className={styles.card} style={{ background: '#fff1f2', borderColor: '#fecdd3' }}>
-        <div className={styles.cardLeft}>
-          <span className={styles.cardIcon}>🗑️</span>
-          <div className={styles.cardInfo}>
-            <span className={styles.cardName} style={{ color: '#9f1239' }}>게임 초기화</span>
-            <span className={styles.cardSub} style={{ color: '#e11d48' }}>모든 진행 상황이 삭제돼요</span>
-          </div>
+      <div className={styles.card}>
+        <div className={styles.iconArea}>🗑️</div>
+        <div className={styles.cardInfo}>
+          <div className={styles.nameRow}><span className={styles.cardName} style={{ color: '#9f1239' }}>게임 초기화</span></div>
+          <div className={styles.bottomRow}><span className={styles.cardSub} style={{ color: '#e11d48' }}>모든 진행 상황이 삭제돼요</span></div>
         </div>
-        <button className={styles.resetBtn} onClick={onHardReset}>
-          초기화
-        </button>
+        <div className={styles.cardActions}>
+          <button className={styles.actionBtn} style={{ background: '#e11d48' }} onClick={onHardReset}>초기화</button>
+        </div>
       </div>
 
     </div>

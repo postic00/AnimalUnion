@@ -205,79 +205,99 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: #fafafa;
-  border: 1.5px solid var(--c-gray-100);
-  border-radius: 14px;
+  align-items: stretch;
+  height: 60px;
+  padding: 0 5px;
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-lg);
+  box-sizing: border-box;
+  overflow: hidden;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-.cardLocked {
-  opacity: 0.55;
-}
-
-.cardLeft {
+.iconArea {
+  width: 50px;
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.cardEmoji {
-  font-size: 26px;
-  line-height: 1;
+  justify-content: center;
   flex-shrink: 0;
+  font-size: 28px;
+  line-height: 1;
 }
 
 .cardInfo {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  flex: 1;
   min-width: 0;
 }
 
-.cardNameRow {
+.nameRow {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
+.bottomRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .cardName {
+  flex: 1;
   font-size: var(--text-base);
   font-weight: 800;
   color: var(--c-bg-dark);
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .levelBadge {
-  font-size: 12px;
+  flex: 1;
+  font-size: 10px;
   font-weight: 700;
   color: #fff;
-  background: var(--c-gray-500);
-  min-width: 48px;
-  height: 22px;
-  padding: 0 6px;
+  background: var(--c-aqua);
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  flex-shrink: 0;
+}
+
+.cardStat {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--c-aqua);
+  text-align: right;
+  padding-right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
 }
 
 .cardSub {
-  display: flex;
-  align-items: center;
-  gap: 3px;
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--c-gray-500);
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .subIcon {
@@ -285,75 +305,41 @@
   height: 12px;
 }
 
-/* 버튼들 */
-.cardBtns {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
 .starBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 3px;
-  height: 32px;
-  padding: 0 12px;
-  background: linear-gradient(135deg, #fbbf24 0%, var(--c-amber) 100%);
+  width: 65px;
+  height: 36px;
+  background: var(--btn-aqua);
   color: #fff;
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   font-size: var(--text-sm);
   font-weight: 700;
   cursor: pointer;
   flex-shrink: 0;
-  box-shadow: 0 1px 6px rgba(245, 158, 11, 0.3);
+  align-self: center;
 }
 
 .starBtn:disabled {
   background: var(--c-gray-200);
   color: var(--c-gray-400);
-  box-shadow: none;
   cursor: default;
 }
 
-.placeBtn {
-  height: 32px;
-  padding: 0 12px;
-  background: #10b981;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-xl);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.placeBtnRecall {
-  background: var(--c-gray-500);
-}
-
-.unlockBtn {
+.maxBadge {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  height: 32px;
-  padding: 0 12px;
-  background: #8b5cf6;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-xl);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.unlockBtn:disabled {
-  background: var(--c-gray-200);
+  width: 65px;
+  height: 36px;
+  font-size: 10px;
+  font-weight: 800;
   color: var(--c-gray-400);
-  cursor: default;
+  background: var(--c-gray-100);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  align-self: center;
 }

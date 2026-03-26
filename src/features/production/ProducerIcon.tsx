@@ -6,7 +6,7 @@ import pandaGrade3 from '../../assets/23_panda_grade3.png'
 
 const PANDA_IMGS = [pandaGrade1, pandaGrade2, pandaGrade3]
 
-const OVL: CSSProperties = { position: 'absolute', bottom: 0, right: 0, pointerEvents: 'none', transform: 'scale(0.66)', transformOrigin: 'bottom right' }
+const OVL: CSSProperties = { position: 'absolute', bottom: 0, right: 0, zIndex: 2, pointerEvents: 'none', transform: 'scale(0.66)', transformOrigin: 'bottom right' }
 
 // Grade 1: 삽 오버레이
 function ShovelOverlay({ s }: { s: number }) {

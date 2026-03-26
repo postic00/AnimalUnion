@@ -33,22 +33,20 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
     <div className={styles.container}>
       <div className={styles.list}>
         {/* 클릭커 업그레이드 */}
-        <div className={styles.card} style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
-          <div className={styles.cardLeft}>
-            <span className={styles.gradeEmoji}>👆</span>
-            <div className={styles.cardInfo}>
-              <div className={styles.cardNameRow}>
-                <span className={styles.cardName} style={{ color: '#1e40af' }}>클릭 생산기</span>
-                <span className={styles.levelBadge} style={{ background: '#3b82f6' }}>Lv.{clicker.level}</span>
-              </div>
-              <span className={styles.cardSub} style={{ color: '#2563eb' }}>
-                클릭당 ×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(3)}
-              </span>
+        <div className={styles.card}>
+          <span className={styles.gradeEmoji}>👆</span>
+          <div className={styles.cardInfo}>
+            <div className={styles.cardNameRow}>
+              <span className={styles.cardName}>클릭 생산기</span>
+              <span className={styles.levelBadge}>Lv.{clicker.level}</span>
+              <span className={styles.cardStat}>×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(2)}</span>
             </div>
+            <span className={styles.cardSub}>
+              클릭당 ×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(3)}
+            </span>
           </div>
           <button
             className={styles.upgradeBtn}
-            style={{ background: '#3b82f6' }}
             onClick={onUpgradeClicker}
             disabled={gold < clickerCost}
           >
@@ -66,12 +64,13 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
 
           if (!producer.built) {
             return (
-              <div key={index} className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
-                <div className={styles.cardLeft}>
-                  <span className={styles.gradeEmoji} style={{ opacity: 0.35 }}><GradeIcon size={36} grade={producer.grade}/></span>
-                  <div className={styles.cardInfo}>
-                    <span className={styles.cardName} style={{ color: '#6b7280' }}>생산기 {index + 1}</span>
-                    <span className={styles.cardSub} style={{ color: '#9ca3af' }}>미건설 · {grade.name}</span>
+              <div key={index} className={styles.card}>
+                <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
+                <div className={styles.cardInfo}>
+                  <div className={styles.cardNameRow}>
+                    <span className={styles.cardName}>생산기 {index + 1}</span>
+                    <span className={styles.levelBadge} style={{ background: 'var(--c-gray-300)' }}>미건설</span>
+                    <span className={styles.cardStat}>{grade.name}</span>
                   </div>
                 </div>
                 <button
@@ -90,34 +89,31 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
           const isActive = producer.level > 0
 
           return (
-            <div key={index} className={styles.card} style={{ background: grade.color, borderColor: grade.border }}>
-              <div className={styles.cardLeft}>
-                <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
-                <div className={styles.cardInfo}>
-                  <div className={styles.cardNameRow}>
-                    <span className={styles.cardName} style={{ color: grade.text }}>생산기 {index + 1}</span>
-                    <span className={styles.levelBadge} style={{ background: grade.sub }}>Lv.{producer.level}</span>
-                  </div>
-                  <span className={styles.cardSub} style={{ color: grade.sub }}>
-                    {isActive ? `${perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s` : '비활성'}
+            <div key={index} className={styles.card}>
+              <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
+              <div className={styles.cardInfo}>
+                <div className={styles.cardNameRow}>
+                  <span className={styles.cardName}>생산기 {index + 1}</span>
+                  <span className={styles.levelBadge}>Lv.{producer.level}</span>
+                  <span className={styles.cardStat}>
+                    {isActive ? `${perSec < 10 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s` : '비활성'}
                   </span>
-                  <div className={styles.gradeSelector}>
-                    {[1, 2, 3].map(g => (
-                      <button
-                        key={g}
-                        className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
-                        style={producer.grade === g ? { background: GRADES[g].sub, color: '#fff' } : { color: GRADES[g].text }}
-                        onClick={() => onGradeChange(index, g)}
-                      >
-                        {GRADES[g].emoji}
-                      </button>
-                    ))}
-                  </div>
+                </div>
+                <div className={styles.gradeSelector}>
+                  {[1, 2, 3].map(g => (
+                    <button
+                      key={g}
+                      className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
+                      style={producer.grade === g ? { background: GRADES[g].sub, color: '#fff', borderColor: 'transparent' } : { color: GRADES[g].text }}
+                      onClick={() => onGradeChange(index, g)}
+                    >
+                      {GRADES[g].emoji}
+                    </button>
+                  ))}
                 </div>
               </div>
               <button
                 className={styles.upgradeBtn}
-                style={{ background: grade.sub }}
                 onClick={() => onUpgrade(index)}
                 disabled={gold < cost}
               >

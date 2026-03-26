@@ -588,6 +588,7 @@ export default function App() {
               <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
                 <button onClick={() => ui.setLbMode('prestige')} className={ui.lbMode === 'prestige' ? 'aqua-btn-active' : 'aqua-btn'}>⭐ 환생</button>
                 <button onClick={() => ui.setLbMode('gold')} className={ui.lbMode === 'gold' ? 'aqua-btn-active' : 'aqua-btn'}>💰 골드</button>
+                <button onClick={() => ui.setLbMode('friend')} className={ui.lbMode === 'friend' ? 'aqua-btn-active' : 'aqua-btn'}>👥 친구</button>
               </div>
             </div>
           ) : (
@@ -666,6 +667,7 @@ export default function App() {
           <LeaderboardTab
             playerName={gameState.playerName}
             mode={ui.lbMode}
+            friendDeviceIds={(gameState.friends ?? []).map(f => f.deviceId)}
             onNameChange={async name => {
               if (!name.trim()) return
               useGameStore.getState().setGameState(prev => ({ ...prev, playerName: name }))

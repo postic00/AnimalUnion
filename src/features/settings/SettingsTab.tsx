@@ -71,7 +71,7 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
     setIssuing(false)
     if (code) {
       setInviteCode(code)
-      const text = `동물노동조합 친구 코드: ${code}\n(24시간 이내 입력)\nPlay Store: https://play.google.com/store/apps/details?id=com.animalunion.game`
+      const text = `[함께하기] 동물노동조합\n친구코드 : ${code}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
       if (navigator.share) {
         await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
       } else {
@@ -317,7 +317,7 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
               <button
                 className={styles.transferBtn}
                 onClick={async () => {
-                  const text = `동물노동조합 친구 코드: ${inviteCode}\n(24시간 이내 입력)\nPlay Store: https://play.google.com/store/apps/details?id=com.animalunion.game`
+                  const text = `[함께하기] 동물노동조합\n친구코드 : ${inviteCode}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
                   if (navigator.share) {
                     await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
                   } else {

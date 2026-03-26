@@ -17,18 +17,20 @@
   height: 45px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  position: relative;
   gap: 6px;
   flex-wrap: wrap;
-  padding: 0 12px;
+  padding: 0 40px;
 }
 
 .body {
   background-image: url('../../assets/51_panel_bg.png');
   background-size: 100% 100%;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
 }
 
 .typeName {
@@ -66,7 +68,8 @@
 }
 
 .closeBtn {
-  margin-left: auto;
+  position: absolute;
+  right: 12px;
   border: none;
   background: rgba(255,255,255,0.85);
   border-radius: 50%;
@@ -127,20 +130,20 @@
 /* 3단 레이아웃 */
 .threeCol {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   align-items: stretch;
-  height: 150px;
+  height: 100px;
 }
 
 /* 좌우 패널 */
 .panel {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   background: rgba(255,255,255,0.55);
   border-radius: var(--radius-md);
-  padding: 10px 8px;
+  padding: 5px 4px;
   min-width: 0;
   overflow-y: auto;
 }
@@ -148,14 +151,14 @@
 .panelLabel {
   font-size: 10px;
   font-weight: 700;
-  color: var(--c-gray-400);
+  color: #1a1a1a;
   text-align: center;
 }
 
 .bufferCount {
   font-size: 9px;
   font-weight: 600;
-  color: var(--c-gray-300);
+  color: #1a1a1a;
   text-align: center;
 }
 
@@ -222,15 +225,22 @@
 
 /* 중앙 패널 */
 .middle {
-  flex: 1.2;
+  flex: 3;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   background: rgba(255,255,255,0.55);
   border-radius: var(--radius-md);
-  padding: 10px 8px;
+  padding: 5px 4px;
   min-width: 0;
   overflow-y: auto;
+}
+
+.middleTop {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 
 .divider {
@@ -240,11 +250,11 @@
 }
 
 .stateBox {
-  flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 4px;
 }
 
 .stateLabel {
@@ -254,7 +264,7 @@
 }
 
 .stateDot {
-  font-size: var(--text-lg);
+  font-size: 8px;
   line-height: 1;
 }
 
@@ -265,7 +275,7 @@
 }
 
 .progressBar {
-  width: 100%;
+  flex: 1;
   height: 5px;
   background: var(--c-gray-200);
   border-radius: 4px;
@@ -299,7 +309,7 @@
 .controls {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .typeRow {

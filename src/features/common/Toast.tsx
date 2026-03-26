@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import styles from './Toast.module.css'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 export default function Toast({ message, onHide, index = 0 }: Props) {
   const [visible, setVisible] = useState(false)
   const onHideRef = useRef(onHide)
-  onHideRef.current = onHide
+  useLayoutEffect(() => { onHideRef.current = onHide })
 
   useEffect(() => {
     const showRaf = requestAnimationFrame(() => setVisible(true))

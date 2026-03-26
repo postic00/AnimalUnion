@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Board from './features/board/Board'
 import Navigation from './features/navigation/Navigation'
 import TabBar from './features/navigation/TabBar'
@@ -111,6 +111,25 @@ function loadInitialState() {
   }
 }
 
+const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
+
+const bgEmojis = [
+  { emoji: '🍲', top: '6%',  left: '4%',  size: 38, rot: -15, op: 0.13 },
+  { emoji: '🍡', top: '10%', left: '78%', size: 32, rot: 20,  op: 0.13 },
+  { emoji: '🐹', top: '18%', left: '88%', size: 30, rot: -10, op: 0.15 },
+  { emoji: '🌶️', top: '28%', left: '2%',  size: 28, rot: 30,  op: 0.12 },
+  { emoji: '🐱', top: '38%', left: '90%', size: 34, rot: -20, op: 0.13 },
+  { emoji: '🍲', top: '50%', left: '5%',  size: 42, rot: 12,  op: 0.12 },
+  { emoji: '🐶', top: '60%', left: '82%', size: 30, rot: 8,   op: 0.14 },
+  { emoji: '🍡', top: '70%', left: '8%',  size: 36, rot: -8,  op: 0.13 },
+  { emoji: '🌶️', top: '78%', left: '88%', size: 26, rot: 25,  op: 0.12 },
+  { emoji: '🐹', top: '86%', left: '3%',  size: 30, rot: -18, op: 0.14 },
+  { emoji: '⭐', top: '44%', left: '94%', size: 22, rot: 0,   op: 0.15 },
+  { emoji: '⭐', top: '22%', left: '1%',  size: 18, rot: 0,   op: 0.13 },
+  { emoji: '🍡', top: '92%', left: '60%', size: 28, rot: 15,  op: 0.12 },
+  { emoji: '🐱', top: '88%', left: '75%', size: 26, rot: 10,  op: 0.13 },
+]
+
 if(typeof window !== 'undefined' && isTossEnvironment()) {
 	document.documentElement.style.setProperty('--safe-area-inset-top', '0px')
 	document.documentElement.style.setProperty('--safe-area-inset-bottom', '0px')
@@ -178,8 +197,6 @@ export default function App() {
   useEffect(() => {
     CloudService.getPendingFriendRequests().then(setPendingFriendRequests)
   }, [])
-
-  const platform = /android/i.test(navigator.userAgent) ? 'android' : /iphone|ipad/i.test(navigator.userAgent) ? 'ios' : 'web'
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -385,14 +402,14 @@ export default function App() {
   }, [addToast])
 
   // ── 크로스커팅 핸들러 ─────────────────────────────────────────────────────
-  const { setSelectedFactory, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
+  const { setSelectedFactory, setSelectedProducer, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
   const { handlePlaceAnimal: actionsPlaceAnimal, handleHardReset: actionsHardReset } = actions
 
   // 생산자 클릭: 튜토리얼 8→9 연동
   const handleProducerClick = useCallback((row: number, col: number) => {
-    ui.setSelectedProducer({ row, col })
+    setSelectedProducer({ row, col })
     if (tutorialStep === 8) setTutorialStep(9)
-  }, [ui.setSelectedProducer, tutorialStep, setTutorialStep])
+  }, [setSelectedProducer, tutorialStep, setTutorialStep])
 
   // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
@@ -416,24 +433,23 @@ export default function App() {
     localStorage.removeItem('animal-union-prestige-total')
   }, [actionsHardReset, setActiveTab])  
 
-  const bundleCost = Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0)))
+  const bundleCost = useMemo(() =>
+    Math.floor(getBundleCost(gameState.bundleCount) * (1 - getBundleCostDiscount(gameState.bundleDiscountLevel ?? 0))),
+    [gameState.bundleCount, gameState.bundleDiscountLevel]
+  )
 
-  const bgEmojis = [
-    { emoji: '🍲', top: '6%',  left: '4%',  size: 38, rot: -15, op: 0.13 },
-    { emoji: '🍡', top: '10%', left: '78%', size: 32, rot: 20,  op: 0.13 },
-    { emoji: '🐹', top: '18%', left: '88%', size: 30, rot: -10, op: 0.15 },
-    { emoji: '🌶️', top: '28%', left: '2%',  size: 28, rot: 30,  op: 0.12 },
-    { emoji: '🐱', top: '38%', left: '90%', size: 34, rot: -20, op: 0.13 },
-    { emoji: '🍲', top: '50%', left: '5%',  size: 42, rot: 12,  op: 0.12 },
-    { emoji: '🐶', top: '60%', left: '82%', size: 30, rot: 8,   op: 0.14 },
-    { emoji: '🍡', top: '70%', left: '8%',  size: 36, rot: -8,  op: 0.13 },
-    { emoji: '🌶️', top: '78%', left: '88%', size: 26, rot: 25,  op: 0.12 },
-    { emoji: '🐹', top: '86%', left: '3%',  size: 30, rot: -18, op: 0.14 },
-    { emoji: '⭐', top: '44%', left: '94%', size: 22, rot: 0,   op: 0.15 },
-    { emoji: '⭐', top: '22%', left: '1%',  size: 18, rot: 0,   op: 0.13 },
-    { emoji: '🍡', top: '92%', left: '60%', size: 28, rot: 15,  op: 0.12 },
-    { emoji: '🐱', top: '88%', left: '75%', size: 26, rot: 10,  op: 0.13 },
-  ]
+  const animals = useMemo(() => [
+    ...gameState.animals,
+    ...(gameState.friends ?? []).map(f => ({ id: f.id, level: 1, unlocked: true, name: f.playerName, rank: f.rank })),
+  ], [gameState.animals, gameState.friends])
+
+  const levelConfig = useMemo(() => ({
+    materialQuantityLevels: gameState.materialQuantityLevels,
+    itemValueLevels: gameState.itemValueLevels,
+    faBufferLevel: gameState.faBufferLevel,
+    rsBufferLevel: gameState.rsBufferLevel,
+    railSpeedLevel: gameState.railSpeedLevel ?? 1,
+  }), [gameState.materialQuantityLevels, gameState.itemValueLevels, gameState.faBufferLevel, gameState.rsBufferLevel, gameState.railSpeedLevel])
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + ver(--safe-area-inset-bottom, 0px))' : 'calc(68px + var(--safe-area-inset-bottom, 0px))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
@@ -479,17 +495,8 @@ export default function App() {
         canAddBundle={gold >= bundleCost}
         producers={gameState.producers}
         factories={gameState.factories}
-        animals={[
-          ...gameState.animals,
-          ...(gameState.friends ?? []).map(f => ({ id: f.id, level: 1, unlocked: true, name: f.playerName, rank: f.rank })),
-        ]}
-        levelConfig={{
-          materialQuantityLevels: gameState.materialQuantityLevels,
-          itemValueLevels: gameState.itemValueLevels,
-          faBufferLevel: gameState.faBufferLevel,
-          rsBufferLevel: gameState.rsBufferLevel,
-          railSpeedLevel: gameState.railSpeedLevel ?? 1,
-        }}
+        animals={animals}
+        levelConfig={levelConfig}
         placingAnimalId={ui.placingAnimalId}
         onPlaceAnimal={handlePlaceAnimal}
         onCancelPlacing={ui.handleCancelPlacing}
@@ -613,10 +620,7 @@ export default function App() {
             onSetGrade={actions.handleSetFactoryGrade}
             onUpgradeLevel={(row, col) => actions.handleUpgradeFactoryLevel(row, col, ui.upgradeAmount)}
             onSetAnimal={actions.handleSetFactoryAnimal}
-            animals={[
-              ...gameState.animals,
-              ...(gameState.friends ?? []).map(f => ({ id: f.id, level: 1, unlocked: true, name: f.playerName, rank: f.rank })),
-            ]}
+            animals={animals}
             maxGrade={20}
             focusFactory={ui.focusFactory}
             onFocusConsumed={() => ui.setFocusFactory(null)}
@@ -637,17 +641,6 @@ export default function App() {
             onUpgradeAnimal={(id) => actions.handleUpgradeAnimal(id, ui.upgradeAmount)}
             onStartPlacing={ui.handleStartPlacing}
             onRecallAnimal={actions.handleRecallAnimal}
-            onIssueInviteCode={actions.handleIssueInviteCode}
-            onSendFriendRequest={actions.handleSendFriendRequest}
-            pendingFriendRequests={pendingFriendRequests}
-            onAcceptFriendRequest={async (id, devId, name) => {
-              const ok = await actions.handleAcceptFriendRequest(id, devId, name)
-              if (ok) setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
-            }}
-            onRejectFriendRequest={async (id) => {
-              await actions.handleRejectFriendRequest(id)
-              setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
-            }}
             onRecallFriend={actions.handleRecallFriend}
             onRemoveFriend={actions.handleRemoveFriend}
           />
@@ -694,6 +687,17 @@ export default function App() {
             onTransferSave={actions.handleTransferSave}
             onTransferLoad={actions.handleTransferLoad}
             onHardReset={() => ui.setShowResetConfirm(true)}
+            onIssueInviteCode={actions.handleIssueInviteCode}
+            onSendFriendRequest={actions.handleSendFriendRequest}
+            pendingFriendRequests={pendingFriendRequests}
+            onAcceptFriendRequest={async (id, devId, name) => {
+              const ok = await actions.handleAcceptFriendRequest(id, devId, name)
+              if (ok) setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
+            }}
+            onRejectFriendRequest={async (id) => {
+              await actions.handleRejectFriendRequest(id)
+              setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
+            }}
           />
         )}
       </BottomSheet>}

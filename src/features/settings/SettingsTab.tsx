@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import type { FriendRequestRow } from '../../lib/userProfile'
 import styles from './SettingsTab.module.css'
 
 interface Props {
@@ -10,6 +11,11 @@ interface Props {
   onTransferSave: () => Promise<string | null>
   onTransferLoad: (code: string) => Promise<boolean>
   onHardReset: () => void
+  onIssueInviteCode: () => Promise<string | null>
+  onSendFriendRequest: (code: string) => Promise<boolean>
+  pendingFriendRequests: FriendRequestRow[]
+  onAcceptFriendRequest: (id: string, fromDeviceId: string, fromPlayerName: string) => Promise<void>
+  onRejectFriendRequest: (id: string) => Promise<void>
 }
 
 function formatDate(ts: number): string {
@@ -24,7 +30,7 @@ function formatCountdown(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onTransferSave, onTransferLoad, onHardReset }: Props) {
+export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onTransferSave, onTransferLoad, onHardReset, onIssueInviteCode, onSendFriendRequest, pendingFriendRequests, onAcceptFriendRequest, onRejectFriendRequest }: Props) {
   const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [loading, setLoading] = useState<'save' | 'load' | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,6 +47,55 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
 
   // 기기 이전 - 코드 입력
   const [inputCode, setInputCode] = useState('')
+
+  // 친구 추가
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [issuing, setIssuing] = useState(false)
+  const [friendInputCode, setFriendInputCode] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [friendMsg, setFriendMsg] = useState<{ text: string; ok: boolean } | null>(null)
+  const friendMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (friendMsgTimerRef.current) clearTimeout(friendMsgTimerRef.current) }, [])
+
+  const showFriendMsg = useCallback((text: string, ok: boolean) => {
+    if (friendMsgTimerRef.current) clearTimeout(friendMsgTimerRef.current)
+    setFriendMsg({ text, ok })
+    friendMsgTimerRef.current = setTimeout(() => setFriendMsg(null), 3000)
+  }, [])
+
+  const handleIssueInvite = useCallback(async () => {
+    if (issuing) return
+    setIssuing(true)
+    const code = await onIssueInviteCode()
+    setIssuing(false)
+    if (code) {
+      setInviteCode(code)
+      const text = `동물노동조합 친구 코드: ${code}\n(24시간 이내 입력)\nPlay Store: https://play.google.com/store/apps/details?id=com.animalunion.game`
+      if (navigator.share) {
+        await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
+      } else {
+        await navigator.clipboard.writeText(text).catch(() => null)
+        showFriendMsg('클립보드에 복사됐어요', true)
+      }
+    } else {
+      showFriendMsg('코드 발급에 실패했어요', false)
+    }
+  }, [issuing, onIssueInviteCode, showFriendMsg])
+
+  const handleAddFriend = useCallback(async () => {
+    const code = friendInputCode.trim()
+    if (code.length !== 6 || adding) return
+    setAdding(true)
+    const ok = await onSendFriendRequest(code)
+    setAdding(false)
+    if (ok) {
+      setFriendInputCode('')
+      showFriendMsg('친구 요청을 보냈어요! 상대방이 수락하면 친구가 돼요', true)
+    } else {
+      showFriendMsg('코드가 올바르지 않거나 이미 추가된 친구예요', false)
+    }
+  }, [friendInputCode, adding, onSendFriendRequest, showFriendMsg])
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -241,6 +296,76 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
             {transferLoading === 'apply' ? '...' : '적용'}
           </button>
         </div>
+      </div>
+
+      {/* 친구 추가 */}
+      <div className={styles.cardTall}>
+        <div className={styles.cardTallHeader}>
+          <span className={styles.cardTallIcon}>👥</span>
+          <div className={styles.cardTallInfo}>
+            <span className={styles.cardName} style={{ color: '#14532d' }}>친구 추가</span>
+            <span className={styles.cardSub} style={{ color: friendMsg ? (friendMsg.ok ? '#16a34a' : '#e11d48') : '#16a34a' }}>
+              {friendMsg ? friendMsg.text : '코드로 친구를 추가해요'}
+            </span>
+          </div>
+        </div>
+        <div className={styles.transferRow}>
+          <span className={styles.transferLabel}>내 코드 발급</span>
+          {inviteCode ? (
+            <div className={styles.codeBox}>
+              <span className={styles.codeText}>{inviteCode}</span>
+              <button
+                className={styles.transferBtn}
+                onClick={async () => {
+                  const text = `동물노동조합 친구 코드: ${inviteCode}\n(24시간 이내 입력)\nPlay Store: https://play.google.com/store/apps/details?id=com.animalunion.game`
+                  if (navigator.share) {
+                    await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
+                  } else {
+                    await navigator.clipboard.writeText(text).catch(() => null)
+                    showFriendMsg('클립보드에 복사됐어요', true)
+                  }
+                }}
+              >공유</button>
+              <button className={styles.transferBtn} style={{ opacity: issuing ? 0.6 : 1 }} onClick={handleIssueInvite} disabled={issuing}>재발급</button>
+            </div>
+          ) : (
+            <button className={styles.transferBtn} style={{ opacity: issuing ? 0.6 : 1 }} onClick={handleIssueInvite} disabled={issuing}>
+              {issuing ? '...' : '발급 & 공유'}
+            </button>
+          )}
+        </div>
+        <div className={styles.transferRow}>
+          <span className={styles.transferLabel}>코드 입력</span>
+          <input
+            className={styles.codeInput}
+            type="tel"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="6자리"
+            value={friendInputCode}
+            onChange={e => setFriendInputCode(e.target.value.replace(/\D/g, ''))}
+          />
+          <button
+            className={styles.transferBtn}
+            style={{ opacity: (adding || friendInputCode.length !== 6) ? 0.6 : 1 }}
+            onClick={handleAddFriend}
+            disabled={adding || friendInputCode.length !== 6}
+          >
+            {adding ? '...' : '추가'}
+          </button>
+        </div>
+        {pendingFriendRequests.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#d97706' }}>친구 요청 {pendingFriendRequests.length}건</span>
+            {pendingFriendRequests.map(req => (
+              <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#92400e' }}>{req.from_player_name}</span>
+                <button className={styles.transferBtn} style={{ background: '#059669' }} onClick={() => onAcceptFriendRequest(req.id, req.from_device_id, req.from_player_name)}>수락</button>
+                <button className={styles.transferBtn} style={{ background: '#e11d48' }} onClick={() => onRejectFriendRequest(req.id)}>거절</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 초기화 */}

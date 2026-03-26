@@ -121,7 +121,7 @@ function getLevelLabel(cell: CellType, factory?: Factory, producer?: Producer): 
   return null
 }
 
-function CellEmoji({ cell, factory, producer, progress, size }: Pick<Props, 'cell' | 'factory' | 'producer' | 'progress'> & { size: number }) {
+const CellEmoji = memo(function CellEmoji({ cell, factory, producer, progress, size }: Pick<Props, 'cell' | 'factory' | 'producer' | 'progress'> & { size: number }) {
   const p = progress ?? 0
   const iconSize = Math.round(size * 0.55)
   const svgStyle: CSSProperties = {
@@ -154,7 +154,7 @@ function CellEmoji({ cell, factory, producer, progress, size }: Pick<Props, 'cel
     default:
       return <span style={{ fontSize: '10px' }}>{cell.type}</span>
   }
-}
+})
 
 
 const LABEL_STYLE: CSSProperties = {
@@ -200,7 +200,7 @@ const BUFFER_NORMAL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(0,0,0,0
 const BUFFER_FULL: CSSProperties = { ...BUFFER_BASE, background: 'rgba(220,38,38,0.85)' }
 
 export default memo(function Cell({ cell, size, factory, producer, progress, bufferInfo, placing, tutorialHighlight, onClick }: Props) {
-  const dynamicStyle = getDynamicStyle(cell, factory, producer)
+  const dynamicStyle = useMemo(() => getDynamicStyle(cell, factory, producer), [cell, factory, producer])
   const label = getLevelLabel(cell, factory, producer)
   const isActiveFA = cell.type === 'FA' && factory?.built && factory.level > 0
   const isActivePR = cell.type === 'PR' && producer?.built
@@ -216,6 +216,13 @@ const cellStyle = useMemo<CSSProperties>(() => ({
 
   const animOpacity = 0.3 + (progress ?? 0) * 0.7
   const animStyle = useMemo<CSSProperties>(() => ({ ...ANIM_CENTER, opacity: animOpacity }), [animOpacity])
+
+  const animalNum = factory?.animalId ? parseInt(factory.animalId.match(/(\d+)$/)?.[1] ?? '1') : 0
+  const animalBadgeStyle = useMemo<CSSProperties>(() => {
+    if (!animalNum) return {}
+    const color = HAT_COLORS[(animalNum - 1) % HAT_COLORS.length]
+    return { ...ICON_TOP_LEFT, background: color, borderRadius: 4, minWidth: 13, height: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px' }
+  }, [animalNum])
 
   return (
     <div
@@ -245,15 +252,11 @@ const cellStyle = useMemo<CSSProperties>(() => ({
           {/* SVG 오버레이: opacity 1 고정 */}
           <ProcessOverlay type={factory!.type} size={size}/>
           {/* 좌측 상단: 동물 번호 */}
-          {factory!.animalId && (() => {
-            const num = parseInt(factory!.animalId.match(/(\d+)$/)?.[1] ?? '1')
-            const color = HAT_COLORS[(num - 1) % HAT_COLORS.length]
-            return (
-              <span style={{ ...ICON_TOP_LEFT, background: color, borderRadius: 4, minWidth: 13, height: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px' }}>
-                <span style={{ fontSize: 8, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{num}</span>
-              </span>
-            )
-          })()}
+          {factory!.animalId && (
+            <span style={animalBadgeStyle}>
+              <span style={{ fontSize: 8, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{animalNum}</span>
+            </span>
+          )}
           {/* 좌측 하단: 아이템 등급 */}
           <span style={ICON_BOTTOM_LEFT}>
             <GradeIcon size={iconSm} grade={factory!.grade}/>

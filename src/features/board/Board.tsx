@@ -104,6 +104,31 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     new Map(factories.map(f => [`${f.row}-${f.col}`, f])),
     [factories]
   )
+  const onPlaceAnimalRef = useRef(onPlaceAnimal)
+  const onFactoryClickRef = useRef(onFactoryClick)
+  const onProducerClickRef = useRef(onProducerClick)
+  const onRsClickRef = useRef(onRsClick)
+  useLayoutEffect(() => {
+    onPlaceAnimalRef.current = onPlaceAnimal
+    onFactoryClickRef.current = onFactoryClick
+    onProducerClickRef.current = onProducerClick
+    onRsClickRef.current = onRsClick
+  })
+
+  const clickHandlers = useMemo(() => {
+    const map = new Map<string, () => void>()
+    board.forEach((row, rowIdx) => { // eslint-disable-line react-hooks/refs
+      row.forEach((cell, colIdx) => {
+        const k = `${rowIdx}-${colIdx}`
+        if (placingAnimalId && cell.type === 'FA') map.set(k, () => onPlaceAnimalRef.current(rowIdx, colIdx))
+        else if (!placingAnimalId && cell.type === 'FA') map.set(k, () => onFactoryClickRef.current?.(rowIdx, colIdx))
+        else if (!placingAnimalId && cell.type === 'PR') map.set(k, () => onProducerClickRef.current?.(rowIdx, colIdx))
+        else if (!placingAnimalId && cell.type === 'RS') map.set(k, () => onRsClickRef.current?.(rowIdx, colIdx, `rs-${rowIdx}-${colIdx}`, rsQueuesRef))
+      })
+    })
+    return map
+  }, [board, placingAnimalId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const firstFAPos = useMemo(() => {
     for (let r = 0; r < board.length; r++) {
       for (let c = 0; c < board[r].length; c++) {
@@ -134,13 +159,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
                   (tutorialHighlight === 'fa' && cell.type === 'FA' && firstFAPos?.row === rowIdx && firstFAPos?.col === colIdx) ||
                   (tutorialHighlight === 'rs' && cell.type === 'PR')
                 }
-                onClick={
-                  placingAnimalId && cell.type === 'FA' ? () => onPlaceAnimal(rowIdx, colIdx)
-                  : !placingAnimalId && cell.type === 'FA' ? () => onFactoryClick?.(rowIdx, colIdx)
-                  : !placingAnimalId && cell.type === 'PR' ? () => onProducerClick?.(rowIdx, colIdx)
-                  : !placingAnimalId && cell.type === 'RS' ? () => onRsClick?.(rowIdx, colIdx, `rs-${rowIdx}-${colIdx}`, rsQueuesRef)
-                  : undefined
-                }
+                onClick={clickHandlers.get(`${rowIdx}-${colIdx}`)}
               />
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, memo, useEffect, useRef, useState } from 'react'
 import type { Factory } from '../../types/factory'
 import type { FAPhases } from '../../hooks/useGameLoop'
 import { getSpecies, HandSvg } from './Cell'
@@ -13,7 +13,7 @@ interface Props {
   faPhases: FAPhases
 }
 
-export default function HandLayer({ factories, cellSize, faPhases }: Props) {
+export default memo(function HandLayer({ factories, cellSize, faPhases }: Props) {
   const hh = Math.floor(cellSize * 7 / 9)
   const baseStyle = { left: 0, top: '50%', marginTop: -hh / 2 } as const
 
@@ -113,4 +113,4 @@ export default function HandLayer({ factories, cellSize, faPhases }: Props) {
       })}
     </>
   )
-}
+})

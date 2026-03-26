@@ -192,6 +192,19 @@ export default function App() {
     setToasts(prev => [...prev, { id: ++toastIdRef.current, message }])
   }, [])
 
+  // ── 순위탭 이름 편집 / 내 순위 ────────────────────────────────────────────
+  const [lbNameEditing, setLbNameEditing] = useState(false)
+  const [lbNameInput, setLbNameInput] = useState('')
+  const [lbMyRank, setLbMyRank] = useState<number | null>(null)
+  const [lbMyScore, setLbMyScore] = useState<number | null>(null)
+  const handleLbNameSave = useCallback(async () => {
+    const trimmed = lbNameInput.trim()
+    if (!trimmed) return
+    useGameStore.getState().setGameState(prev => ({ ...prev, playerName: trimmed }))
+    await ScoreService.updatePlayerName(SaveService.getDeviceId(), trimmed)
+    setLbNameEditing(false)
+  }, [lbNameInput])
+
   // ── 친구 요청 ─────────────────────────────────────────────────────────────
   const [pendingFriendRequests, setPendingFriendRequests] = useState<import('./lib/userProfile').FriendRequestRow[]>([])
   useEffect(() => {
@@ -581,14 +594,33 @@ export default function App() {
             </div>
           ) : ui.activeTab === 4 ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, whiteSpace: 'nowrap' }}>
-                <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px' }}>순위</h2>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280' }}>{CONFIG.CURRENT_WEEK}시즌</span>
-              </div>
-              <div style={{ display: 'flex', flex: 1, gap: 4, justifyContent: 'flex-end' }}>
-                <button onClick={() => ui.setLbMode('prestige')} className={ui.lbMode === 'prestige' ? 'aqua-btn-active' : 'aqua-btn'}>⭐ 환생</button>
-                <button onClick={() => ui.setLbMode('gold')} className={ui.lbMode === 'gold' ? 'aqua-btn-active' : 'aqua-btn'}>💰 골드</button>
-              </div>
+              {lbNameEditing ? (
+                <>
+                  <input
+                    style={{ flex: 1, fontSize: 13, fontWeight: 700, border: '1.5px solid #06b6d4', borderRadius: 6, padding: '2px 6px', outline: 'none', minWidth: 0 }}
+                    value={lbNameInput}
+                    onChange={e => setLbNameInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleLbNameSave()}
+                    maxLength={16}
+                    autoFocus
+                  />
+                  <button className="aqua-btn" onClick={handleLbNameSave}>확인</button>
+                  <button className="aqua-btn" onClick={() => setLbNameEditing(false)}>취소</button>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: 1 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: '#191f28', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gameState.playerName}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#6b7280' }}>
+                      {lbMyRank ? `${lbMyRank === 1 ? '🥇' : lbMyRank === 2 ? '🥈' : lbMyRank === 3 ? '🥉' : `#${lbMyRank}`} ${lbMyScore !== null ? formatGold(lbMyScore) : ''}` : '미등록'}
+                    </span>
+                  </div>
+                  <button className="aqua-btn" onClick={() => { setLbNameInput(gameState.playerName); setLbNameEditing(true) }}>✏️</button>
+                  <button className="aqua-btn" onClick={() => ui.setLbMode(ui.lbMode === 'prestige' ? 'gold' : 'prestige')}>
+                    {ui.lbMode === 'prestige' ? '⭐ 환생' : '💰 골드'}
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#191f28', letterSpacing: '-0.5px', whiteSpace: 'nowrap', width: 25, flexShrink: 0 }}>
@@ -667,11 +699,8 @@ export default function App() {
             playerName={gameState.playerName}
             mode={ui.lbMode}
             friendDeviceIds={(gameState.friends ?? []).map(f => f.deviceId)}
-            onNameChange={async name => {
-              if (!name.trim()) return
-              useGameStore.getState().setGameState(prev => ({ ...prev, playerName: name }))
-              await ScoreService.updatePlayerName(SaveService.getDeviceId(), name)
-            }}
+            myPrestigeScore={gameState.prestigePoints.total}
+            onRankUpdate={(rank, score) => { setLbMyRank(rank); setLbMyScore(score) }}
             onSubmitGold={async () => {
               const { playerName } = gameStateRef.current
               if (playerName) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)

@@ -10,11 +10,12 @@ interface Props {
   playerName: string
   mode: 'prestige' | 'gold'
   friendDeviceIds: string[]
-  onNameChange: (name: string) => void
+  myPrestigeScore?: number
   onSubmitGold?: () => Promise<void>
+  onRankUpdate?: (rank: number | null, score: number | null) => void
 }
 
-export default function LeaderboardTab({ playerName, mode, friendDeviceIds, onNameChange, onSubmitGold }: Props) {
+export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPrestigeScore = 0, onSubmitGold, onRankUpdate }: Props) {
   const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,8 +25,10 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, onNa
   const myIndex = entries.findIndex(e => e.player_name === playerName)
   const myEntry = myIndex >= 0 ? entries[myIndex] : null
   const myRank = myIndex >= 0 ? startRank + myIndex : null
-  const [editingName, setEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState(playerName)
+
+  useEffect(() => {
+    onRankUpdate?.(myRank, myEntry?.score ?? null)
+  }, [myRank, myEntry?.score]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const doFetch = async () => {
     setLoading(true)
@@ -34,7 +37,14 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, onNa
         const myDeviceId = SaveService.getDeviceId()
         const allIds = [...new Set([myDeviceId, ...friendDeviceIds])]
         const data = await ScoreService.fetchFriendsPrestige(allIds)
-        setEntries(data)
+        // 내 항목이 없으면 직접 추가
+        const hasMe = data.some(e => e.player_name === playerName)
+        const list = hasMe ? data : [
+          { id: myDeviceId, player_name: playerName, score: myPrestigeScore, created_at: '' },
+          ...data,
+        ]
+        list.sort((a, b) => b.score - a.score)
+        setEntries(list)
         setStartRank(1)
       } else if (view === 'top') {
         if (mode === 'gold') await onSubmitGold?.()
@@ -54,85 +64,36 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, onNa
     finally { setLoading(false) }
   }
 
-  const refresh = () => { doFetch() }
-
   useEffect(() => {
     doFetch()
   }, [mode, view]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleNameSave = () => {
-    const trimmed = nameInput.trim()
-    if (!trimmed) return
-    onNameChange(trimmed)
-    setEditingName(false)
-  }
-
   return (
     <div className={styles.container}>
-      {/* 내 순위 */}
-      <div className={styles.myScore}>
-        <div className={styles.myLeft}>
-          <span className={styles.myIcon}>{mode === 'prestige' ? '⭐' : '💰'}</span>
-          <div className={styles.myInfo}>
-            {editingName ? (
-              <div className={styles.nameEdit}>
-                <textarea
-                  className={styles.nameInput}
-                  value={nameInput}
-                  onChange={e => setNameInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleNameSave())}
-                  placeholder="닉네임 입력"
-                  maxLength={16}
-                  rows={1}
-                  autoFocus
-                />
-                <button className={styles.nameSaveBtn} onClick={handleNameSave}>확인</button>
-              </div>
-            ) : (
-              <div className={styles.nameRow}>
-                <span className={styles.myName}>{playerName}</span>
-                <button className={styles.nameEditBtn} onClick={() => { setNameInput(playerName); setEditingName(true) }}>✏️</button>
-              </div>
-            )}
-          </div>
-        </div>
-        {myEntry && myRank && (
-          <div className={styles.myRankInfo}>
-            <span className={styles.myRankNum}>
-              {myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : `#${myRank}`}
-            </span>
-            <span className={styles.myRankScore}>{formatGold(myEntry.score)}</span>
-          </div>
-        )}
-        {!myEntry && !loading && view === 'around' && hasPrestigedThisWeek && (
-          <span className={styles.myRankNone}>미등록</span>
-        )}
-      </div>
-
       {/* 뷰 전환 + 새로고침 */}
       <div className={styles.viewRow}>
         <button
-          className={`${styles.viewBtn} ${view === 'top' ? styles.viewBtnActive : ''}`}
+          className={view === 'top' ? 'aqua-btn-active' : 'aqua-btn'}
           onClick={() => setView('top')}
           disabled={loading}
         >
           TOP 10
         </button>
         <button
-          className={`${styles.viewBtn} ${view === 'around' ? styles.viewBtnActive : ''}`}
+          className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'}
           onClick={() => setView('around')}
           disabled={loading}
         >
           내 순위
         </button>
         <button
-          className={`${styles.viewBtn} ${view === 'friend' ? styles.viewBtnActive : ''}`}
+          className={view === 'friend' ? 'aqua-btn-active' : 'aqua-btn'}
           onClick={() => setView('friend')}
           disabled={loading}
         >
           친구
         </button>
-        <button className={styles.refreshBtn} onClick={refresh} disabled={loading}>
+        <button className={styles.refreshBtn} onClick={() => doFetch()} disabled={loading}>
           {loading ? '...' : '↻'}
         </button>
       </div>

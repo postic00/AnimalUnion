@@ -284,6 +284,16 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
   const unlockCost = getAnimalUnlockCost()
   const filteredIds = ANIMAL_IDS.filter(id => id.startsWith(animalType))
 
+  // FA 위치를 행/열 순번으로 변환하는 맵 생성
+  const faRows = [...new Set(factories.map(f => f.row))].sort((a, b) => a - b)
+  const faPosLabel = new Map(
+    factories.map(f => {
+      const rowIdx = faRows.indexOf(f.row) + 1
+      const colIdx = factories.filter(x => x.row === f.row).sort((a, b) => a.col - b.col).indexOf(f) + 1
+      return [`${f.row}-${f.col}`, `${rowIdx}행 ${colIdx}열`]
+    })
+  )
+
   return (
     <div className={styles.container}>
       <div className={styles.list}>
@@ -305,7 +315,7 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
                 <div className={styles.bottomRow}>
                   {animal.unlocked && (
                     <>
-                      {isPlaced && <span className={styles.placedLabel}>{(() => { const f = factories.find(f => f.animalId === id); return f ? `${f.row + 1}행 ${f.col + 1}열` : '' })()} 배치중</span>}
+                      {isPlaced && <span className={styles.placedLabel}>{(() => { const f = factories.find(f => f.animalId === id); return f ? faPosLabel.get(`${f.row}-${f.col}`) ?? '' : '' })()} 배치중</span>}
                       <button
                         className={`${styles.placeBtn} ${isPlaced ? styles.placeBtnRecall : ''}`}
                         onClick={() => isPlaced ? onRecallAnimal(id) : onStartPlacing(id)}

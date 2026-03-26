@@ -24,14 +24,14 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
     return () => window.removeEventListener('rs-queue-change', handler)
   }, [rsQueuesRef])
 
-  const grouped = items.reduce<Record<number, { count: number; totalQty: number }>>((acc, it) => {
-    if (!acc[it.grade]) acc[it.grade] = { count: 0, totalQty: 0 }
-    acc[it.grade].count++
-    acc[it.grade].totalQty += it.quantity
+  const grouped = items.reduce<Record<string, { grade: number; quantity: number; count: number }>>((acc, it) => {
+    const key = `${it.grade}-${it.quantity}`
+    if (!acc[key]) acc[key] = { grade: it.grade, quantity: it.quantity, count: 0 }
+    acc[key].count++
     return acc
   }, {})
 
-  const sortedGrades = Object.keys(grouped).map(Number).sort((a, b) => a - b)
+  const sortedGroups = Object.values(grouped).sort((a, b) => a.grade - b.grade || a.quantity - b.quantity)
   const fillRatio = Math.min(items.length / Math.max(capacity, 1), 1)
   const isFull = items.length >= capacity
 
@@ -44,38 +44,37 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
 
-        <div className={styles.fillRow}>
-          <div className={styles.fillTrack}>
-            <div
-              className={styles.fillBar}
-              style={{
-                width: `${fillRatio * 100}%`,
-                background: isFull ? '#dc2626' : '#3b82f6',
-              }}
-            />
+        <div className={styles.body}>
+          <div className={styles.fillRow}>
+            <div className={styles.fillTrack}>
+              <div
+                className={styles.fillBar}
+                style={{
+                  width: `${fillRatio * 100}%`,
+                  background: isFull ? '#dc2626' : '#3b82f6',
+                }}
+              />
+            </div>
+            <span className={styles.fillLabel} style={{ color: isFull ? '#dc2626' : '#374151' }}>
+              {formatQuantity(items.length)}/{formatQuantity(capacity)}
+            </span>
           </div>
-          <span className={styles.fillLabel} style={{ color: isFull ? '#dc2626' : '#374151' }}>
-            {formatQuantity(items.length)}/{formatQuantity(capacity)}
-          </span>
-        </div>
 
-        {sortedGrades.length === 0 ? (
-          <div className={styles.empty}>버퍼가 비어있습니다</div>
-        ) : (
-          <div className={styles.list}>
-            {sortedGrades.map(grade => {
-              const info = grouped[grade]
-              return (
-                <div key={grade} className={styles.row}>
-                  <GradeIcon size={22} grade={grade} />
-                  <span className={styles.gradeLabel}>{grade}등급</span>
+          {sortedGroups.length === 0 ? (
+            <div className={styles.empty}>버퍼가 비어있습니다</div>
+          ) : (
+            <div className={styles.list}>
+              {sortedGroups.map(info => (
+                <div key={`${info.grade}-${info.quantity}`} className={styles.row}>
+                  <GradeIcon size={22} grade={info.grade} />
+                  <span className={styles.gradeLabel}>{info.grade}등급</span>
                   <span className={styles.countBadge}>{info.count}개</span>
-                  <span className={styles.qty}>×{formatQuantity(info.totalQty / info.count)}</span>
+                  <span className={styles.qty}>×{formatQuantity(info.quantity)}</span>
                 </div>
-              )
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

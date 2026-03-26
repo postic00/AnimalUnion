@@ -22,9 +22,6 @@ export default function PrestigeAdModal({ earned, currentPoints, availablePoints
   const expected1x = keepPoints
     ? Math.floor(availablePoints * weekRate + earned)
     : Math.floor((currentPoints + earned) * weekRate)
-  const expected2x = keepPoints
-    ? Math.floor(availablePoints * weekRate + earned * 2)
-    : Math.floor((currentPoints + earned * 2) * weekRate)
 
   return (
     <div className="modal-overlay">
@@ -34,38 +31,39 @@ export default function PrestigeAdModal({ earned, currentPoints, availablePoints
           <h2 className={styles.title}>{keepPoints ? '환생 (포인트 유지)' : '환생'}</h2>
         </div>
 
-        <div className={styles.pointsTable}>
-          <div className={styles.pointsRow}>
-            <span className={styles.pointsLabel}>현재</span>
-            <span className={styles.pointsValue}>⭐ {formatGold(currentPoints)}</span>
-          </div>
-          <div className={styles.pointsRow}>
-            <span className={styles.pointsLabel}>예상</span>
-            <span className={styles.pointsValue}>⭐ {formatGold(expected1x)}</span>
-          </div>
-          {isNewSeason && (
-            <div className={styles.newSeasonInfo}>
-              <span className={styles.newSeasonBadge}>🌟 새 시즌</span>
-              <span className={styles.newSeasonDesc}>환생 포인트가 {Math.round((1 - weekRate) * 100)}% 감소합니다</span>
+        <div className={styles.body}>
+          <div className={styles.pointsTable}>
+            <div className={styles.pointsRow}>
+              <span className={styles.pointsLabel}>현재</span>
+              <span className={styles.pointsValue}>⭐ {formatGold(currentPoints)}</span>
             </div>
-          )}
-        </div>
-
-        <button className={styles.adBtn} onClick={onWatchAd}>
-          <span className={styles.adBtnIcon}>📺</span>
-          <div className={styles.adBtnInfo}>
-            <span className={styles.adBtnTitle}>광고 보고 2배 획득</span>
-            <span className={styles.adBtnSub}>예상 ⭐ {formatGold(expected2x)}</span>
+            <div className={styles.pointsRow}>
+              <span className={styles.pointsLabel}>예상</span>
+              <span className={styles.pointsValue}>⭐ {formatGold(expected1x)}</span>
+            </div>
+            {isNewSeason && (
+              <div className={styles.newSeasonInfo}>
+                <span className={styles.newSeasonBadge}>🌟 새 시즌</span>
+                <span className={styles.newSeasonDesc}>환생 포인트가 {Math.round((1 - weekRate) * 100)}% 감소합니다</span>
+              </div>
+            )}
           </div>
-        </button>
 
-        <button className={styles.normalBtn} onClick={onPrestige}>
-          그냥 환생
-        </button>
+          <div className={styles.btnRow}>
+            <button className={styles.adBtn} onClick={onWatchAd}>
+              <span className={styles.adBtnIcon}>📺</span>
+              <span className={styles.adBtnTitle}>2배</span>
+            </button>
 
-        <button className={styles.cancelBtn} onClick={onClose}>
-          취소
-        </button>
+            <button className={styles.normalBtn} onClick={onPrestige}>
+              환생
+            </button>
+
+            <button className={styles.cancelBtn} onClick={onClose}>
+              취소
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

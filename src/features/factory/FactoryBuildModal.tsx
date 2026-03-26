@@ -21,16 +21,18 @@ export default function FactoryBuildModal({ gold, onBuild, onClose, tutorialHigh
           <span className={styles.title}>공장 건설</span>
           <button className={styles.closeBtn} onClick={onClose}>✕</button>
         </div>
-        <p className={styles.desc}>이 칸에 공장을 건설합니다.</p>
-        <button
-          className={`${styles.buildBtn}${tutorialHighlight ? ` ${styles.buildBtnHighlight}` : ''}`}
-          onClick={() => { onBuild(); onClose() }}
-          disabled={!canAfford}
-        >
-          <img src={coinIcon} className={styles.coinIcon} alt="gold" />
-          <span>{formatGold(cost)}</span>
-          {!canAfford && <span className={styles.lack}>골드 부족</span>}
-        </button>
+        <div className={styles.body}>
+          <p className={styles.desc}>이 칸에 공장을 건설합니다.</p>
+          <button
+            className={`${styles.buildBtn}${tutorialHighlight ? ` ${styles.buildBtnHighlight}` : ''}`}
+            onClick={() => { onBuild(); onClose() }}
+            disabled={!canAfford}
+          >
+            <img src={coinIcon} className={styles.coinIcon} alt="gold" />
+            <span>{formatGold(cost)}</span>
+            {!canAfford && <span className={styles.lack}>골드 부족</span>}
+          </button>
+        </div>
       </div>
     </div>
   )

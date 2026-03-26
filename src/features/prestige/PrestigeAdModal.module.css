@@ -1,31 +1,43 @@
 .modal {
-  background: #fff;
   border-radius: 24px;
-  padding: 28px 24px 20px;
+  overflow: hidden;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
   width: 300px;
 }
 
 .header {
+  background-image: url('../../assets/53_top_bg.png');
+  background-size: 100% 100%;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.body {
+  background-image: url('../../assets/51_panel_bg.png');
+  background-size: 100% 100%;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
+  gap: 10px;
 }
 
 .icon {
-  font-size: 40px;
+  font-size: 22px;
+  line-height: 1;
 }
 
 .title {
   margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 900;
-  color: var(--c-gray-900);
+  font-size: 16px;
+  font-weight: 800;
+  color: #3d1a00;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.3);
 }
 
 .pointsTable {
@@ -33,7 +45,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: #f9fafb;
+  background: rgba(255,255,255,0.55);
   border-radius: var(--radius-md);
   padding: 12px 16px;
 }
@@ -92,12 +104,18 @@
   color: var(--c-gray-500);
 }
 
+.btnRow {
+  display: flex;
+  gap: 8px;
+}
+
 .adBtn {
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
   background: linear-gradient(135deg, var(--c-indigo), #8b5cf6);
   border: none;
   border-radius: var(--radius-lg);
@@ -105,15 +123,8 @@
 }
 
 .adBtnIcon {
-  font-size: 28px;
+  font-size: 18px;
   flex-shrink: 0;
-}
-
-.adBtnInfo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
 }
 
 .adBtnTitle {
@@ -122,15 +133,9 @@
   color: #fff;
 }
 
-.adBtnSub {
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: rgba(255,255,255,0.8);
-}
-
 .normalBtn {
-  width: 100%;
-  padding: 12px;
+  flex: 1;
+  padding: 12px 8px;
   background: var(--c-gray-100);
   border: none;
   border-radius: var(--radius-md);
@@ -141,15 +146,15 @@
 }
 
 .cancelBtn {
-  width: 100%;
-  min-height: 44px;
-  background: none;
+  flex: 1;
+  background: rgba(255,255,255,0.5);
   border: none;
+  border-radius: var(--radius-md);
   font-size: var(--text-md);
   font-weight: 600;
-  color: var(--c-gray-400);
+  color: var(--c-gray-500);
   cursor: pointer;
-  padding: 10px;
+  padding: 12px 8px;
   display: flex;
   align-items: center;
   justify-content: center;

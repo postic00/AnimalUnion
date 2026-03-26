@@ -91,6 +91,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
           <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
         </div>
 
+        <div className={styles.body}>
         {/* 레시피 고정 표시 */}
         <div className={styles.recipeRow}>
           {recipe
@@ -111,7 +112,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
         </div>
 
         {/* 3단 레이아웃 */}
-        <div className={styles.body}>
+        <div className={styles.threeCol}>
 
           {/* 좌: 입력 저장소 + 그랩 상태 */}
           <div className={styles.panel}>
@@ -241,6 +242,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
             <span>레벨업</span>
             <span className={styles.levelUpCost}>{formatGold(levelCost)}</span>
           </button>
+        </div>
         </div>
 
       </div>

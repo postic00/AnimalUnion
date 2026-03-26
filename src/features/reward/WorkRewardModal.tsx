@@ -44,42 +44,46 @@ export default function WorkRewardModal({ rewards, onClaim, onWatchAd }: Props) 
           <h2 className={styles.title}>{title}</h2>
         </div>
 
-        <div className={styles.rewardList}>
-          {rewards.map((reward, i) => {
-            if (reward.type === 'offline') {
-              return (
-                <div key={i} className={styles.rewardRow}>
-                  <span className={styles.rewardEmoji}>😴</span>
-                  <div className={styles.rewardInfo}>
-                    <span className={styles.rewardLabel}>휴게 보상</span>
-                    <span className={styles.rewardValue}>+{formatGold(reward.gold)} 골드</span>
+        <div className={styles.body}>
+          <div className={styles.rewardList}>
+            {rewards.map((reward, i) => {
+              if (reward.type === 'offline') {
+                return (
+                  <div key={i} className={styles.rewardRow}>
+                    <span className={styles.rewardEmoji}>😴</span>
+                    <div className={styles.rewardInfo}>
+                      <span className={styles.rewardLabel}>휴게 보상</span>
+                      <span className={styles.rewardValue}>+{formatGold(reward.gold)} 골드</span>
+                    </div>
                   </div>
-                </div>
-              )
-            }
-            if (reward.type === 'breakfast' || reward.type === 'lunch' || reward.type === 'dinner') {
-              return (
-                <div key={i} className={styles.rewardRow}>
-                  <span className={styles.rewardEmoji}>{getMealEmoji(reward.type)}</span>
-                  <div className={styles.rewardInfo}>
-                    <span className={styles.rewardLabel}>{getMealLabel(reward.type)} 식사 보상</span>
-                    <span className={styles.rewardValue}>speed boost 10분 + gold boost 10분</span>
+                )
+              }
+              if (reward.type === 'breakfast' || reward.type === 'lunch' || reward.type === 'dinner') {
+                return (
+                  <div key={i} className={styles.rewardRow}>
+                    <span className={styles.rewardEmoji}>{getMealEmoji(reward.type)}</span>
+                    <div className={styles.rewardInfo}>
+                      <span className={styles.rewardLabel}>{getMealLabel(reward.type)} 식사 보상</span>
+                      <span className={styles.rewardValue}>속도 부스트 10분 + 골드 부스트 10분</span>
+                    </div>
                   </div>
-                </div>
-              )
-            }
-            return null
-          })}
-        </div>
+                )
+              }
+              return null
+            })}
+          </div>
 
-        {onWatchAd && (
-          <button className={styles.adBtn} onClick={onWatchAd}>
-            📺 3배 받기
-          </button>
-        )}
-        <button className={styles.claimBtn} onClick={() => onClaim()}>
-          받기
-        </button>
+          <div className={styles.btnRow}>
+            {onWatchAd && (
+              <button className={styles.adBtn} onClick={onWatchAd}>
+                📺 3배
+              </button>
+            )}
+            <button className={styles.claimBtn} onClick={() => onClaim()}>
+              받기
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

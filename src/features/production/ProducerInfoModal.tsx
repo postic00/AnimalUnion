@@ -30,7 +30,7 @@ interface Props {
   progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, producerIndex, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
+export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [progress, setProgress] = useState(0)
   const progressKeyRef = useRef(progressKey)
@@ -62,92 +62,86 @@ export default function ProducerInfoModal({ producer, producerIndex, gold, mater
         {/* 헤더 */}
         <div className={styles.header}>
           <GradeIcon size={28} grade={producer.grade} />
-          <div className={styles.titleGroup}>
-            <span className={styles.title} style={{ color: grade.color }}>
-              생산기 {producerIndex + 1}
-            </span>
-            <span className={styles.gradeName} style={{ color: grade.color }}>
-              {GRADE_NAMES[producer.grade] ?? `${producer.grade}등급`}
-            </span>
-          </div>
-          {producer.built && (
-            <span className={styles.levelBadge}>Lv.{producer.level}</span>
-          )}
+          <span className={styles.title}>
+            생산공장 Lv.{producer.level}
+          </span>
           <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
         </div>
 
-        {/* 등급 선택 */}
-        <div className={styles.gradeSelector}>
-          {[1, 2, 3].map(g => (
+        <div className={styles.body}>
+          {/* 등급 선택 */}
+          <div className={styles.gradeSelector}>
+            {[1, 2, 3].map(g => (
+              <button
+                key={g}
+                className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
+                style={producer.grade === g ? { background: GRADE_COLORS[g].color, borderColor: GRADE_COLORS[g].color } : { borderColor: GRADE_COLORS[g].border, color: GRADE_COLORS[g].color }}
+                onClick={() => onGradeChange(g)}
+              >
+                <span>{GRADE_EMOJI[g]}</span>
+                <span>{GRADE_NAMES[g]}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* 상태 */}
+          {producer.built ? (
+            <div className={styles.stats} style={{ background: grade.bg }}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>초당 생산량</span>
+                <span className={styles.statValue} style={{ color: grade.color }}>
+                  {perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s
+                </span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>수량 배율</span>
+                <span className={styles.statValue} style={{ color: grade.color }}>
+                  ×{formatQuantity(quantity)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.stats} style={{ background: 'rgba(255,255,255,0.55)' }}>
+              <span className={styles.unbuilt}>미건설</span>
+            </div>
+          )}
+
+          {/* 생산 프로그레스 */}
+          {producer.built && (
+            <div className={styles.progressWrap}>
+              <div className={styles.progressLabel}>생산 진행</div>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
+              </div>
+            </div>
+          )}
+
+          {/* 버튼 */}
+          {producer.built ? (
             <button
-              key={g}
-              className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
-              style={producer.grade === g ? { background: GRADE_COLORS[g].color, borderColor: GRADE_COLORS[g].color } : { borderColor: GRADE_COLORS[g].border, color: GRADE_COLORS[g].color }}
-              onClick={() => onGradeChange(g)}
+              className={styles.actionBtn}
+              style={{ background: grade.color }}
+              onClick={() => { onUpgrade(); }}
+              disabled={gold < upgradeCost}
             >
-              <span>{GRADE_EMOJI[g]}</span>
-              <span>{GRADE_NAMES[g]}</span>
+              <img src={coinIcon} className={styles.coinIcon} alt="" />
+              <span>레벨업</span>
+              <span className={styles.cost}>{formatGold(upgradeCost)}</span>
             </button>
-          ))}
+          ) : (
+            <button
+              className={`${styles.actionBtn}${tutorialHighlightBuild ? ` ${styles.actionBtnHighlight}` : ''}`}
+              style={{ background: '#22c55e' }}
+              onClick={() => { onBuild(); onClose() }}
+              disabled={gold < buildCost}
+            >
+              <img src={coinIcon} className={styles.coinIcon} alt="" />
+              <span>건설</span>
+              <span className={styles.cost}>{formatGold(buildCost)}</span>
+            </button>
+          )}
         </div>
-
-        {/* 상태 */}
-        {producer.built ? (
-          <div className={styles.stats} style={{ background: grade.bg }}>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>초당 생산량</span>
-              <span className={styles.statValue} style={{ color: grade.color }}>
-                {perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s
-              </span>
-            </div>
-            <div className={styles.statDivider} />
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>수량 배율</span>
-              <span className={styles.statValue} style={{ color: grade.color }}>
-                ×{formatQuantity(quantity)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.stats} style={{ background: '#f9fafb' }}>
-            <span className={styles.unbuilt}>미건설</span>
-          </div>
-        )}
-
-        {/* 생산 프로그레스 */}
-        {producer.built && (
-          <div className={styles.progressWrap}>
-            <div className={styles.progressLabel}>생산 진행</div>
-            <div className={styles.progressTrack}>
-              <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
-            </div>
-          </div>
-        )}
-
-        {/* 버튼 */}
-        {producer.built ? (
-          <button
-            className={styles.actionBtn}
-            style={{ background: grade.color }}
-            onClick={() => { onUpgrade(); }}
-            disabled={gold < upgradeCost}
-          >
-            <img src={coinIcon} className={styles.coinIcon} alt="" />
-            <span>레벨업</span>
-            <span className={styles.cost}>{formatGold(upgradeCost)}</span>
-          </button>
-        ) : (
-          <button
-            className={`${styles.actionBtn}${tutorialHighlightBuild ? ` ${styles.actionBtnHighlight}` : ''}`}
-            style={{ background: '#22c55e' }}
-            onClick={() => { onBuild(); onClose() }}
-            disabled={gold < buildCost}
-          >
-            <img src={coinIcon} className={styles.coinIcon} alt="" />
-            <span>건설</span>
-            <span className={styles.cost}>{formatGold(buildCost)}</span>
-          </button>
-        )}
       </div>
     </div>
   )

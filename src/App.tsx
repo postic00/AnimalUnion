@@ -814,6 +814,7 @@ export default function App() {
           title="게임 초기화"
           message={'모든 데이터가 삭제됩니다.\n정말 초기화하시겠습니까?'}
           confirmLabel="초기화"
+          cancelLabel="취소"
           onConfirm={() => { ui.setShowResetConfirm(false); handleHardReset() }}
           onClose={() => ui.setShowResetConfirm(false)}
         />

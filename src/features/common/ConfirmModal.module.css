@@ -1,26 +1,44 @@
 .modal {
-  background: #fff;
-  border-radius: var(--radius-xl);
-  padding: 28px 24px 20px;
+  width: 300px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.header {
+  background-image: url('../../assets/53_top_bg.png');
+  background-size: 100% 100%;
+  height: 45px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 280px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
 }
 
 .title {
   margin: 0;
   font-size: var(--text-lg);
   font-weight: 900;
-  color: var(--c-gray-900);
+  color: #1a0a00;
   text-align: center;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  letter-spacing: -0.3px;
+}
+
+.body {
+  background-image: url('../../assets/51_panel_bg.png');
+  background-size: 100% 100%;
+  padding: 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .message {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--c-gray-500);
+  color: #1e3a5f;
   text-align: center;
   line-height: 1.5;
 }
@@ -28,13 +46,12 @@
 .btns {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
 }
 
 .cancelBtn {
   flex: 1;
   padding: 12px;
-  background: var(--c-gray-100);
+  background: rgba(255, 255, 255, 0.6);
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--text-md);

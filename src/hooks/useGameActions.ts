@@ -340,9 +340,8 @@ export function useGameActions(ctx: GameActionsCtx) {
 
   // B가 A 코드 입력 → friend_requests 삽입 + B 목록에 A 추가 (rank 포함)
   const handleSendFriendRequest = useCallback(async (code: string): Promise<boolean> => {
-    const myState = gameStateRef.current
     const myDeviceId = SaveService.getDeviceId()
-    const result = await CloudService.sendFriendRequest(code, myDeviceId, myState.playerName)
+    const result = await CloudService.sendFriendRequest(code, myDeviceId)
     if (!result) return false
     setGameState(prev => {
       if (prev.friends.length >= 20) return prev
@@ -354,23 +353,6 @@ export function useGameActions(ctx: GameActionsCtx) {
     return true
   }, [setGameState])
 
-  // A가 pending 요청 수락 → A 목록에 B 추가 (rank 조회 포함)
-  const handleAcceptFriendRequest = useCallback(async (requestId: string, fromDeviceId: string, fromPlayerName: string): Promise<boolean> => {
-    const rank = await CloudService.acceptFriendRequest(requestId, fromDeviceId)
-    if (rank === null) return false
-    setGameState(prev => {
-      if (prev.friends.length >= 20) return prev
-      if (prev.friends.some(f => f.deviceId === fromDeviceId)) return prev
-      const nextId = `friend${prev.friends.length + 1}` as FriendId
-      const newFriend: Friend = { id: nextId, deviceId: fromDeviceId, playerName: fromPlayerName, rank }
-      return { ...prev, friends: [...prev.friends, newFriend] }
-    })
-    return true
-  }, [setGameState])
-
-  const handleRejectFriendRequest = useCallback(async (requestId: string): Promise<boolean> => {
-    return CloudService.rejectFriendRequest(requestId)
-  }, [])
 
 
   const handleRecallFriend = useCallback((id: FriendId) => {
@@ -666,6 +648,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     const deviceId = SaveService.getDeviceId()
     ScoreService.deleteAllScores(deviceId)
     CloudService.clearCloudSave(deviceId)
+    CloudService.removeFriends(deviceId)
     SaveService.deleteSave()
     localStorage.removeItem('tutorialDone')
     localStorage.removeItem('animal-union-week-config')
@@ -737,7 +720,7 @@ export function useGameActions(ctx: GameActionsCtx) {
 
   const mergeFriendsFromServer = useCallback(async () => {
     const myDeviceId = SaveService.getDeviceId()
-    const serverFriends = await CloudService.fetchAcceptedFriends(myDeviceId)
+    const serverFriends = await CloudService.fetchFriends(myDeviceId)
     if (serverFriends.length === 0) return
     useGameStore.getState().setGameState(prev => {
       const localIds = new Set(prev.friends.map(f => f.deviceId))
@@ -822,8 +805,6 @@ export function useGameActions(ctx: GameActionsCtx) {
     handleTransferLoad,
     handleIssueInviteCode,
     handleSendFriendRequest,
-    handleAcceptFriendRequest,
-    handleRejectFriendRequest,
     handleRecallFriend,
     handleRemoveFriend,
   }

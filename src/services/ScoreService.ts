@@ -3,12 +3,8 @@ import {
   deleteAllScores as _deleteAllScores,
   submitPrestigeScore as _submitPrestigeScore,
   submitGoldScore as _submitGoldScore,
-  fetchPrestigeLeaderboard as _fetchPrestigeLeaderboard,
-  fetchGoldLeaderboard as _fetchGoldLeaderboard,
-  fetchPrestigeAround as _fetchPrestigeAround,
-  fetchGoldAround as _fetchGoldAround,
-  fetchFriendsPrestige as _fetchFriendsPrestige,
-  fetchFriendsGold as _fetchFriendsGold,
+  lbTop as _lbTop,
+  lbAround as _lbAround,
   recordSession as _recordSession,
   recordAd as _recordAd,
 } from '../lib/supabase'
@@ -42,27 +38,11 @@ export const ScoreService = {
   },
 
   // ── 리더보드 조회 ─────────────────────────────────────────────────────────
-  fetchPrestige(limit = 10) {
-    return _fetchPrestigeLeaderboard(limit)
+  lbTop(table: string, opts?: Parameters<typeof _lbTop>[1]) {
+    return _lbTop(table, opts)
   },
 
-  fetchGold(limit = 10) {
-    return _fetchGoldLeaderboard(limit)
-  },
-
-  fetchPrestigeAround(deviceId: string, range = 5) {
-    return _fetchPrestigeAround(deviceId, range)
-  },
-
-  fetchGoldAround(deviceId: string, range = 5) {
-    return _fetchGoldAround(deviceId, range)
-  },
-
-  fetchFriendsPrestige(deviceIds: string[]) {
-    return _fetchFriendsPrestige(deviceIds)
-  },
-
-  fetchFriendsGold(deviceIds: string[]) {
-    return _fetchFriendsGold(deviceIds)
+  lbAround(table: string, deviceId: string, opts?: Parameters<typeof _lbAround>[2]) {
+    return _lbAround(table, deviceId, opts)
   },
 }

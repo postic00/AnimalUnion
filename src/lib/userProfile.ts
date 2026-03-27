@@ -160,21 +160,11 @@ export async function issueInviteCode(): Promise<string | null> {
   return error ? null : code
 }
 
-export interface FriendRequestRow {
-  id: string
-  from_device_id: string
-  from_player_name: string
-  to_device_id: string
-  to_player_name: string
-}
-
-// B가 A의 코드 입력 → friend_requests에 { from: B, to: A } 삽입 + A 정보 반환
+// B가 A의 코드 입력 → friends에 (A,B),(B,A) 삽입 + A 정보 반환
 export async function sendFriendRequest(
   inviteCode: string,
   myDeviceId: string,
-  myPlayerName: string,
 ): Promise<{ deviceId: string; playerName: string; rank: number } | null> {
-  // 코드로 A 조회
   const { data, error } = await supabase
     .from('user_profiles')
     .select('device_id, player_name, invite_expires_at')
@@ -182,71 +172,45 @@ export async function sendFriendRequest(
     .single()
   if (error || !data) return null
   if (new Date(data.invite_expires_at) < new Date()) return null
-  // 자기 자신 방지
   if (data.device_id === myDeviceId) return null
-  // 코드 소진
   await supabase
     .from('user_profiles')
     .update({ invite_code: null, invite_expires_at: null })
     .eq('device_id', data.device_id)
-  // friend_requests 삽입 (B → A)
   const { error: insertError } = await supabase
-    .from('friend_requests')
-    .insert({
-      from_device_id: myDeviceId,
-      from_player_name: myPlayerName,
-      to_device_id: data.device_id,
-      to_player_name: data.player_name ?? '친구',
-    })
+    .from('friends')
+    .insert([
+      { from_device_id: myDeviceId, to_device_id: data.device_id },
+      { from_device_id: data.device_id, to_device_id: myDeviceId },
+    ])
   if (insertError) return null
   const rank = await fetchPrestigeRank(data.device_id)
   return { deviceId: data.device_id, playerName: data.player_name ?? '친구', rank }
 }
 
-// 앱 로드 시 나에게 온 pending 요청 조회
-export async function getPendingFriendRequests(): Promise<FriendRequestRow[]> {
-  const deviceId = getDeviceId()
+// 친구 목록 조회 (rank 포함)
+export async function fetchFriends(myDeviceId: string): Promise<{ deviceId: string; playerName: string; rank: number }[]> {
   const { data, error } = await supabase
-    .from('friend_requests')
-    .select('id, from_device_id, from_player_name, to_device_id, to_player_name')
-    .eq('to_device_id', deviceId)
-    .eq('status', 'pending')
-  if (error || !data) return []
-  return data as FriendRequestRow[]
-}
-
-// A가 요청 수락 → status 업데이트 + from 유저의 rank 반환
-export async function acceptFriendRequest(requestId: string, fromDeviceId: string): Promise<number | null> {
-  const { error } = await supabase
-    .from('friend_requests')
-    .update({ status: 'accepted' })
-    .eq('id', requestId)
-  if (error) return null
-  return fetchPrestigeRank(fromDeviceId)
-}
-
-// 수락된 친구 목록을 서버에서 조회 (rank 포함)
-export async function fetchAcceptedFriends(myDeviceId: string): Promise<{ deviceId: string; playerName: string; rank: number }[]> {
-  const { data, error } = await supabase
-    .from('friend_requests')
-    .select('from_device_id, from_player_name, to_device_id, to_player_name')
-    .or(`from_device_id.eq.${myDeviceId},to_device_id.eq.${myDeviceId}`)
-    .eq('status', 'accepted')
+    .from('friends')
+    .select('to_device_id')
+    .eq('from_device_id', myDeviceId)
   if (error || !data || data.length === 0) return []
 
-  const friends = data.map(row => ({
-    deviceId: row.from_device_id === myDeviceId ? row.to_device_id : row.from_device_id,
-    playerName: row.from_device_id === myDeviceId ? row.to_player_name : row.from_player_name,
-  }))
+  const friendIds = data.map(r => r.to_device_id)
+  const { data: profiles } = await supabase
+    .from('user_profiles')
+    .select('device_id, player_name')
+    .in('device_id', friendIds)
+  const nameMap = new Map((profiles ?? []).map(p => [p.device_id, p.player_name as string]))
 
-  // 각 친구의 점수 및 순위 조회
+  const friends = friendIds.map(id => ({ deviceId: id, playerName: nameMap.get(id) ?? '친구' }))
+
   const { data: lb } = await supabase
     .from('leaderboard')
     .select('id, score')
-    .in('id', friends.map(f => f.deviceId))
+    .in('id', friendIds)
   const scoreMap = new Map((lb ?? []).map(r => [r.id, r.score as number]))
 
-  // 순위: 각 친구의 score보다 높은 사람 수 + 1
   const ranks = await Promise.all(
     friends.map(async f => {
       const score = scoreMap.get(f.deviceId)
@@ -262,13 +226,12 @@ export async function fetchAcceptedFriends(myDeviceId: string): Promise<{ device
   return friends.map((f, i) => ({ ...f, rank: ranks[i] }))
 }
 
-// 요청 거절 → 삭제
-export async function rejectFriendRequest(requestId: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('friend_requests')
+// 초기화 시 내 친구 관계 전체 삭제
+export async function removeFriends(myDeviceId: string): Promise<void> {
+  await supabase
+    .from('friends')
     .delete()
-    .eq('id', requestId)
-  return !error
+    .or(`from_device_id.eq.${myDeviceId},to_device_id.eq.${myDeviceId}`)
 }
 
 export async function loadFromCloud(): Promise<CloudSaveData | null> {

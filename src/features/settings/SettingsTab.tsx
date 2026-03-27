@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { FriendRequestRow } from '../../lib/userProfile'
 import styles from './SettingsTab.module.css'
 
 interface Props {
@@ -13,9 +12,6 @@ interface Props {
   onHardReset: () => void
   onIssueInviteCode: () => Promise<string | null>
   onSendFriendRequest: (code: string) => Promise<boolean>
-  pendingFriendRequests: FriendRequestRow[]
-  onAcceptFriendRequest: (id: string, fromDeviceId: string, fromPlayerName: string) => Promise<void>
-  onRejectFriendRequest: (id: string) => Promise<void>
 }
 
 function formatDate(ts: number): string {
@@ -30,7 +26,7 @@ function formatCountdown(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onTransferSave, onTransferLoad, onHardReset, onIssueInviteCode, onSendFriendRequest, pendingFriendRequests, onAcceptFriendRequest, onRejectFriendRequest }: Props) {
+export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave, onCloudLoad, onTransferSave, onTransferLoad, onHardReset, onIssueInviteCode, onSendFriendRequest }: Props) {
   const [cloudMsg, setCloudMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [loading, setLoading] = useState<'save' | 'load' | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -354,18 +350,6 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
             {adding ? '...' : '추가'}
           </button>
         </div>
-        {pendingFriendRequests.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#d97706' }}>친구 요청 {pendingFriendRequests.length}건</span>
-            {pendingFriendRequests.map(req => (
-              <div key={req.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#92400e' }}>{req.from_player_name}</span>
-                <button className={styles.transferBtn} style={{ background: '#059669' }} onClick={() => onAcceptFriendRequest(req.id, req.from_device_id, req.from_player_name)}>수락</button>
-                <button className={styles.transferBtn} style={{ background: '#e11d48' }} onClick={() => onRejectFriendRequest(req.id)}>거절</button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* 초기화 */}

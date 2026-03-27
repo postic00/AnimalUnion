@@ -77,7 +77,7 @@ function FriendView({ gameState, onRecallFriend, onRemoveFriend, onStartPlacing 
             return (
               <div key={friend.id} className={styles.card}>
                 <div className={styles.iconArea}>
-                  <span style={{ fontSize: 36 }}>👤</span>
+                  <span style={{ fontSize: 36 }}>👽</span>
                 </div>
                 <div className={styles.cardInfo}>
                   <div className={styles.nameRow}>

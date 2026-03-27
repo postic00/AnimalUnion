@@ -205,11 +205,6 @@ export default function App() {
     setLbNameEditing(false)
   }, [lbNameInput])
 
-  // ── 친구 요청 ─────────────────────────────────────────────────────────────
-  const [pendingFriendRequests, setPendingFriendRequests] = useState<import('./lib/userProfile').FriendRequestRow[]>([])
-  useEffect(() => {
-    CloudService.getPendingFriendRequests().then(setPendingFriendRequests)
-  }, [])
 
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -409,7 +404,7 @@ export default function App() {
       save()
       SaveService.saveWorkData(workDataRef.current)
       const { playerName } = gameStateRef.current
-      if (playerName && totalEarnedRef.current > 0) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+      if (playerName && totalEarnedRef.current > 0 && CONFIG.WEEK > 0 && CONFIG.WEEK === CONFIG.CURRENT_WEEK) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
     }, 60000)
 
     return () => {
@@ -704,14 +699,13 @@ export default function App() {
           <LeaderboardTab
             playerName={gameState.playerName}
             mode={ui.lbMode}
-            friendDeviceIds={(gameState.friends ?? []).map(f => f.deviceId)}
             myPrestigeScore={gameState.prestigePoints.total}
             myGoldScore={gameState.totalEarned}
             hasGoldSeason={CONFIG.WEEK > 0 && CONFIG.WEEK === CONFIG.CURRENT_WEEK}
             onRankUpdate={(rank, score) => { setLbMyRank(rank); setLbMyScore(score) }}
             onSubmitGold={async () => {
               const { playerName, totalEarned } = gameStateRef.current
-              if (playerName && totalEarned > 0) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+              if (playerName && totalEarned > 0 && CONFIG.WEEK > 0 && CONFIG.WEEK === CONFIG.CURRENT_WEEK) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
             }}
           />
         )}
@@ -727,15 +721,6 @@ export default function App() {
             onHardReset={() => ui.setShowResetConfirm(true)}
             onIssueInviteCode={actions.handleIssueInviteCode}
             onSendFriendRequest={actions.handleSendFriendRequest}
-            pendingFriendRequests={pendingFriendRequests}
-            onAcceptFriendRequest={async (id, devId, name) => {
-              const ok = await actions.handleAcceptFriendRequest(id, devId, name)
-              if (ok) setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
-            }}
-            onRejectFriendRequest={async (id) => {
-              await actions.handleRejectFriendRequest(id)
-              setPendingFriendRequests(prev => prev.filter(r => r.id !== id))
-            }}
           />
         )}
       </BottomSheet>}

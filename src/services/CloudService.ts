@@ -10,13 +10,10 @@ import {
   loadByTransferCode as _loadByTransferCode,
   issueInviteCode as _issueInviteCode,
   sendFriendRequest as _sendFriendRequest,
-  getPendingFriendRequests as _getPendingFriendRequests,
-  acceptFriendRequest as _acceptFriendRequest,
-  rejectFriendRequest as _rejectFriendRequest,
-  fetchAcceptedFriends as _fetchAcceptedFriends,
+  fetchFriends as _fetchFriends,
+  removeFriends as _removeFriends,
   clearCloudSave as _clearCloudSave,
 } from '../lib/userProfile'
-import type { FriendRequestRow } from '../lib/userProfile'
 
 export interface CloudExtras {
   boosts?: { speedBoostRemaining: number; goldBoostRemaining: number }
@@ -67,24 +64,16 @@ export const CloudService = {
     return _issueInviteCode()
   },
 
-  sendFriendRequest(inviteCode: string, myDeviceId: string, myPlayerName: string) {
-    return _sendFriendRequest(inviteCode, myDeviceId, myPlayerName)
+  sendFriendRequest(inviteCode: string, myDeviceId: string) {
+    return _sendFriendRequest(inviteCode, myDeviceId)
   },
 
-  getPendingFriendRequests(): Promise<FriendRequestRow[]> {
-    return _getPendingFriendRequests()
+  fetchFriends(myDeviceId: string) {
+    return _fetchFriends(myDeviceId)
   },
 
-  acceptFriendRequest(requestId: string, fromDeviceId: string): Promise<number | null> {
-    return _acceptFriendRequest(requestId, fromDeviceId)
-  },
-
-  rejectFriendRequest(requestId: string): Promise<boolean> {
-    return _rejectFriendRequest(requestId)
-  },
-
-  fetchAcceptedFriends(myDeviceId: string) {
-    return _fetchAcceptedFriends(myDeviceId)
+  removeFriends(myDeviceId: string): Promise<void> {
+    return _removeFriends(myDeviceId)
   },
 
   clearCloudSave(deviceId: string): Promise<void> {

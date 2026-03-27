@@ -38,6 +38,16 @@ interface CloudSaveData {
   prStates?: Record<string, unknown>
 }
 
+export async function ensureProfile(playerName: string, platform: string): Promise<void> {
+  const deviceId = getDeviceId()
+  await supabase
+    .from('user_profiles')
+    .upsert(
+      { device_id: deviceId, player_name: playerName, platform, last_online_at: new Date().toISOString() },
+      { onConflict: 'device_id', ignoreDuplicates: false }
+    )
+}
+
 export async function saveToCloud(
   playerName: string,
   gameState: GameState,

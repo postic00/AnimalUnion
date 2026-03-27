@@ -3,6 +3,7 @@ import type { GameState } from '../types/gameState'
 import type { WorkData } from '../types/workData'
 import {
   fetchAndSaveWeekConfig as _fetchAndSaveWeekConfig,
+  ensureProfile as _ensureProfile,
   saveToCloud as _saveToCloud,
   loadFromCloud as _loadFromCloud,
   issueTransferCode as _issueTransferCode,
@@ -31,6 +32,10 @@ export const CloudService = {
   // ── 주차 설정 동기화 ─────────────────────────────────────────────────────
   fetchAndSaveWeekConfig(): Promise<void> {
     return _fetchAndSaveWeekConfig()
+  },
+
+  ensureProfile(playerName: string, platform: string): Promise<void> {
+    return _ensureProfile(playerName, platform)
   },
 
   // ── 클라우드 저장/로드 ────────────────────────────────────────────────────

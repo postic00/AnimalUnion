@@ -215,6 +215,7 @@ export default function App() {
     const today = new Date().toISOString().slice(0, 10)
     if (workData.lastActivityDate !== today) {
       ScoreService.recordSession(SaveService.getDeviceId(), platform)
+      CloudService.ensureProfile(gameState.playerName, platform)
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkData(prev => ({ ...prev, lastActivityDate: today }))
     }

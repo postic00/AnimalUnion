@@ -144,7 +144,7 @@
 
 .noPrestige {
   text-align: center;
-  color: var(--c-gray-400);
+  color: var(--c-gray-900);
   font-size: 14px;
   font-weight: 600;
   line-height: 2;
@@ -172,8 +172,7 @@
 }
 
 .myRow {
-  border-color: var(--c-indigo);
-  background: #eef2ff;
+  border: 2px solid #ef4444;
 }
 
 .disabledRow {

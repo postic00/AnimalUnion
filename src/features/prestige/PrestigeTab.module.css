@@ -211,7 +211,7 @@
 .card {
   display: flex;
   align-items: stretch;
-  height: 45px;
+  height: 60px;
   padding: 0 5px;
   border: 1px solid #93c5fd;
   border-radius: var(--radius-lg);

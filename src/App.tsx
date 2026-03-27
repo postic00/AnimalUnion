@@ -621,7 +621,7 @@ export default function App() {
                       {lbMyRank ? `${lbMyRank === 1 ? '🥇' : lbMyRank === 2 ? '🥈' : lbMyRank === 3 ? '🥉' : `#${lbMyRank}`} ${lbMyScore !== null ? formatGold(lbMyScore) : ''}` : '미등록'}
                     </span>
                   </div>
-                  <button className="aqua-btn" onClick={() => { setLbNameInput(gameState.playerName); setLbNameEditing(true) }}>✏️</button>
+                  <button className="aqua-btn" onClick={() => { setLbNameInput(gameState.playerName); setLbNameEditing(true) }}>✏️ 수정</button>
                   <button className="aqua-btn" onClick={() => ui.setLbMode(ui.lbMode === 'prestige' ? 'gold' : 'prestige')}>
                     {ui.lbMode === 'prestige' ? '⭐ 환생' : '💰 골드'}
                   </button>
@@ -707,6 +707,7 @@ export default function App() {
             friendDeviceIds={(gameState.friends ?? []).map(f => f.deviceId)}
             myPrestigeScore={gameState.prestigePoints.total}
             myGoldScore={gameState.totalEarned}
+            hasGoldSeason={CONFIG.WEEK > 0 && CONFIG.WEEK === CONFIG.CURRENT_WEEK}
             onRankUpdate={(rank, score) => { setLbMyRank(rank); setLbMyScore(score) }}
             onSubmitGold={async () => {
               const { playerName, totalEarned } = gameStateRef.current

@@ -12,69 +12,80 @@ interface Props {
   friendDeviceIds: string[]
   myPrestigeScore?: number
   myGoldScore?: number
+  hasGoldSeason?: boolean
   onSubmitGold?: () => Promise<void>
   onRankUpdate?: (rank: number | null, score: number | null) => void
 }
 
-export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPrestigeScore = 0, myGoldScore = 0, onSubmitGold, onRankUpdate }: Props) {
-  const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
+export default function LeaderboardTab({
+  playerName,
+  mode,
+  friendDeviceIds,
+  myPrestigeScore = 0,
+  myGoldScore = 0,
+  hasGoldSeason = false,
+  onSubmitGold,
+  onRankUpdate,
+}: Props) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'top' | 'around' | 'friend'>('top')
   const [startRank, setStartRank] = useState(1)
-  const [myInjected, setMyInjected] = useState(false)
 
+  const myDeviceId = SaveService.getDeviceId()
   const myIndex = entries.findIndex(e => e.player_name === playerName)
   const myEntry = myIndex >= 0 ? entries[myIndex] : null
   const myRank = myIndex >= 0 ? startRank + myIndex : null
   const myScore = mode === 'gold' ? myGoldScore : myPrestigeScore
-  const myUnregistered = myInjected && myScore === 0
+  const myUnregistered = myScore === 0
 
+  // 헤더 순위 업데이트
+  const notParticipating = mode === 'gold' ? !hasGoldSeason : myPrestigeScore === 0
   useEffect(() => {
+    if (notParticipating) { onRankUpdate?.(null, null); return }
     onRankUpdate?.(myUnregistered ? null : myRank, myEntry?.score ?? null)
-  }, [myRank, myEntry?.score, myUnregistered]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [myRank, myEntry?.score, myUnregistered, notParticipating]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const injectMe = (data: LeaderboardEntry[]): LeaderboardEntry[] => {
-    const myDeviceId = SaveService.getDeviceId()
-    // 중복 제거 (player_name 기준)
     const deduped = data.filter((e, i) => data.findIndex(x => x.player_name === e.player_name) === i)
     const hasMe = deduped.some(e => e.id === myDeviceId || e.player_name === playerName)
-    if (hasMe) { setMyInjected(false); return deduped }
-    setMyInjected(true)
+    if (hasMe) return deduped
     return [...deduped, { id: myDeviceId, player_name: playerName, score: myScore, created_at: '' }]
   }
+
+  const filterZero = (data: LeaderboardEntry[]) =>
+    mode === 'gold' ? data.filter(e => e.score > 0) : data
 
   const doFetch = async () => {
     setLoading(true)
     try {
-      if (view === 'friend') {
-        if (friendDeviceIds.length === 0) {
-          setEntries(injectMe([]))
-          setStartRank(1)
-          return
-        }
+      if (view === 'top') {
+        // 환생: 항상 조회 + 나 주입 / 골드: week=서버WEEK로 항상 조회, 참여 시에만 나 주입
+        const fetchFn = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
+        const data = filterZero(await fetchFn(10))
+        setEntries(mode === 'gold' && !hasGoldSeason ? data : injectMe(data))
+        setStartRank(1)
+
+      } else if (view === 'around') {
+        // 환생: myPrestigeScore=0 → 빈 목록 / 골드: !hasGoldSeason → 빈 목록
+        const noAround = mode === 'gold' ? !hasGoldSeason : myPrestigeScore === 0
+        if (noAround) { setEntries([]); setStartRank(1); return }
         if (mode === 'gold') await onSubmitGold?.()
-        const fetch = mode === 'prestige' ? ScoreService.fetchFriendsPrestige : ScoreService.fetchFriendsGold
-        const data = await fetch(friendDeviceIds)
-        const list = injectMe(data)
+        const fetchFn = mode === 'prestige' ? ScoreService.fetchPrestigeAround : ScoreService.fetchGoldAround
+        const result = await fetchFn(myDeviceId)
+        setEntries(injectMe(filterZero(result.entries)))
+        setStartRank(result.startRank)
+
+      } else { // friend
+        // 환생/골드 모두: id IN(친구IDs, 내ID) 조회 + 나 주입
+        // 골드: fetchFriendsGold 내부에서 week=서버WEEK 필터 적용
+        const ids = [...friendDeviceIds, myDeviceId]
+        const fetchFn = mode === 'prestige' ? ScoreService.fetchFriendsPrestige : ScoreService.fetchFriendsGold
+        const data = filterZero(await fetchFn(ids))
+        const list = (mode === 'gold' && !hasGoldSeason) ? data : injectMe(data)
         list.sort((a, b) => b.score - a.score)
         setEntries(list)
         setStartRank(1)
-      } else if (view === 'top') {
-        if (mode === 'gold') await onSubmitGold?.()
-        const fetch = mode === 'prestige' ? ScoreService.fetchPrestige : ScoreService.fetchGold
-        const data = await fetch(10)
-        const list = injectMe(data)
-        setEntries(list)
-        setStartRank(1)
-      } else {
-        if (mode === 'gold') await onSubmitGold?.()
-        const deviceId = SaveService.getDeviceId()
-        const fetch = mode === 'prestige' ? ScoreService.fetchPrestigeAround : ScoreService.fetchGoldAround
-        const result = await fetch(deviceId)
-        const list = injectMe(result.entries)
-        setEntries(list)
-        setStartRank(result.startRank)
       }
     } catch { /* ignore */ }
     finally { setLoading(false) }
@@ -97,12 +108,9 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
         </span>
         <span className={styles.name}>{e.player_name}</span>
         <span className={styles.score}>
-          {view === 'friend' ? '⭐' : mode === 'prestige' ? '⭐' : '💰'} {isDisabled ? '미등록' : formatGold(e.score)}
+          {mode === 'prestige' ? '⭐' : '💰'} {isDisabled ? '미등록' : formatGold(e.score)}
         </span>
-        {view !== 'friend' && mode === 'prestige' && e.prestige_count !== undefined && (
-          <span className={styles.prestige}>환생 {e.prestige_count}회</span>
-        )}
-        {view === 'friend' && e.prestige_count !== undefined && (
+        {mode === 'prestige' && e.prestige_count !== undefined && (
           <span className={styles.prestige}>환생 {e.prestige_count}회</span>
         )}
       </div>
@@ -111,28 +119,21 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
 
   return (
     <div className={styles.container}>
-      {/* 뷰 전환 + 새로고침 */}
       <div className={styles.viewRow}>
         <button style={{ flex: 1 }} className={view === 'top' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('top')} disabled={loading}>TOP 10</button>
-        <button style={{ flex: 1 }} className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('around')} disabled={loading || myScore === 0}>내 순위</button>
+        <button style={{ flex: 1 }} className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('around')} disabled={loading}>내 순위</button>
         <button style={{ flex: 1 }} className={view === 'friend' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('friend')} disabled={loading}>친구</button>
         <button style={{ flex: 1 }} className="aqua-btn" onClick={() => doFetch()} disabled={loading}>{loading ? '...' : '↻'}</button>
       </div>
 
-      {/* 리더보드 */}
-      {view === 'friend' ? (
-        <div className={styles.list}>
-          {loading ? (
-            <div className={styles.loading}>불러오는 중...</div>
-          ) : entries.length === 0 ? (
-            <div className={styles.loading}>친구가 없어요</div>
-          ) : entries.map((e, i) => renderRow(e, i + 1))}
-        </div>
-      ) : view === 'around' && !hasPrestigedThisWeek ? (
+      {view === 'around' && mode === 'prestige' && myPrestigeScore === 0 ? (
         <div className={styles.noPrestige}>
-          <div>참여중인 시즌이 종료되었어요.</div>
-          <div>환생 후 시즌 참여 가능합니다.</div>
-          <div className={styles.newSeason}>새로운 시즌: {CONFIG.WEEK}시즌 ({CONFIG.WEEK_START_DATE} ~ {CONFIG.WEEK_END_DATE})</div>
+          <div>환생 후 순위에 등록됩니다.</div>
+        </div>
+      ) : view === 'around' && mode === 'gold' && !hasGoldSeason ? (
+        <div className={styles.noPrestige}>
+          <div>현재 참여 중인 골드 시즌이 없습니다.</div>
+          <div>시즌 기간: {CONFIG.WEEK_START_DATE} ~ {CONFIG.WEEK_END_DATE}</div>
         </div>
       ) : (
         <div className={styles.list}>
@@ -140,7 +141,7 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
             <div className={styles.loading}>불러오는 중...</div>
           ) : entries.length === 0 ? (
             <div className={styles.loading}>아직 등록된 순위가 없습니다</div>
-          ) : entries.map((e, i) => renderRow(e, startRank + i))}
+          ) : entries.map((e, i) => renderRow(e, view === 'friend' ? i + 1 : startRank + i))}
         </div>
       )}
     </div>

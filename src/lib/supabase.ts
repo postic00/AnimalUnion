@@ -58,7 +58,7 @@ export async function submitGoldScore(deviceId: string, playerName: string, scor
   if (!playerName.trim() || !isFinite(score) || score < 0) return false
   const { error } = await supabase
     .from('leaderboard_gold')
-    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score), week: CONFIG.CURRENT_WEEK, last_seen: new Date().toISOString() }, { onConflict: 'id,week' })
+    .upsert({ id: deviceId, player_name: playerName, score: Math.floor(score), week: CONFIG.WEEK, last_seen: new Date().toISOString() }, { onConflict: 'id,week' })
   return !error
 }
 
@@ -76,7 +76,7 @@ export async function fetchGoldLeaderboard(limit = 10): Promise<LeaderboardEntry
   const { data, error } = await supabase
     .from('leaderboard_gold')
     .select('*')
-    .eq('week', CONFIG.CURRENT_WEEK)
+    .eq('week', CONFIG.WEEK)
     .order('score', { ascending: false })
     .limit(Math.max(1, limit))
   if (error || !Array.isArray(data)) return []
@@ -100,12 +100,12 @@ export async function fetchPrestigeAround(deviceId: string, range = 5): Promise<
 }
 
 export async function fetchGoldAround(deviceId: string, range = 5): Promise<AroundResult> {
-  const { data: myData } = await supabase.from('leaderboard_gold').select('score').eq('id', deviceId).eq('week', CONFIG.CURRENT_WEEK).single()
+  const { data: myData } = await supabase.from('leaderboard_gold').select('score').eq('id', deviceId).eq('week', CONFIG.WEEK).single()
   if (!myData) return { entries: [], startRank: 1 }
-  const { count } = await supabase.from('leaderboard_gold').select('*', { count: 'exact', head: true }).eq('week', CONFIG.CURRENT_WEEK).gt('score', myData.score)
+  const { count } = await supabase.from('leaderboard_gold').select('*', { count: 'exact', head: true }).eq('week', CONFIG.WEEK).gt('score', myData.score)
   const rank = (count ?? 0) + 1
   const offset = Math.max(0, rank - range - 1)
-  const { data, error } = await supabase.from('leaderboard_gold').select('*').eq('week', CONFIG.CURRENT_WEEK).order('score', { ascending: false }).range(offset, offset + range * 2)
+  const { data, error } = await supabase.from('leaderboard_gold').select('*').eq('week', CONFIG.WEEK).order('score', { ascending: false }).range(offset, offset + range * 2)
   if (error || !Array.isArray(data)) return { entries: [], startRank: rank }
   return { entries: data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[], startRank: offset + 1 }
 }
@@ -127,7 +127,7 @@ export async function fetchFriendsGold(deviceIds: string[]): Promise<Leaderboard
     .from('leaderboard_gold')
     .select('*')
     .in('id', deviceIds)
-    .eq('week', CONFIG.CURRENT_WEEK)
+    .eq('week', CONFIG.WEEK)
     .order('score', { ascending: false })
   if (error || !Array.isArray(data)) return []
   return data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[]

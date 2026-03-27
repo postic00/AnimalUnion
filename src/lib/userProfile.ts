@@ -1,5 +1,5 @@
 import { supabase, fetchPrestigeRank } from './supabase'
-import { CONFIG } from '../config'
+import { APP_VERSION } from '../config'
 import { saveWeekConfig, getDeviceId } from '../utils/saveLoad'
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
@@ -82,7 +82,7 @@ export async function saveToCloud(
           prStates: extras?.prStates,
         },
         platform,
-        app_version: CONFIG.WEEK_END_DATE ? '1.2' : '1.0',
+        app_version: APP_VERSION,
         last_online_at: new Date().toISOString(),
       },
       { onConflict: 'device_id' }

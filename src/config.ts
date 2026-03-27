@@ -1,3 +1,5 @@
+export const APP_VERSION = '1.7'
+
 export const CONFIG = {
   // 현재 주차
   CURRENT_WEEK: 0,

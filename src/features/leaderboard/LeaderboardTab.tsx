@@ -11,11 +11,12 @@ interface Props {
   mode: 'prestige' | 'gold'
   friendDeviceIds: string[]
   myPrestigeScore?: number
+  myGoldScore?: number
   onSubmitGold?: () => Promise<void>
   onRankUpdate?: (rank: number | null, score: number | null) => void
 }
 
-export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPrestigeScore = 0, onSubmitGold, onRankUpdate }: Props) {
+export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPrestigeScore = 0, myGoldScore = 0, onSubmitGold, onRankUpdate }: Props) {
   const hasPrestigedThisWeek = CONFIG.WEEK > 0 && CONFIG.WEEK <= CONFIG.CURRENT_WEEK
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,7 +27,8 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
   const myIndex = entries.findIndex(e => e.player_name === playerName)
   const myEntry = myIndex >= 0 ? entries[myIndex] : null
   const myRank = myIndex >= 0 ? startRank + myIndex : null
-  const myUnregistered = myInjected && myPrestigeScore === 0
+  const myScore = mode === 'gold' ? myGoldScore : myPrestigeScore
+  const myUnregistered = myInjected && myScore === 0
 
   useEffect(() => {
     onRankUpdate?.(myUnregistered ? null : myRank, myEntry?.score ?? null)
@@ -39,7 +41,7 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
     const hasMe = deduped.some(e => e.id === myDeviceId || e.player_name === playerName)
     if (hasMe) { setMyInjected(false); return deduped }
     setMyInjected(true)
-    return [...deduped, { id: myDeviceId, player_name: playerName, score: myPrestigeScore, created_at: '' }]
+    return [...deduped, { id: myDeviceId, player_name: playerName, score: myScore, created_at: '' }]
   }
 
   const doFetch = async () => {
@@ -112,7 +114,7 @@ export default function LeaderboardTab({ playerName, mode, friendDeviceIds, myPr
       {/* 뷰 전환 + 새로고침 */}
       <div className={styles.viewRow}>
         <button style={{ flex: 1 }} className={view === 'top' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('top')} disabled={loading}>TOP 10</button>
-        <button style={{ flex: 1 }} className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('around')} disabled={loading || myPrestigeScore === 0}>내 순위</button>
+        <button style={{ flex: 1 }} className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('around')} disabled={loading || myScore === 0}>내 순위</button>
         <button style={{ flex: 1 }} className={view === 'friend' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('friend')} disabled={loading}>친구</button>
         <button style={{ flex: 1 }} className="aqua-btn" onClick={() => doFetch()} disabled={loading}>{loading ? '...' : '↻'}</button>
       </div>

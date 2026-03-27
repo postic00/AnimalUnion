@@ -409,7 +409,7 @@ export default function App() {
       save()
       SaveService.saveWorkData(workDataRef.current)
       const { playerName } = gameStateRef.current
-      if (playerName) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+      if (playerName && totalEarnedRef.current > 0) ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
     }, 60000)
 
     return () => {
@@ -706,10 +706,11 @@ export default function App() {
             mode={ui.lbMode}
             friendDeviceIds={(gameState.friends ?? []).map(f => f.deviceId)}
             myPrestigeScore={gameState.prestigePoints.total}
+            myGoldScore={gameState.totalEarned}
             onRankUpdate={(rank, score) => { setLbMyRank(rank); setLbMyScore(score) }}
             onSubmitGold={async () => {
-              const { playerName } = gameStateRef.current
-              if (playerName) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
+              const { playerName, totalEarned } = gameStateRef.current
+              if (playerName && totalEarned > 0) await ScoreService.submitGold(SaveService.getDeviceId(), playerName, totalEarnedRef.current)
             }}
           />
         )}

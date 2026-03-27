@@ -301,6 +301,11 @@ export default function App() {
     BOOST_MS,
   })
 
+  // ── 앱 시작 시 친구 동기화 ────────────────────────────────────────────────
+  useEffect(() => {
+    actions.mergeFriendsFromServer()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── 튜토리얼 사이드이펙트 ─────────────────────────────────────────────────
   useEffect(() => {
     if (ui.tutorialStep === 3 && ui.tutorialItemCount >= 20) ui.setTutorialStep(4)

@@ -781,6 +781,7 @@ export function useGameActions(ctx: GameActionsCtx) {
   }, [mergeFriendsFromServer]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
+    mergeFriendsFromServer,
     handleGoldEarned,
     handleClickerClick,
     handleUpgradeClicker,

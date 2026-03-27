@@ -1,4 +1,5 @@
-export const APP_VERSION = '1.7'
+import { version } from '../package.json'
+export const APP_VERSION = version
 
 export const CONFIG = {
   // 현재 주차

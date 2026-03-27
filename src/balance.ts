@@ -267,12 +267,8 @@ export function getAnimalStat(level: number): number {
 }
 
 // 친구 순위 stat (bonus - 1 을 반환, 예: 5.0 → 4.0)
-export function getFriendStat(rank: number): number {
-  const tiers = CONFIG.FR_RANK_TIERS
-  for (const tier of tiers) {
-    if (rank <= tier.maxRank) return tier.bonus - 1
-  }
-  return CONFIG.FR_DEFAULT_BONUS - 1
+export function getFriendStat(_rank: number): number {
+  return 3.0
 }
 
 // 아이템 가치 초기화 시 환급 포인트

@@ -24,6 +24,7 @@ const ANIM_IMGS: Record<string, Record<Factory['type'], string>> = {
   cat:     { WA: catWA,     PA: catPA,     PK: catPK },
   dog:     { WA: dogWA,     PA: dogPA,     PK: dogPK },
   alien:   { WA: alienWA,   PA: alienPA,   PK: alienPK },
+  friend:  { WA: alienWA,   PA: alienPA,   PK: alienPK },
   robot:   { WA: robotWA,   PA: robotPA,   PK: robotPK },
 }
 

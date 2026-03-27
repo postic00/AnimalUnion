@@ -56,24 +56,34 @@
   transform-origin: center;
 }
 
-/* UP_TO_DOWN — grab: 위 레일(-130%) → 셀(0%) → 위 레일(-130%) 1회 왕복 */
+/* UP_TO_DOWN — grab: 위 레일(-130%) → 셀(0%) */
 @keyframes handGrab {
-  0%   { transform: translateY(0%);    animation-timing-function: ease-in;  }
-  45%  { transform: translateY(-130%); animation-timing-function: linear;   }
-  55%  { transform: translateY(-130%); animation-timing-function: ease-out; }
+  0%   { transform: translateY(-130%); animation-timing-function: ease-out; }
   100% { transform: translateY(0%);    }
 }
 
-/* UP_TO_DOWN — place: 셀(0%) → 아래 레일(+130%) → 셀(0%) 1회 왕복 */
+/* UP_TO_DOWN — place: 셀(0%) → 아래 레일(130%) */
 @keyframes handPlace {
-  0%   { transform: translateY(0%)    rotate(180deg); animation-timing-function: ease-in;  }
-  45%  { transform: translateY(130%)  rotate(180deg); animation-timing-function: linear;   }
-  55%  { transform: translateY(130%)  rotate(180deg); animation-timing-function: ease-out; }
+  0%   { transform: translateY(0%)    rotate(180deg); animation-timing-function: ease-out; }
+  100% { transform: translateY(130%)  rotate(180deg); }
+}
+
+/* DOWN_TO_UP — grab: 아래 레일(130%) → 셀(0%) */
+@keyframes handGrabUp {
+  0%   { transform: translateY(130%)  rotate(180deg); animation-timing-function: ease-out; }
   100% { transform: translateY(0%)    rotate(180deg); }
 }
 
-.handGrab  { animation: handGrab  800ms linear 1 forwards; }
-.handPlace { animation: handPlace 800ms linear 1 forwards; }
+/* DOWN_TO_UP — place: 셀(0%) → 위 레일(-130%) */
+@keyframes handPlaceDown {
+  0%   { transform: translateY(0%);    animation-timing-function: ease-out; }
+  100% { transform: translateY(-130%); }
+}
+
+.handGrab      { animation: handGrab      400ms ease-out 1 forwards; }
+.handPlace     { animation: handPlace     400ms ease-out 1 forwards; }
+.handGrabUp    { animation: handGrabUp    400ms ease-out 1 forwards; }
+.handPlaceDown { animation: handPlaceDown 400ms ease-out 1 forwards; }
 
 /* 애니메이션 */
 @keyframes flowR  { from { transform: translate(0,0); }    to { transform: translate(16px,0); } }

@@ -74,7 +74,6 @@ function FriendView({ gameState, onRecallFriend, onRemoveFriend, onStartPlacing 
           friends.map(friend => {
             const isPlaced = factories.some(f => f.animalId === friend.id)
             const bonus = getFriendStat(friend.rank)
-            const rankLabel = friend.rank >= 9999 ? '순위 없음' : `${friend.rank}위`
             return (
               <div key={friend.id} className={styles.card}>
                 <div className={styles.iconArea}>
@@ -83,7 +82,6 @@ function FriendView({ gameState, onRecallFriend, onRemoveFriend, onStartPlacing 
                 <div className={styles.cardInfo}>
                   <div className={styles.nameRow}>
                     <span className={styles.cardName}>{friend.playerName}</span>
-                    <span className={styles.levelBadge}>{rankLabel}</span>
                   </div>
                   <div className={styles.bottomRow}>
                     <span className={styles.cardSub}>+{formatNumber(bonus * 100)}% 가치</span>

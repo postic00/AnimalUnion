@@ -120,14 +120,14 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     board.forEach((row, rowIdx) => { // eslint-disable-line react-hooks/refs
       row.forEach((cell, colIdx) => {
         const k = `${rowIdx}-${colIdx}`
-        if (placingAnimalId && cell.type === 'FA') map.set(k, () => onPlaceAnimalRef.current(rowIdx, colIdx))
+        if (placingAnimalId && cell.type === 'FA' && factoriesByPos.get(k)?.built) map.set(k, () => onPlaceAnimalRef.current(rowIdx, colIdx))
         else if (!placingAnimalId && cell.type === 'FA') map.set(k, () => onFactoryClickRef.current?.(rowIdx, colIdx))
         else if (!placingAnimalId && cell.type === 'PR') map.set(k, () => onProducerClickRef.current?.(rowIdx, colIdx))
         else if (!placingAnimalId && cell.type === 'RS') map.set(k, () => onRsClickRef.current?.(rowIdx, colIdx, `rs-${rowIdx}-${colIdx}`, rsQueuesRef))
       })
     })
     return map
-  }, [board, placingAnimalId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [board, placingAnimalId, factoriesByPos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const firstFAPos = useMemo(() => {
     for (let r = 0; r < board.length; r++) {
@@ -154,7 +154,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
                 producer={cell.type === 'PR' ? producersByPos.get(`${rowIdx}-${colIdx}`) : undefined}
                 progress={progresses[`${rowIdx}-${colIdx}`]}
                 bufferInfo={bufferCounts[`${rowIdx}-${colIdx}`]}
-                placing={!!placingAnimalId && cell.type === 'FA'}
+                placing={!!placingAnimalId && cell.type === 'FA' && !!factoriesByPos.get(`${rowIdx}-${colIdx}`)?.built}
                 tutorialHighlight={
                   (tutorialHighlight === 'fa' && cell.type === 'FA' && firstFAPos?.row === rowIdx && firstFAPos?.col === colIdx) ||
                   (tutorialHighlight === 'rs' && cell.type === 'PR')

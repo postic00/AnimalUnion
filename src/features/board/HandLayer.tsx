@@ -5,7 +5,7 @@ import { getSpecies, HandSvg } from './Cell'
 import styles from './Cell.module.css'
 
 // FA_PICK_TIME(200ms)에 맞춰 한 번 왕복하는 애니메이션 + 인터벌 오차 여유
-const ANIM_DURATION = 800
+const ANIM_DURATION = 400
 
 interface Props {
   factories: Factory[]
@@ -89,7 +89,7 @@ export default memo(function HandLayer({ factories, cellSize, faPhases }: Props)
                 style={{ ...overlayBase, clipPath: isUpToDown ? 'inset(-300% 0 100% 0)' : 'inset(100% 0 -300% 0)' }}
               >
                 <div
-                  className={`${styles.handWrap} ${isUpToDown ? styles.handGrab : styles.handPlace}`}
+                  className={`${styles.handWrap} ${isUpToDown ? styles.handGrab : styles.handGrabUp}`}
                   style={baseStyle}
                 >
                   <HandSvg species={species} w={cellSize} h={hh} />
@@ -101,7 +101,7 @@ export default memo(function HandLayer({ factories, cellSize, faPhases }: Props)
                 style={{ ...overlayBase, clipPath: isUpToDown ? 'inset(100% 0 -300% 0)' : 'inset(-300% 0 100% 0)' }}
               >
                 <div
-                  className={`${styles.handWrap} ${isUpToDown ? styles.handPlace : styles.handGrab}`}
+                  className={`${styles.handWrap} ${isUpToDown ? styles.handPlace : styles.handPlaceDown}`}
                   style={baseStyle}
                 >
                   <HandSvg species={species} w={cellSize} h={hh} />

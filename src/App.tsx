@@ -323,7 +323,7 @@ export default function App() {
     let cleanup = () => {}
     initTossBackEvent(() => {
       if (ui.activeTabRef.current !== null) ui.setActiveTab(null)
-      else closeView()
+      else ui.setShowExitConfirm(true)
     }).then(fn => { cleanup = fn })
     return () => cleanup()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -334,6 +334,12 @@ export default function App() {
       () => { mutedRef.current = muted }
     )
   }, [muted])
+
+  // 광고 재생 중 사운드 일시정지
+  useEffect(() => {
+    if (ui.adTarget !== null) mutedRef.current = true
+    else mutedRef.current = muted
+  }, [ui.adTarget, muted])
 
   // ── 저장 인터벌 ──────────────────────────────────────────────────────────
   const lastSavedSnapshotRef = useRef<string>('')
@@ -466,7 +472,7 @@ export default function App() {
   }), [gameState.materialQuantityLevels, gameState.itemValueLevels, gameState.faBufferLevel, gameState.rsBufferLevel, gameState.railSpeedLevel])
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + ver(--safe-area-inset-bottom, 0px))' : 'calc(68px + var(--safe-area-inset-bottom, 0px))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + var(--safe-area-inset-bottom, 0px))' : 'calc(68px + var(--safe-area-inset-bottom, 0px))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {bgEmojis.map((item, i) => (
@@ -844,6 +850,17 @@ export default function App() {
           cancelLabel="취소"
           onConfirm={() => { ui.setShowResetConfirm(false); handleHardReset() }}
           onClose={() => ui.setShowResetConfirm(false)}
+        />
+      )}
+
+      {ui.showExitConfirm && (
+        <ConfirmModal
+          title="동물노동조합을 종료할까요?"
+          message=""
+          confirmLabel="종료하기"
+          cancelLabel="닫기"
+          onConfirm={() => { ui.setShowExitConfirm(false); closeView() }}
+          onClose={() => ui.setShowExitConfirm(false)}
         />
       )}
 

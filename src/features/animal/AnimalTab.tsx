@@ -6,6 +6,7 @@ import { formatGold, formatNumber } from '../../utils/formatGold'
 import { AnimalSvg } from './AnimalSvg'
 import type { AnimalSpecies } from './AnimalSvg'
 import styles from './AnimalTab.module.css'
+import friendIcon from '../../assets/61_friend.png'
 
 const ANIMAL_TYPE_NAME: Record<string, string> = { hamster: '햄스터', cat: '고양이', dog: '강아지' }
 
@@ -77,7 +78,7 @@ function FriendView({ gameState, onRecallFriend, onRemoveFriend, onStartPlacing 
             return (
               <div key={friend.id} className={styles.card}>
                 <div className={styles.iconArea}>
-                  <span style={{ fontSize: 36 }}>👽</span>
+                  <img src={friendIcon} style={{ width: 64, height: 64 }} />
                 </div>
                 <div className={styles.cardInfo}>
                   <div className={styles.nameRow}>

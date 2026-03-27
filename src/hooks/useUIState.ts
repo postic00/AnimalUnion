@@ -12,6 +12,7 @@ export type ActiveModal =
   | { type: 'prestige' }
   | { type: 'prestigeKeep' }
   | { type: 'resetConfirm' }
+  | { type: 'exitConfirm' }
 
 export function useUIState() {
   // ── 네비게이션 ─────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ export function useUIState() {
   const showPrestigeModal = activeModal?.type === 'prestige'
   const showPrestigeKeepModal = activeModal?.type === 'prestigeKeep'
   const showResetConfirm = activeModal?.type === 'resetConfirm'
+  const showExitConfirm = activeModal?.type === 'exitConfirm'
 
   // 호환 세터
   const setAdTarget = useCallback((target: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' | null) => {
@@ -68,6 +70,9 @@ export function useUIState() {
   }, [])
   const setShowResetConfirm = useCallback((show: boolean) => {
     setActiveModal(show ? { type: 'resetConfirm' } : null)
+  }, [])
+  const setShowExitConfirm = useCallback((show: boolean) => {
+    setActiveModal(show ? { type: 'exitConfirm' } : null)
   }, [])
 
   // ── 스플래시 / 튜토리얼 ────────────────────────────────────────────────────
@@ -141,6 +146,7 @@ export function useUIState() {
     showPrestigeModal, setShowPrestigeModal,
     showPrestigeKeepModal, setShowPrestigeKeepModal,
     showResetConfirm, setShowResetConfirm,
+    showExitConfirm, setShowExitConfirm,
     // 스플래시/튜토리얼
     showSplash, setShowSplash,
     tutorialStep, setTutorialStep,

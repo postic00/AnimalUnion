@@ -7,6 +7,8 @@ import {
   fetchGoldLeaderboard as _fetchGoldLeaderboard,
   fetchPrestigeAround as _fetchPrestigeAround,
   fetchGoldAround as _fetchGoldAround,
+  fetchFriendsPrestige as _fetchFriendsPrestige,
+  fetchFriendsGold as _fetchFriendsGold,
   recordSession as _recordSession,
   recordAd as _recordAd,
 } from '../lib/supabase'
@@ -54,5 +56,13 @@ export const ScoreService = {
 
   fetchGoldAround(deviceId: string, range = 5) {
     return _fetchGoldAround(deviceId, range)
+  },
+
+  fetchFriendsPrestige(deviceIds: string[]) {
+    return _fetchFriendsPrestige(deviceIds)
+  },
+
+  fetchFriendsGold(deviceIds: string[]) {
+    return _fetchFriendsGold(deviceIds)
   },
 }

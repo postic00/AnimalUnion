@@ -23,10 +23,7 @@ export interface LeaderboardEntry {
 
 export async function updatePlayerName(deviceId: string, playerName: string) {
   if (!deviceId || !playerName.trim()) return
-  await Promise.all([
-    supabase.from('leaderboard').update({ player_name: playerName }).eq('id', deviceId),
-    supabase.from('leaderboard_gold').update({ player_name: playerName }).eq('id', deviceId),
-  ])
+  await supabase.rpc('update_player_name', { p_device_id: deviceId, p_player_name: playerName })
 }
 
 export async function recordSession(deviceId: string, platform: string) {
@@ -111,6 +108,29 @@ export async function fetchGoldAround(deviceId: string, range = 5): Promise<Arou
   const { data, error } = await supabase.from('leaderboard_gold').select('*').eq('week', CONFIG.CURRENT_WEEK).order('score', { ascending: false }).range(offset, offset + range * 2)
   if (error || !Array.isArray(data)) return { entries: [], startRank: rank }
   return { entries: data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[], startRank: offset + 1 }
+}
+
+export async function fetchFriendsPrestige(deviceIds: string[]): Promise<LeaderboardEntry[]> {
+  if (deviceIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('leaderboard')
+    .select('*')
+    .in('id', deviceIds)
+    .order('score', { ascending: false })
+  if (error || !Array.isArray(data)) return []
+  return data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[]
+}
+
+export async function fetchFriendsGold(deviceIds: string[]): Promise<LeaderboardEntry[]> {
+  if (deviceIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('leaderboard_gold')
+    .select('*')
+    .in('id', deviceIds)
+    .eq('week', CONFIG.CURRENT_WEEK)
+    .order('score', { ascending: false })
+  if (error || !Array.isArray(data)) return []
+  return data.filter(e => e && typeof e.player_name === 'string' && typeof e.score === 'number') as LeaderboardEntry[]
 }
 
 // 특정 deviceId의 환생 순위 조회 (없으면 9999)

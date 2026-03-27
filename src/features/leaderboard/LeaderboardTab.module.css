@@ -33,92 +33,21 @@
 .myScore {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--c-gray-200);
-  background: #fff;
-  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid #93c5fd;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  gap: 10px;
 }
 
-.myLeft {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.myScoreLabel {
   flex: 1;
-  min-width: 0;
-}
-
-.myIcon {
-  font-size: 22px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.myInfo {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-}
-
-.nameRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.myName {
-  font-size: var(--text-md);
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: -0.3px;
-  color: var(--c-gray-900);
-}
-
-.nameEditBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-}
-
-.nameEdit {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  width: 100%;
-}
-
-.nameInput {
-  border: 1.5px solid var(--c-gray-300);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
-  font-size: var(--text-md);
-  font-weight: 700;
-  flex: 1;
-  min-width: 0;
-  box-sizing: border-box;
-  outline: none;
-  resize: none;
-  font-family: inherit;
-}
-
-.nameInput:focus {
-  border-color: var(--c-indigo);
-}
-
-.nameSaveBtn {
-  background: var(--c-indigo);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: var(--text-base);
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
+  color: var(--c-gray-700);
 }
 
 .myRankInfo {
@@ -233,15 +162,23 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-radius: var(--radius-lg);
-  border: 1.5px solid var(--c-gray-100);
-  background: #fff;
+  border: 1px solid #93c5fd;
+  background-image: url('../../assets/surfboard-bg.png');
+  background-size: 100% 100%;
+  background-position: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .myRow {
   border-color: var(--c-indigo);
   background: #eef2ff;
+}
+
+.disabledRow {
+  opacity: 0.45;
+  filter: grayscale(0.4);
 }
 
 .rank {

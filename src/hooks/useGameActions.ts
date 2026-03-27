@@ -528,6 +528,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     if (weekConfig) applyWeekConfig(weekConfig)
     const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
     if (!mutedRef.current) soundCat()
+    boardSaveRef.current = () => {}
     SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
@@ -567,6 +568,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     const weekConfig = SaveService.loadWeekConfig()
     if (weekConfig) applyWeekConfig(weekConfig)
     if (!mutedRef.current) soundCat()
+    boardSaveRef.current = () => {}
     SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
@@ -660,7 +662,10 @@ export function useGameActions(ctx: GameActionsCtx) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleHardReset = useCallback(() => {
-    ScoreService.deleteAllScores(SaveService.getDeviceId())
+    boardSaveRef.current = () => {} // 구 Board가 스토리지에 재저장하지 못하도록 차단
+    const deviceId = SaveService.getDeviceId()
+    ScoreService.deleteAllScores(deviceId)
+    CloudService.clearCloudSave(deviceId)
     SaveService.deleteSave()
     localStorage.removeItem('tutorialDone')
     localStorage.removeItem('animal-union-week-config')
@@ -730,6 +735,24 @@ export function useGameActions(ctx: GameActionsCtx) {
     return true
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const mergeFriendsFromServer = useCallback(async () => {
+    const myDeviceId = SaveService.getDeviceId()
+    const serverFriends = await CloudService.fetchAcceptedFriends(myDeviceId)
+    if (serverFriends.length === 0) return
+    useGameStore.getState().setGameState(prev => {
+      const localIds = new Set(prev.friends.map(f => f.deviceId))
+      const newFriends = serverFriends.filter(f => !localIds.has(f.deviceId))
+      if (newFriends.length === 0) return prev
+      const mapped = newFriends.map((f, i) => ({
+        id: `friend${prev.friends.length + i + 1}` as import('../types/animal').FriendId,
+        deviceId: f.deviceId,
+        playerName: f.playerName,
+        rank: f.rank,
+      }))
+      return { ...prev, friends: [...prev.friends, ...mapped] }
+    })
+  }, [])
+
   const handleCloudLoad = useCallback(async (): Promise<boolean> => {
     const data = await CloudService.load()
     if (!data || !Array.isArray(data.board) || !data.gameState) return false
@@ -753,8 +776,9 @@ export function useGameActions(ctx: GameActionsCtx) {
     useGoldStore.getState().setGold(data.gameState.gold ?? 0)
     useGoldStore.getState().setTotalEarned(data.gameState.totalEarned ?? 0)
     setResetKey(k => k + 1)
+    mergeFriendsFromServer()
     return true
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mergeFriendsFromServer]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     handleGoldEarned,

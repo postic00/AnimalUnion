@@ -846,7 +846,7 @@ export default function App() {
       {ui.showResetConfirm && (
         <ConfirmModal
           title="게임 초기화"
-          message={'모든 데이터가 삭제됩니다.\n정말 초기화하시겠습니까?'}
+          message={'모든 데이터가 삭제됩니다.\n정말 초기화하시겠습니까?\n\n(주의) 클라우드 저장 데이터도 함께 삭제됩니다.'}
           confirmLabel="초기화"
           cancelLabel="취소"
           onConfirm={() => { ui.setShowResetConfirm(false); handleHardReset() }}

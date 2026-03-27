@@ -12,6 +12,8 @@ import {
   getPendingFriendRequests as _getPendingFriendRequests,
   acceptFriendRequest as _acceptFriendRequest,
   rejectFriendRequest as _rejectFriendRequest,
+  fetchAcceptedFriends as _fetchAcceptedFriends,
+  clearCloudSave as _clearCloudSave,
 } from '../lib/userProfile'
 import type { FriendRequestRow } from '../lib/userProfile'
 
@@ -74,5 +76,13 @@ export const CloudService = {
 
   rejectFriendRequest(requestId: string): Promise<boolean> {
     return _rejectFriendRequest(requestId)
+  },
+
+  fetchAcceptedFriends(myDeviceId: string) {
+    return _fetchAcceptedFriends(myDeviceId)
+  },
+
+  clearCloudSave(deviceId: string): Promise<void> {
+    return _clearCloudSave(deviceId)
   },
 }

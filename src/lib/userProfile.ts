@@ -94,6 +94,10 @@ function isValidCloudSave(raw: unknown): raw is CloudSaveData {
 
 // ── 기기 이전 ──────────────────────────────────────────────────────────────
 
+export async function clearCloudSave(deviceId: string): Promise<void> {
+  await supabase.rpc('delete_all_user_data', { p_device_id: deviceId })
+}
+
 export async function issueTransferCode(): Promise<string | null> {
   const deviceId = getDeviceId()
   const code = String(Math.floor(100000 + Math.random() * 900000))
@@ -209,6 +213,43 @@ export async function acceptFriendRequest(requestId: string, fromDeviceId: strin
     .eq('id', requestId)
   if (error) return null
   return fetchPrestigeRank(fromDeviceId)
+}
+
+// 수락된 친구 목록을 서버에서 조회 (rank 포함)
+export async function fetchAcceptedFriends(myDeviceId: string): Promise<{ deviceId: string; playerName: string; rank: number }[]> {
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('from_device_id, from_player_name, to_device_id, to_player_name')
+    .or(`from_device_id.eq.${myDeviceId},to_device_id.eq.${myDeviceId}`)
+    .eq('status', 'accepted')
+  if (error || !data || data.length === 0) return []
+
+  const friends = data.map(row => ({
+    deviceId: row.from_device_id === myDeviceId ? row.to_device_id : row.from_device_id,
+    playerName: row.from_device_id === myDeviceId ? row.to_player_name : row.from_player_name,
+  }))
+
+  // 각 친구의 점수 및 순위 조회
+  const { data: lb } = await supabase
+    .from('leaderboard')
+    .select('id, score')
+    .in('id', friends.map(f => f.deviceId))
+  const scoreMap = new Map((lb ?? []).map(r => [r.id, r.score as number]))
+
+  // 순위: 각 친구의 score보다 높은 사람 수 + 1
+  const ranks = await Promise.all(
+    friends.map(async f => {
+      const score = scoreMap.get(f.deviceId)
+      if (score === undefined) return 9999
+      const { count } = await supabase
+        .from('leaderboard')
+        .select('*', { count: 'exact', head: true })
+        .gt('score', score)
+      return (count ?? 0) + 1
+    })
+  )
+
+  return friends.map((f, i) => ({ ...f, rank: ranks[i] }))
 }
 
 // 요청 거절 → 삭제

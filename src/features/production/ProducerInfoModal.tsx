@@ -35,20 +35,22 @@ interface Props {
 
 export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
-  const [progress, setProgress] = useState(0)
   const [outputBuffer, setOutputBuffer] = useState<Item[]>([])
+  const progressBarRef = useRef<HTMLDivElement>(null)
   const progressKeyRef = useRef(progressKey)
   useLayoutEffect(() => { progressKeyRef.current = progressKey })
   useEffect(() => {
     if (!producerProgressesRef || !progressKey) return
     let rafId: number
-    let lastProgress = 0
     let lastBuffer = 0
+    let displayed = 0
+    let prevTarget = 0
     const loop = (now: number) => {
-      if (now - lastProgress >= 100) {
-        lastProgress = now
-        setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
-      }
+      const target = producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0
+      if (target < prevTarget - 0.3) displayed = target  // 리셋 감지 → 즉시 점프
+      else displayed += (target - displayed) * 0.12
+      prevTarget = target
+      if (progressBarRef.current) progressBarRef.current.style.width = `${displayed * 100}%`
       if (now - lastBuffer >= 500) {
         lastBuffer = now
         setOutputBuffer([...(prStatesRef?.current?.[progressKeyRef.current ?? '']?.outputBuffer ?? [])])
@@ -120,7 +122,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
           {producer.built && (
             <div className={styles.progressWrap}>
 <div className={styles.progressTrack}>
-                <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
+                <div ref={progressBarRef} className={styles.progressBar} style={{ width: '0%', background: grade.color }} />
               </div>
             </div>
           )}

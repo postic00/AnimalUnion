@@ -216,7 +216,9 @@ export default function App() {
       }
       run()
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setWorkData(prev => ({ ...prev, lastActivityDate: today }))
+      workDataRef.current = { ...workDataRef.current, lastActivityDate: today }
+      setWorkData(workDataRef.current)
+      SaveService.saveWorkData(workDataRef.current)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

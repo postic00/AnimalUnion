@@ -118,8 +118,8 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  width: 65px;
-  height: 36px;
+  width: 70px;
+  height: 40px;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--text-base);

@@ -141,8 +141,8 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  width: 65px;
-  height: 36px;
+  width: 70px;
+  height: 40px;
   padding: 0;
   background: var(--btn-aqua);
   color: #fff;
@@ -167,8 +167,8 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  height: 36px;
-  width: 65px;
+  height: 40px;
+  width: 70px;
   padding: 0 10px;
   background: var(--btn-aqua);
   color: #fff;

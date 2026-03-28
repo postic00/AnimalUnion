@@ -135,8 +135,8 @@
 
 /* 버튼 */
 .actionBtn {
-  height: 36px;
-  min-width: 65px;
+  height: 40px;
+  min-width: 70px;
   padding: 0 8px;
   background: var(--btn-aqua);
   color: #fff;
@@ -191,7 +191,7 @@
 
 .transferBtn {
   width: 72px;
-  height: 36px;
+  height: 40px;
   padding: 0;
   background: var(--btn-aqua);
   color: #fff;

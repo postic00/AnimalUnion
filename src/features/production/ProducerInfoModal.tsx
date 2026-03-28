@@ -86,7 +86,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
               <button
                 key={g}
                 className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
-                style={producer.grade === g ? { background: GRADE_COLORS[g].color, borderColor: GRADE_COLORS[g].color } : { borderColor: GRADE_COLORS[g].border, color: GRADE_COLORS[g].color }}
+                style={producer.grade === g ? { backgroundColor: GRADE_COLORS[g].color, borderColor: GRADE_COLORS[g].border } : { borderColor: GRADE_COLORS[g].border, color: GRADE_COLORS[g].color }}
                 onClick={() => onGradeChange(g)}
               >
                 <span>{GRADE_EMOJI[g]}</span>

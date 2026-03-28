@@ -104,7 +104,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                     <button
                       key={g}
                       className={`${styles.gradePill} ${producer.grade === g ? styles.gradePillActive : ''}`}
-                      style={producer.grade === g ? { background: GRADES[g].sub, color: '#fff', borderColor: 'transparent' } : { color: GRADES[g].text }}
+                      style={producer.grade === g ? { backgroundColor: GRADES[g].border, color: GRADES[g].text, borderColor: GRADES[g].border } : { color: GRADES[g].text, borderColor: GRADES[g].border }}
                       onClick={() => onGradeChange(index, g)}
                     >
                       {GRADES[g].emoji}

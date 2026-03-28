@@ -541,6 +541,13 @@ export function useGameActions(ctx: GameActionsCtx) {
       currentWeek: CONFIG.WEEK,
       friends: prevState.friends ?? [],
     }))
+    setTimeout(() => {
+      const fullState = { ...gameStateRef.current, gold: startGold, totalEarned: 0, goldPerSec: 0 }
+      saveGame(boardRef.current, fullState, {
+        speedBoostRemaining: speedBoostRemainingRef.current,
+        goldBoostRemaining: goldBoostRemainingRef.current,
+      })
+    }, 0)
     resetSalary()
     const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
     SaveService.saveWeekConfig(updatedConfig)
@@ -597,7 +604,7 @@ export function useGameActions(ctx: GameActionsCtx) {
       friends: prevState.friends ?? [],
     }))
 	setTimeout(() => {
-		const fullState = { ...gameStateRef.current, gold: 0, totalEarned: 0, goldPerSec: 0 }
+		const fullState = { ...gameStateRef.current, gold: startGold, totalEarned: 0, goldPerSec: 0 }
 		saveGame(boardRef.current, fullState, {
 			speedBoostRemaining: speedBoostRemainingRef.current,
 			goldBoostRemaining: goldBoostRemainingRef.current,

@@ -7,7 +7,8 @@ import { GameEngine } from '../engine/GameEngine'
 import type { FAState, PRState, FALiveStates, Progresses, FAPhases } from '../engine/types'
 
 // ── 상수 ───────────────────────────────────────────────────────────────────
-const RENDER_INTERVAL_MS = 100     // 렌더/진행도 갱신 주기
+const ITEM_RENDER_INTERVAL_MS = 33  // 아이템 위치 갱신 주기 (~30fps)
+const RENDER_INTERVAL_MS = 100      // 스냅샷(진행도·버퍼 등) 갱신 주기
 
 // ── re-export (하위 호환) ───────────────────────────────────────────────────
 export type { FAState, PRState, FALiveStates, FAPhases, Progresses }
@@ -111,15 +112,19 @@ export function useGameLoop(
     engineRef.current = engine
 
     let rafId: number | null = null
+    let lastItemRenderTime = 0
     let lastRenderTime = 0
     let lastSecondTick = 0
 
     const loop = (now: number) => {
       engine.updateConfig({ speedMultiplier: speedMultiplierRef.current })
       engine.tick()
+      if (now - lastItemRenderTime >= ITEM_RENDER_INTERVAL_MS) {
+        lastItemRenderTime = now
+        setRenderItems(engine.getRenderItems())
+      }
       if (now - lastRenderTime >= RENDER_INTERVAL_MS) {
         lastRenderTime = now
-        setRenderItems(engine.getRenderItems())
         const snap = engine.computeSnapshot(true)
         if (snap.hasDerailed) setHasDerailed(true)
         setProgresses(snap.progresses)
@@ -142,6 +147,7 @@ export function useGameLoop(
 
     const start = () => {
       engine.resetLastTime()
+      lastItemRenderTime = performance.now()
       lastRenderTime = performance.now()
       lastSecondTick = performance.now()
       rafId = requestAnimationFrame(loop)

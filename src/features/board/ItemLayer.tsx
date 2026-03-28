@@ -44,7 +44,6 @@ export default memo(function ItemLayer({ items, cellSize }: Props) {
               height: size,
               borderRadius: size / 2,
               transform: `translate(${item.x - size / 2}px, ${item.y - size / 2}px)`,
-              transition: 'transform 100ms linear',
               background: `radial-gradient(circle at 35% 28%, #ffffff 0%, ${tier.bg} 55%, ${tier.border} 100%)`,
               border: `2.5px solid ${tier.border}`,
               boxShadow: `inset 0 0 0 2.5px ${tier.inset}, inset 0 2px 5px rgba(255,255,255,0.95), inset 0 -3px 8px rgba(0,0,0,0.10), 0 5px 12px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.10)`,

@@ -105,10 +105,7 @@ function isValidCloudSave(raw: unknown): raw is CloudSaveData {
 // ── 기기 이전 ──────────────────────────────────────────────────────────────
 
 export async function clearCloudSave(deviceId: string): Promise<void> {
-  await supabase
-    .from('user_profiles')
-    .update({ game_state: null })
-    .eq('device_id', deviceId)
+  await supabase.rpc('delete_all_user_data', { p_device_id: deviceId })
 }
 
 export async function issueTransferCode(): Promise<string | null> {

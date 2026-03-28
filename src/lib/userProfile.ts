@@ -185,7 +185,7 @@ export async function sendFriendRequest(
     ])
   if (insertError) return null
   const rank = await fetchPrestigeRank(data.device_id)
-  return { deviceId: data.device_id, playerName: data.player_name ?? '친구', rank }
+  return { deviceId: data.device_id, playerName: data.player_name || '친구', rank }
 }
 
 // 친구 목록 조회 (rank 포함)
@@ -203,7 +203,7 @@ export async function fetchFriends(myDeviceId: string): Promise<{ deviceId: stri
     .in('device_id', friendIds)
   const nameMap = new Map((profiles ?? []).map(p => [p.device_id, p.player_name as string]))
 
-  const friends = friendIds.map(id => ({ deviceId: id, playerName: nameMap.get(id) ?? '친구' }))
+  const friends = friendIds.map(id => ({ deviceId: id, playerName: nameMap.get(id) || '친구' }))
 
   const { data: lb } = await supabase
     .from('leaderboard')

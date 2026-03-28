@@ -44,7 +44,7 @@ interface Props {
   muted: boolean
   speedMultiplier: number
   onFactoryClick?: (row: number, col: number) => void
-  onProducerClick?: (row: number, col: number) => void
+  onProducerClick?: (row: number, col: number, prStatesRef: MutableRefObject<Record<string, import('../../engine/types').PRState>>) => void
   onRsClick?: (row: number, col: number, rsKey: string, rsQueuesRef: MutableRefObject<Record<string, import('../../types/item').Item[]>>) => void
   onFaLiveStateChange?: (states: FALiveStates) => void
   onProducerProgressChange?: (progresses: Record<string, number>) => void
@@ -122,7 +122,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
         const k = `${rowIdx}-${colIdx}`
         if (placingAnimalId && cell.type === 'FA' && factoriesByPos.get(k)?.built) map.set(k, () => onPlaceAnimalRef.current(rowIdx, colIdx))
         else if (!placingAnimalId && cell.type === 'FA') map.set(k, () => onFactoryClickRef.current?.(rowIdx, colIdx))
-        else if (!placingAnimalId && cell.type === 'PR') map.set(k, () => onProducerClickRef.current?.(rowIdx, colIdx))
+        else if (!placingAnimalId && cell.type === 'PR') map.set(k, () => onProducerClickRef.current?.(rowIdx, colIdx, prStatesRef))
         else if (!placingAnimalId && cell.type === 'RS') map.set(k, () => onRsClickRef.current?.(rowIdx, colIdx, `rs-${rowIdx}-${colIdx}`, rsQueuesRef))
       })
     })

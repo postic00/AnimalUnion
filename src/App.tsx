@@ -209,8 +209,11 @@ export default function App() {
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10)
     if (workData.lastActivityDate !== today) {
-      ScoreService.recordSession(SaveService.getDeviceId(), platform)
-      CloudService.ensureProfile(gameState.playerName, platform)
+      const run = async () => {
+        await CloudService.ensureProfile(gameState.playerName, platform)
+        ScoreService.recordSession(SaveService.getDeviceId(), platform)
+      }
+      run()
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkData(prev => ({ ...prev, lastActivityDate: today }))
     }
@@ -754,6 +757,9 @@ export default function App() {
         }
         const liveKey = `${ui.selectedFactory.row}-${ui.selectedFactory.col}`
         const { row, col } = ui.selectedFactory
+        const animalDisplayName = factory.animalId?.startsWith('friend')
+          ? (gameState.friends ?? []).find(f => f.id === factory.animalId)?.playerName
+          : undefined
         return (
           <FactoryInfoModal
             factory={factory}
@@ -762,6 +768,7 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             maxGrade={20}
+            animalDisplayName={animalDisplayName}
             onClose={() => { ui.setSelectedFactory(null) }}
             onSetType={type => actions.handleSetFactoryType(row, col, type)}
             onSetDir={dir => actions.handleSetFactoryDir(row, col, dir)}
@@ -789,6 +796,7 @@ export default function App() {
             onClose={() => { ui.setSelectedProducer(null) }}
             onGradeChange={(grade) => actions.handleProducerGradeChange(producerIndex, grade)}
             producerProgressesRef={ui.producerProgressesRef}
+            prStatesRef={ui.selectedProducer.prStatesRef ?? undefined}
             progressKey={`${ui.selectedProducer.row}-${ui.selectedProducer.col}`}
             tutorialHighlightBuild={ui.tutorialStep === 9}
           />

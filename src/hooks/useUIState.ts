@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AnimalId } from '../types/animal'
 import type { Item } from '../types/item'
-import type { FALiveStates } from '../engine/types'
+import type { FALiveStates, PRState } from '../engine/types'
 import type { UpgradeAmount } from '../features/navigation/UpgradeAmountToggle'
 
 export type ActiveModal =
   | { type: 'ad'; target: 'speed' | 'gold' | 'prestige' | 'prestigeKeep' | 'reward' }
   | { type: 'factory'; row: number; col: number }
-  | { type: 'producer'; row: number; col: number }
+  | { type: 'producer'; row: number; col: number; prStatesRef?: React.MutableRefObject<Record<string, PRState>> }
   | { type: 'rs'; rsKey: string; rsQueuesRef: React.MutableRefObject<Record<string, Item[]>> }
   | { type: 'prestige' }
   | { type: 'prestigeKeep' }
@@ -42,7 +42,7 @@ export function useUIState() {
   // 파생 값
   const adTarget = activeModal?.type === 'ad' ? activeModal.target : null
   const selectedFactory = activeModal?.type === 'factory' ? { row: activeModal.row, col: activeModal.col } : null
-  const selectedProducer = activeModal?.type === 'producer' ? { row: activeModal.row, col: activeModal.col } : null
+  const selectedProducer = activeModal?.type === 'producer' ? { row: activeModal.row, col: activeModal.col, prStatesRef: activeModal.prStatesRef ?? null } : null
   const selectedRs = activeModal?.type === 'rs' ? { rsKey: activeModal.rsKey, rsQueuesRef: activeModal.rsQueuesRef } : null
   const showPrestigeModal = activeModal?.type === 'prestige'
   const showPrestigeKeepModal = activeModal?.type === 'prestigeKeep'
@@ -100,8 +100,8 @@ export function useUIState() {
     setActiveModal({ type: 'factory', row, col })
   }, [])
 
-  const handleProducerClick = useCallback((_row: number, _col: number) => {
-    setActiveModal({ type: 'producer', row: _row, col: _col })
+  const handleProducerClick = useCallback((_row: number, _col: number, prStatesRef: React.MutableRefObject<Record<string, PRState>>) => {
+    setActiveModal({ type: 'producer', row: _row, col: _col, prStatesRef })
   }, [])
 
   const handleRsClick = useCallback((

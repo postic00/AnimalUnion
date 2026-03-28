@@ -10,7 +10,7 @@ import { ProcessAnimation, ProcessOverlay } from '../factory/ProcessAnimation'
 import styles from './Cell.module.css'
 
 
-export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot'
+export type AnimalSpecies = 'hamster' | 'cat' | 'dog' | 'robot' | 'friend'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function getSpecies(animalId: AnimalId | null): AnimalSpecies {

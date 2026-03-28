@@ -29,6 +29,7 @@ interface Props {
   gold: number
   materialQuantityLevels: number[]
   maxGrade: number
+  animalDisplayName?: string
   onClose: () => void
   onSetType: (type: Factory['type']) => void
   onSetDir: (dir: Factory['dir']) => void
@@ -37,7 +38,7 @@ interface Props {
   tutorialHighlightClose?: boolean
 }
 
-export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
+export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, animalDisplayName, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
   const [live, setLive] = useState<FALiveState | undefined>(undefined)
   const liveKeyRef = useRef(liveKey)
   useLayoutEffect(() => { liveKeyRef.current = liveKey })
@@ -80,7 +81,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
           <span className={styles.badge}>Lv.{factory.level}</span>
           <span className={styles.bonusBadge}>+{formatQuantity(bonus * 100)}%</span>
           {factory.animalId && (
-            <span className={styles.animalBadge}>{ANIMAL_NAMES[factory.animalId]}</span>
+            <span className={styles.animalBadge}>{animalDisplayName ?? ANIMAL_NAMES[factory.animalId]}</span>
           )}
           <button className={`${styles.closeBtn}${tutorialHighlightClose ? ` ${styles.closeBtnHighlight}` : ''}`} onClick={onClose}>✕</button>
         </div>
@@ -120,22 +121,24 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
               {recipe
                 ? recipe.map((r) => {
                     const have = inputItems.find(it => it.grade === r.grade)?.quantity ?? 0
-                    const need = r.count * qty
+                    const capacity = live?.inputCapacity ?? 1
                     return (
                       <div key={r.grade} className={styles.storageRow}>
                         <GradeIcon size={14} grade={r.grade} />
                         <span className={styles.storageQty} style={{ color: have > 0 ? '#374151' : '#9ca3af' }}>
-                          {formatQuantity(have)}<span className={styles.storageNeed}>/{formatQuantity(need)}</span>
+                          {formatQuantity(have)}<span className={styles.storageNeed}>/{formatQuantity(capacity)}</span>
                         </span>
                       </div>
                     )
                   })
-                : inputItems.sort((a, b) => a.grade - b.grade).map((it) => (
-                    <div key={it.grade} className={styles.storageRow}>
-                      <GradeIcon size={14} grade={it.grade} />
-                      <span className={styles.storageQty}>{formatQuantity(it.quantity)}</span>
+                : (
+                    <div className={styles.storageRow}>
+                      <GradeIcon size={14} grade={factory.grade} />
+                      <span className={styles.storageQty}>
+                        {formatQuantity(live?.inputBuffer ?? 0)}<span className={styles.storageNeed}>/{formatQuantity(live?.inputCapacity ?? 1)}</span>
+                      </span>
                     </div>
-                  ))
+                  )
               }
             </div>
           </div>

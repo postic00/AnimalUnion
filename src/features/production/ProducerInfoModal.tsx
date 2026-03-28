@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Producer } from '../../types/producer'
+import type { PRState } from '../../engine/types'
+import type { Item } from '../../types/item'
 import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../../balance'
 import { formatGold, formatQuantity } from '../../utils/formatGold'
 import { GradeIcon } from '../common/GradeIcon'
@@ -27,12 +29,14 @@ interface Props {
   tutorialHighlightBuild?: boolean
   tutorialHighlightClose?: boolean
   producerProgressesRef?: React.RefObject<Record<string, number>>
+  prStatesRef?: React.RefObject<Record<string, PRState>>
   progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, progressKey }: Props) {
+export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [progress, setProgress] = useState(0)
+  const [outputBuffer, setOutputBuffer] = useState<Item[]>([])
   const progressKeyRef = useRef(progressKey)
   useLayoutEffect(() => { progressKeyRef.current = progressKey })
   useEffect(() => {
@@ -43,12 +47,13 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
       if (now - last >= 100) {
         last = now
         setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
+        setOutputBuffer([...(prStatesRef?.current?.[progressKeyRef.current ?? '']?.outputBuffer ?? [])])
       }
       rafId = requestAnimationFrame(loop)
     }
     rafId = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(rafId)
-  }, [producerProgressesRef, progressKey])
+  }, [producerProgressesRef, prStatesRef, progressKey])
   const buildCost = getProducerBuildCost(builtCount)
   const upgradeCost = getProducerUpgradeCost(producer.level)
   const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
@@ -114,6 +119,23 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
               <div className={styles.progressTrack}>
                 <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
               </div>
+              {outputBuffer.length > 0 && (
+                <div className={styles.outputBuffer}>
+                  {Object.values(
+                    outputBuffer.reduce<Record<number, { grade: number; quantity: number; count: number }>>((acc, it) => {
+                      if (acc[it.grade]) { acc[it.grade].quantity += it.quantity; acc[it.grade].count++ }
+                      else acc[it.grade] = { grade: it.grade, quantity: it.quantity, count: 1 }
+                      return acc
+                    }, {})
+                  ).sort((a, b) => a.grade - b.grade).map(info => (
+                    <div key={info.grade} className={styles.outputRow}>
+                      <GradeIcon size={16} grade={info.grade} />
+                      <span className={styles.outputCount}>{info.count}개</span>
+                      <span className={styles.outputQty}>×{formatQuantity(info.quantity / info.count)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

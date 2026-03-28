@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Producer } from '../../types/producer'
 import type { Clicker } from '../../types/clicker'
 import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost } from '../../balance'
@@ -6,6 +7,8 @@ import { GradeIcon } from '../common/GradeIcon'
 import coinIcon from '../../assets/coin.svg'
 import styles from './ProductionTab.module.css'
 
+const CLICKER_COUNTS = [1, 5, 10, 100]
+
 interface Props {
   producers: Producer[]
   gold: number
@@ -13,7 +16,7 @@ interface Props {
   clicker: Clicker
   onBuild: (index: number) => void
   onUpgrade: (index: number) => void
-  onUpgradeClicker: () => void
+  onUpgradeClicker: (count: number) => void
   onGradeChange: (index: number, grade: number) => void
 }
 
@@ -24,9 +27,10 @@ const GRADES: Record<number, { name: string; emoji: string; color: string; borde
 }
 
 export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker, onGradeChange }: Props) {
+  const [clickerCount, setClickerCount] = useState(1)
   const builtCount = producers.filter(p => p.built).length
   const buildCost = getProducerBuildCost(builtCount)
-  const clickerCost = getClickerUpgradeCost(clicker.level)
+  const clickerBulkCost = Array.from({ length: clickerCount }, (_, i) => getClickerUpgradeCost(clicker.level + i)).reduce((a, b) => a + b, 0)
   const clickerValue = getClickerValue(clicker.level)
 
   return (
@@ -37,21 +41,30 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
           <span className={styles.gradeEmoji}>👆</span>
           <div className={styles.cardInfo}>
             <div className={styles.cardNameRow}>
-              <span className={styles.cardName}>클릭 생산기</span>
+              <span className={styles.cardName}>클릭 레벨</span>
               <span className={styles.levelBadge}>Lv.{clicker.level}</span>
               <span className={styles.cardStat}>×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(2)}</span>
             </div>
-            <span className={styles.cardSub}>
-              클릭당 ×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(3)}
-            </span>
+            <div className={styles.gradeSelector}>
+              {CLICKER_COUNTS.map(c => (
+                <button
+                  key={c}
+                  className={`${styles.gradePill} ${clickerCount === c ? styles.gradePillActive : ''}`}
+                  style={clickerCount === c ? { backgroundColor: '#bae6ff', color: '#0369a1', borderColor: '#7dd3fc' } : { color: '#0369a1', borderColor: '#7dd3fc' }}
+                  onClick={() => setClickerCount(c)}
+                >
+                  ×{c}
+                </button>
+              ))}
+            </div>
           </div>
           <button
             className={styles.upgradeBtn}
-            onClick={onUpgradeClicker}
-            disabled={gold < clickerCost}
+            onClick={() => onUpgradeClicker(clickerCount)}
+            disabled={gold < clickerBulkCost}
           >
             <img src={coinIcon} className={styles.btnIcon} alt="" />
-            {formatGold(clickerCost)}
+            {formatGold(clickerBulkCost)}
           </button>
         </div>
 
@@ -68,7 +81,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                 <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
                 <div className={styles.cardInfo}>
                   <div className={styles.cardNameRow}>
-                    <span className={styles.cardName}>생산기 {index + 1}</span>
+                    <span className={styles.cardName}>생산공장</span>
                     <span className={styles.levelBadge} style={{ background: 'var(--c-gray-300)' }}>미건설</span>
                     <span className={styles.cardStat}>{grade.name}</span>
                   </div>
@@ -93,7 +106,7 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
               <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
               <div className={styles.cardInfo}>
                 <div className={styles.cardNameRow}>
-                  <span className={styles.cardName}>생산기 {index + 1}</span>
+                  <span className={styles.cardName}>생산공장</span>
                   <span className={styles.levelBadge}>Lv.{producer.level}</span>
                   <span className={styles.cardStat}>
                     {isActive ? `${perSec < 10 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s` : '비활성'}

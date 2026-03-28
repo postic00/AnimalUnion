@@ -131,12 +131,13 @@ export function useGameActions(ctx: GameActionsCtx) {
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleUpgradeClicker = useCallback(() => {
+  const handleUpgradeClicker = useCallback((count: number = 1) => {
     setGameState(prev => {
-      const cost = getClickerUpgradeCost(prev.clicker.level)
-      if (goldRef.current < cost) return prev
-      setGold(g => g - cost)
-      return { ...prev, clicker: { ...prev.clicker, level: prev.clicker.level + 1 } }
+      let totalCost = 0
+      for (let i = 0; i < count; i++) totalCost += getClickerUpgradeCost(prev.clicker.level + i)
+      if (goldRef.current < totalCost) return prev
+      setGold(g => g - totalCost)
+      return { ...prev, clicker: { ...prev.clicker, level: prev.clicker.level + count } }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

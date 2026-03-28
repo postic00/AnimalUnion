@@ -114,7 +114,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
             </div>
           ) : (
             <div className={styles.stats} style={{ background: 'rgba(255,255,255,0.55)' }}>
-              <span className={styles.unbuilt}>미건설</span>
+              <span className={styles.unbuilt}>이 칸에 공장을 건설합니다</span>
             </div>
           )}
 

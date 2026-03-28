@@ -43,7 +43,7 @@ export async function ensureProfile(playerName: string, platform: string): Promi
   await supabase
     .from('user_profiles')
     .upsert(
-      { device_id: deviceId, player_name: playerName, platform, last_online_at: new Date().toISOString() },
+      { device_id: deviceId, player_name: playerName, platform, app_version: APP_VERSION, last_online_at: new Date().toISOString() },
       { onConflict: 'device_id', ignoreDuplicates: false }
     )
 }

@@ -17,6 +17,7 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
   useLayoutEffect(() => { rsKeyRef.current = rsKey })
 
   useEffect(() => {
+    setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
     const handler = () => {
       setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
     }

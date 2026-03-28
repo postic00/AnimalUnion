@@ -42,11 +42,15 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
   useEffect(() => {
     if (!producerProgressesRef || !progressKey) return
     let rafId: number
-    let last = 0
+    let lastProgress = 0
+    let lastBuffer = 0
     const loop = (now: number) => {
-      if (now - last >= 100) {
-        last = now
+      if (now - lastProgress >= 100) {
+        lastProgress = now
         setProgress(producerProgressesRef.current?.[progressKeyRef.current ?? ''] ?? 0)
+      }
+      if (now - lastBuffer >= 500) {
+        lastBuffer = now
         setOutputBuffer([...(prStatesRef?.current?.[progressKeyRef.current ?? '']?.outputBuffer ?? [])])
       }
       rafId = requestAnimationFrame(loop)

@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: center;
   will-change: transform;
-  transition: transform 130ms linear;
+  transition: transform 40ms linear;
   /* background/border/box-shadow는 인라인(티어별) */
 }
 

@@ -418,14 +418,14 @@ export default function App() {
   }, [addToast])
 
   // ── 크로스커팅 핸들러 ─────────────────────────────────────────────────────
-  const { setSelectedFactory, setSelectedProducer, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
+  const { setSelectedFactory, tutorialStep, setTutorialStep, placingAnimalId, setPlacingAnimalId, setActiveTab } = ui
   const { handlePlaceAnimal: actionsPlaceAnimal, handleHardReset: actionsHardReset } = actions
 
   // 생산자 클릭: 튜토리얼 8→9 연동
-  const handleProducerClick = useCallback((row: number, col: number) => {
-    setSelectedProducer({ row, col })
+  const handleProducerClick = useCallback((row: number, col: number, prStatesRef: import('react').MutableRefObject<Record<string, import('./engine/types').PRState>>) => {
+    ui.handleProducerClick(row, col, prStatesRef)
     if (tutorialStep === 8) setTutorialStep(9)
-  }, [setSelectedProducer, tutorialStep, setTutorialStep])
+  }, [ui.handleProducerClick, tutorialStep, setTutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
@@ -786,7 +786,6 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             builtCount={builtCount}
-            capacity={getRsBufferCapacity(gameState.rsBufferLevel)}
             onBuild={() => actions.handleBuildProducer(producerIndex)}
             onUpgrade={() => actions.handleUpgradeProducer(producerIndex, ui.upgradeAmount)}
             onClose={() => { ui.setSelectedProducer(null) }}

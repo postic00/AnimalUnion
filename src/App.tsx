@@ -386,6 +386,7 @@ export default function App() {
         // workData 틱
         const newWorkData = tickWorkData(workDataRef.current)
         workDataRef.current = newWorkData
+        setWorkData(newWorkData)
 
         // 식사 보상 체크 (같은 타입 중복 방지)
         const mealReward = calcMealReward(workDataRef.current)

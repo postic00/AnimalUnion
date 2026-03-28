@@ -519,9 +519,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
     // 제출용 값 사전 계산 (state updater 밖에서)
     const prevState = gameStateRef.current
+    const totalEarned = totalEarnedRef.current
     const startGold = getInitialGold(prevState.initialGoldLevel ?? 0)
     useGoldStore.getState().reset(startGold)
-    const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
+    const earned = getPrestigePoints(totalEarned) * safeMultiplier
     const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
     const newPrestigeCount = prevState.prestigeCount + 1
     if (prevState.playerName) {
@@ -561,9 +562,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     const weekRate = isNewSeason ? CONFIG.NEXT_WEEK_RATE : 1
     // 제출용 값 사전 계산 (state updater 밖에서)
     const prevState = gameStateRef.current
+    const totalEarned = totalEarnedRef.current
     const startGold = getInitialGold(prevState.initialGoldLevel ?? 0)
     useGoldStore.getState().reset(startGold)
-    const earned = getPrestigePoints(totalEarnedRef.current) * safeMultiplier
+    const earned = getPrestigePoints(totalEarned) * safeMultiplier
     const newTotal = isNewSeason ? Math.floor(prevState.prestigePoints.total * weekRate) + earned : prevState.prestigePoints.total + earned
     const newPrestigeCount = prevState.prestigeCount + 1
     const keptCurrent = isNewSeason

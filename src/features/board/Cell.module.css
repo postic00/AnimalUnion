@@ -80,10 +80,10 @@
   100% { transform: translateY(-130%); }
 }
 
-.handGrab      { animation: handGrab      400ms ease-out 1 forwards; }
-.handPlace     { animation: handPlace     400ms ease-out 1 forwards; }
-.handGrabUp    { animation: handGrabUp    400ms ease-out 1 forwards; }
-.handPlaceDown { animation: handPlaceDown 400ms ease-out 1 forwards; }
+.handGrab      { animation: handGrab      400ms ease-out 1; }
+.handPlace     { animation: handPlace     400ms ease-out 1; }
+.handGrabUp    { animation: handGrabUp    400ms ease-out 1; }
+.handPlaceDown { animation: handPlaceDown 400ms ease-out 1; }
 
 /* 애니메이션 */
 @keyframes flowR  { from { transform: translate(0,0); }    to { transform: translate(16px,0); } }

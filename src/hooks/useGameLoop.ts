@@ -7,7 +7,7 @@ import { GameEngine } from '../engine/GameEngine'
 import type { FAState, PRState, FALiveStates, Progresses, FAPhases } from '../engine/types'
 
 // ── 상수 ───────────────────────────────────────────────────────────────────
-const ITEM_RENDER_INTERVAL_MS = 22  // 아이템 위치 갱신 주기 (~45fps)
+const ITEM_RENDER_INTERVAL_MS = 33  // 아이템 위치 갱신 주기 (~30fps)
 const RENDER_INTERVAL_MS = 100      // 스냅샷(진행도·버퍼 등) 갱신 주기
 
 // ── re-export (하위 호환) ───────────────────────────────────────────────────

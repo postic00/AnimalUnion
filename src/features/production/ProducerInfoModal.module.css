@@ -225,53 +225,12 @@
   color: #fff !important;
 }
 
-.outputBuffer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.outputFillRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.outputFillTrack {
-  flex: 1;
-  height: 8px;
-  background: rgba(255,255,255,0.4);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.outputFillBar {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.1s linear, background 0.2s;
-}
-
-.outputFillLabel {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-width: 36px;
-  text-align: right;
-}
-
-.outputEmpty {
-  text-align: center;
-  font-size: var(--text-sm);
-  color: var(--c-gray-400);
-  font-weight: 600;
-  padding: 8px;
-  background: rgba(255,255,255,0.55);
-  border-radius: var(--radius-md);
-}
-
 .outputList {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  height: 60px;
+  overflow-y: auto;
 }
 
 .outputRow {
@@ -297,10 +256,4 @@
   color: #1d4ed8;
   border-radius: var(--radius-sm);
   padding: 2px 6px;
-}
-
-.outputQty {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--c-gray-400);
 }

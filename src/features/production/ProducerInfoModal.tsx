@@ -22,7 +22,6 @@ interface Props {
   gold: number
   materialQuantityLevels: number[]
   builtCount: number
-  capacity: number
   onBuild: () => void
   onUpgrade: () => void
   onClose: () => void
@@ -34,7 +33,7 @@ interface Props {
   progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, capacity, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
+export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [progress, setProgress] = useState(0)
   const [outputBuffer, setOutputBuffer] = useState<Item[]>([])
@@ -123,7 +122,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
             </div>
           )}
 
-          {/* 출력 버퍼 (RS 형식) */}
+          {/* 출력 버퍼 */}
           {producer.built && (() => {
             const grouped = outputBuffer.reduce<Record<string, { grade: number; quantity: number; count: number }>>((acc, it) => {
               const key = `${it.grade}-${it.quantity}`
@@ -131,33 +130,17 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
               acc[key].count++
               return acc
             }, {})
-            const sortedGroups = Object.values(grouped).sort((a, b) => a.grade - b.grade || a.quantity - b.quantity)
-            const fillRatio = Math.min(outputBuffer.length / Math.max(capacity, 1), 1)
-            const isFull = outputBuffer.length >= capacity
+            const sorted = Object.values(grouped).sort((a, b) => a.grade - b.grade || a.quantity - b.quantity)
             return (
-              <div className={styles.outputBuffer}>
-                <div className={styles.outputFillRow}>
-                  <div className={styles.outputFillTrack}>
-                    <div className={styles.outputFillBar} style={{ width: `${fillRatio * 100}%`, background: isFull ? '#dc2626' : '#3b82f6' }} />
+              <div className={styles.outputList}>
+                {sorted.map(info => (
+                  <div key={`${info.grade}-${info.quantity}`} className={styles.outputRow}>
+                    <GradeIcon size={18} grade={info.grade} />
+                    <span className={styles.outputGradeLabel}>{info.grade}등급</span>
+                    <span className={styles.outputCount}>{info.count}개</span>
+                    <span className={styles.outputQty}>×{formatQuantity(info.quantity)}</span>
                   </div>
-                  <span className={styles.outputFillLabel} style={{ color: isFull ? '#dc2626' : '#374151' }}>
-                    {outputBuffer.length}/{capacity}
-                  </span>
-                </div>
-                {sortedGroups.length === 0 ? (
-                  <div className={styles.outputEmpty}>버퍼가 비어있습니다</div>
-                ) : (
-                  <div className={styles.outputList}>
-                    {sortedGroups.map(info => (
-                      <div key={`${info.grade}-${info.quantity}`} className={styles.outputRow}>
-                        <GradeIcon size={18} grade={info.grade} />
-                        <span className={styles.outputGradeLabel}>{info.grade}등급</span>
-                        <span className={styles.outputCount}>{info.count}개</span>
-                        <span className={styles.outputQty}>×{formatQuantity(info.quantity)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                ))}
               </div>
             )
           })()}

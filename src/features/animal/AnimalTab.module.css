@@ -138,11 +138,12 @@
 
 .starBtn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 1px;
   width: 70px;
-  height: 40px;
+  height: 44px;
   padding: 0;
   background: var(--btn-aqua);
   color: #fff;
@@ -153,7 +154,13 @@
   cursor: pointer;
   flex-shrink: 0;
   align-self: center;
-  white-space: nowrap;
+}
+
+.lvSub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+  line-height: 1;
 }
 
 .starBtn:disabled {
@@ -167,7 +174,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  height: 40px;
+  height: 44px;
   width: 70px;
   padding: 0 10px;
   background: var(--btn-aqua);

@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Producer } from '../../types/producer'
 import type { PRState } from '../../engine/types'
 import type { Item } from '../../types/item'
-import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity } from '../../balance'
+import { getProducerBuildCost, getProducerUpgradeCost, getProducerInterval, getMaterialQuantity, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatGold, formatQuantity } from '../../utils/formatGold'
 import { GradeIcon } from '../common/GradeIcon'
 import coinIcon from '../../assets/coin.svg'
@@ -20,6 +21,7 @@ interface Props {
   producer: Producer
   producerIndex: number
   gold: number
+  upgradeAmount: UpgradeAmount
   materialQuantityLevels: number[]
   builtCount: number
   onBuild: () => void
@@ -33,7 +35,7 @@ interface Props {
   progressKey?: string
 }
 
-export default function ProducerInfoModal({ producer, gold, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
+export default function ProducerInfoModal({ producer, gold, upgradeAmount, materialQuantityLevels, builtCount, onBuild, onUpgrade, onClose, onGradeChange, tutorialHighlightBuild, tutorialHighlightClose, producerProgressesRef, prStatesRef, progressKey }: Props) {
   const grade = GRADE_COLORS[producer.grade] ?? GRADE_COLORS[1]
   const [outputBuffer, setOutputBuffer] = useState<Item[]>([])
   const progressBarRef = useRef<HTMLDivElement>(null)
@@ -61,7 +63,8 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
     return () => cancelAnimationFrame(rafId)
   }, [producerProgressesRef, prStatesRef, progressKey])
   const buildCost = getProducerBuildCost(builtCount)
-  const upgradeCost = getProducerUpgradeCost(producer.level)
+  const upgradeCost = getBulkCost(getProducerUpgradeCost, producer.level, upgradeAmount, gold)
+  const upgradeCount = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getProducerUpgradeCost, producer.level, 'MAX', gold)) : upgradeAmount
   const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
   const interval = getProducerInterval(producer.level) * quantity
   const perSec = interval > 0 && isFinite(interval) ? quantity * 1000 / interval : 0
@@ -160,7 +163,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
             >
               <img src={coinIcon} className={styles.coinIcon} alt="" />
               <span>레벨업</span>
-              <span className={styles.cost}>{formatGold(upgradeCost)}</span>
+              <span className={styles.cost}>{formatGold(upgradeCost)}{upgradeCount > 0 ? ` (+lv${upgradeCount})` : ''}</span>
             </button>
           ) : (
             <button

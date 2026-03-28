@@ -34,7 +34,7 @@ import { calcOfflineReward, calcMealReward, calcSalaryReward, tickWorkData } fro
 import { formatGold } from './utils/formatGold'
 import { CONFIG, applyWeekConfig } from './config'
 import { initAdMob } from './utils/admob'
-import { initTossBackEvent, initTossVisibility, closeView, isTossEnvironment } from './utils/toss'
+import { initTossBackEvent, initTossVisibility, closeView, isTossEnvironment, isAndroid } from './utils/toss'
 import type { Board as BoardType, Cell } from './types/board'
 import { getBundleCost, getBundleCostDiscount, getPrestigePoints, getRsBufferCapacity, getGoldMultiplierBonus } from './balance'
 import { useUIState } from './hooks/useUIState'
@@ -216,7 +216,6 @@ export default function App() {
         ScoreService.recordSession(SaveService.getDeviceId(), platform)
       }
       run()
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       workDataRef.current = { ...workDataRef.current, lastActivityDate: today }
       setWorkData(workDataRef.current)
       SaveService.saveWorkData(workDataRef.current)
@@ -425,7 +424,7 @@ export default function App() {
   const handleProducerClick = useCallback((row: number, col: number, prStatesRef: import('react').MutableRefObject<Record<string, import('./engine/types').PRState>>) => {
     ui.handleProducerClick(row, col, prStatesRef)
     if (tutorialStep === 8) setTutorialStep(9)
-  }, [ui.handleProducerClick, tutorialStep, setTutorialStep]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ui, tutorialStep, setTutorialStep])
 
   // 공장 클릭: 튜토리얼 6→7 연동
   const handleFactoryClick = useCallback((row: number, col: number) => {
@@ -484,7 +483,8 @@ export default function App() {
           }}>{item.emoji}</span>
         ))}
       </div>
-      {isTossEnvironment() && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
+      {(isTossEnvironment() || isAndroid()) && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
+      {isAndroid() && <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 34, background: '#f3f4f6', zIndex: 9998, pointerEvents: 'none' }} />}
       {ui.showSplash && <SplashScreen onDone={ui.handleSplashDone} />}
       {!ui.showSplash && ui.tutorialStep !== null && <Tutorial
         step={ui.tutorialStep}
@@ -502,7 +502,7 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && isTossEnvironment() && <div style={{ height: 44 }} />}
+      {!ui.showSplash && (isTossEnvironment() || isAndroid()) && <div style={{ height: 44 }} />}
       {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && <Board
         key={resetKey}
@@ -642,9 +642,10 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             clicker={gameState.clicker}
+            upgradeAmount={ui.upgradeAmount}
             onBuild={actions.handleBuildProducer}
             onUpgrade={(i) => actions.handleUpgradeProducer(i, ui.upgradeAmount)}
-            onUpgradeClicker={actions.handleUpgradeClicker}
+            onUpgradeClicker={() => actions.handleUpgradeClicker(ui.upgradeAmount)}
             onGradeChange={actions.handleProducerGradeChange}
           />
         )}
@@ -653,6 +654,7 @@ export default function App() {
             board={board}
             factories={gameState.factories}
             gold={gold}
+            upgradeAmount={ui.upgradeAmount}
             onBuild={actions.handleBuildFactory}
             onSetType={actions.handleSetFactoryType}
             onSetDir={actions.handleSetFactoryDir}
@@ -669,6 +671,7 @@ export default function App() {
           <MaterialTab
             gameState={gameState}
             gold={gold}
+            upgradeAmount={ui.upgradeAmount}
             onUpgradeQuantity={(i) => actions.handleUpgradeMaterialQuantity(i, ui.upgradeAmount)}
           />
         )}
@@ -676,6 +679,7 @@ export default function App() {
           <AnimalTab
             gameState={gameState}
             animalType={ui.animalType}
+            upgradeAmount={ui.upgradeAmount}
             onUnlockAnimal={actions.handleUnlockAnimal}
             onUpgradeAnimal={(id) => actions.handleUpgradeAnimal(id, ui.upgradeAmount)}
             onStartPlacing={ui.handleStartPlacing}
@@ -688,17 +692,18 @@ export default function App() {
           <PrestigeTab
             gameState={{ ...gameState, totalEarned }}
             section={ui.prestigeSection}
+            upgradeAmount={ui.upgradeAmount}
             onPrestige={actions.handlePrestige}
             onPrestigeKeepPoints={actions.handlePrestigeKeepPoints}
             onLevelUpItemValue={(i) => actions.handleLevelUpItemValue(i, ui.upgradeAmount)}
             onUpgradeRsBuffer={() => actions.handleUpgradeRsBuffer(ui.upgradeAmount)}
             onUpgradeFaBuffer={() => actions.handleUpgradeFaBuffer(ui.upgradeAmount)}
             onUpgradeRailSpeed={() => actions.handleUpgradeRailSpeed(ui.upgradeAmount)}
-            onUpgradeBuildDiscount={actions.handleUpgradeBuildDiscount}
-            onUpgradeBundleDiscount={actions.handleUpgradeBundleDiscount}
-            onUpgradeProducerStart={actions.handleUpgradeProducerStart}
-            onUpgradeGoldMultiplier={actions.handleUpgradeGoldMultiplier}
-            onUpgradeInitialGold={actions.handleUpgradeInitialGold}
+            onUpgradeBuildDiscount={() => actions.handleUpgradeBuildDiscount(ui.upgradeAmount)}
+            onUpgradeBundleDiscount={() => actions.handleUpgradeBundleDiscount(ui.upgradeAmount)}
+            onUpgradeProducerStart={() => actions.handleUpgradeProducerStart(ui.upgradeAmount)}
+            onUpgradeGoldMultiplier={() => actions.handleUpgradeGoldMultiplier(ui.upgradeAmount)}
+            onUpgradeInitialGold={() => actions.handleUpgradeInitialGold(ui.upgradeAmount)}
           />
         )}
         {ui.activeTab === 4 && (
@@ -763,6 +768,7 @@ export default function App() {
             faLiveStatesRef={ui.faLiveStatesRef}
             liveKey={liveKey}
             gold={gold}
+            upgradeAmount={ui.upgradeAmount}
             materialQuantityLevels={gameState.materialQuantityLevels}
             maxGrade={20}
             animalDisplayName={animalDisplayName}
@@ -786,6 +792,7 @@ export default function App() {
             producer={producer}
             producerIndex={producerIndex}
             gold={gold}
+            upgradeAmount={ui.upgradeAmount}
             materialQuantityLevels={gameState.materialQuantityLevels}
             builtCount={builtCount}
             onBuild={() => actions.handleBuildProducer(producerIndex)}
@@ -877,6 +884,7 @@ export default function App() {
       {toasts.map((t, i) => (
         <Toast key={t.id} message={t.message} index={i} onHide={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
       ))}
+      {!ui.showSplash && isAndroid() && <div style={{ height: 34 }} />}
     </div>
   )
 }

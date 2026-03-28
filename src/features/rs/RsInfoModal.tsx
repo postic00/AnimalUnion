@@ -17,12 +17,10 @@ export default function RsInfoModal({ rsKey, rsQueuesRef, capacity, onClose }: P
   useLayoutEffect(() => { rsKeyRef.current = rsKey })
 
   useEffect(() => {
-    setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
-    const handler = () => {
-      setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
-    }
-    window.addEventListener('rs-queue-change', handler)
-    return () => window.removeEventListener('rs-queue-change', handler)
+    const sync = () => setItems([...(rsQueuesRef.current?.[rsKeyRef.current] ?? [])])
+    sync()
+    window.addEventListener('rs-queue-change', sync)
+    return () => window.removeEventListener('rs-queue-change', sync)
   }, [rsQueuesRef])
 
   const grouped = items.reduce<Record<string, { grade: number; quantity: number; count: number }>>((acc, it) => {

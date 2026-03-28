@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { Factory } from '../../types/factory'
 import type { FALiveState, FALiveStates } from '../../hooks/useGameLoop'
 import { ANIMAL_NAMES } from '../../types/animal'
-import { getFactoryBonus, getFactoryLevelUpgradeCost, RECIPES, getMaterialQuantity } from '../../balance'
+import { getFactoryBonus, getFactoryLevelUpgradeCost, RECIPES, getMaterialQuantity, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatQuantity, formatGold } from '../../utils/formatGold'
 import { GradeIcon } from '../common/GradeIcon'
 import coinIcon from '../../assets/coin.svg'
@@ -27,6 +28,7 @@ interface Props {
   faLiveStatesRef: React.RefObject<FALiveStates>
   liveKey: string
   gold: number
+  upgradeAmount: UpgradeAmount
   materialQuantityLevels: number[]
   maxGrade: number
   animalDisplayName?: string
@@ -38,7 +40,7 @@ interface Props {
   tutorialHighlightClose?: boolean
 }
 
-export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, materialQuantityLevels, maxGrade, animalDisplayName, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
+export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, gold, upgradeAmount, materialQuantityLevels, maxGrade, animalDisplayName, onClose, onSetType, onSetDir, onSetGrade, onUpgradeLevel, tutorialHighlightClose }: Props) {
   const [live, setLive] = useState<FALiveState | undefined>(undefined)
   const liveKeyRef = useRef(liveKey)
   useLayoutEffect(() => { liveKeyRef.current = liveKey })
@@ -58,7 +60,8 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
   const qty = getMaterialQuantity(materialQuantityLevels[factory.grade - 1] ?? 1)
   const bonus = getFactoryBonus(factory.type, factory.grade)
   const recipe = factory.type === 'PA' ? RECIPES[factory.grade] : null
-  const levelCost = getFactoryLevelUpgradeCost(factory.level)
+  const levelCost = getBulkCost(getFactoryLevelUpgradeCost, factory.level, upgradeAmount, gold)
+  const levelCount = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getFactoryLevelUpgradeCost, factory.level, 'MAX', gold)) : upgradeAmount
   const typeColor = TYPE_COLOR[factory.type]
 
   const grabState = live?.grabState ?? 'IDLE'
@@ -235,7 +238,7 @@ export default function FactoryInfoModal({ factory, faLiveStatesRef, liveKey, go
           >
             <img src={coinIcon} className={styles.coinIcon} alt="" />
             <span>레벨업</span>
-            <span className={styles.levelUpCost}>{formatGold(levelCost)}</span>
+            <span className={styles.levelUpCost}>{formatGold(levelCost)}{levelCount > 0 ? ` (+lv${levelCount})` : ''}</span>
           </button>
         </div>
         </div>

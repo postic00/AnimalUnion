@@ -25,6 +25,7 @@ import {
   getMaterialQuantity,
   getClickerThreshold,
   getClickerUpgradeCost,
+  getBulkCount,
   getBufferUpgradeCost,
   getRailSpeedUpgradeCost,
   getBuildCostDiscount,
@@ -131,8 +132,10 @@ export function useGameActions(ctx: GameActionsCtx) {
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleUpgradeClicker = useCallback((count: number = 1) => {
+  const handleUpgradeClicker = useCallback((amount: number | 'MAX' = 1) => {
     setGameState(prev => {
+      const count = getBulkCount(getClickerUpgradeCost, prev.clicker.level, amount, goldRef.current)
+      if (count === 0) return prev
       let totalCost = 0
       for (let i = 0; i < count; i++) totalCost += getClickerUpgradeCost(prev.clicker.level + i)
       if (goldRef.current < totalCost) return prev
@@ -170,20 +173,14 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       const producer = prev.producers[index]
       if (!producer) return prev
-      let goldAmt = goldRef.current
-      let level = producer.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0, spent = 0
-      while (count < limit) {
-        const cost = getProducerUpgradeCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost; spent += cost; level++; count++
-      }
+      const count = getBulkCount(getProducerUpgradeCost, producer.level, amount, goldRef.current)
       if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getProducerUpgradeCost(producer.level + i)
       if (!mutedRef.current) soundBuild()
       setGold(g => g - spent)
       const producers = [...prev.producers]
-      producers[index] = { ...producer, level }
+      producers[index] = { ...producer, level: producer.level + count }
       return { ...prev, producers }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -262,19 +259,13 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       const factory = prev.factories.find(f => f.row === row && f.col === col)
       if (!factory) return prev
-      let goldAmt = goldRef.current
-      let level = factory.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0, spent = 0
-      while (count < limit) {
-        const cost = getFactoryLevelUpgradeCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost; spent += cost; level++; count++
-      }
+      const count = getBulkCount(getFactoryLevelUpgradeCost, factory.level, amount, goldRef.current)
       if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getFactoryLevelUpgradeCost(factory.level + i)
       if (!mutedRef.current) soundBuild()
       setGold(g => g - spent)
-      return { ...prev, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level } : f) }
+      return { ...prev, factories: prev.factories.map(f => f.row === row && f.col === col ? { ...f, level: factory.level + count } : f) }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -295,20 +286,14 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => {
       const animal = prev.animals.find(a => a.id === id)
       if (!animal || !animal.unlocked) return prev
-      let points = prev.prestigePoints.current
-      let level = animal.level
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getAnimalUpgradeCost(level)
-        if (points < cost) break
-        points -= cost; level++; count++
-      }
+      const count = getBulkCount(getAnimalUpgradeCost, animal.level, amount, prev.prestigePoints.current)
       if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getAnimalUpgradeCost(animal.level + i)
       return {
         ...prev,
-        prestigePoints: { ...prev.prestigePoints, current: points },
-        animals: prev.animals.map(a => a.id === id ? { ...a, level } : a),
+        prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent },
+        animals: prev.animals.map(a => a.id === id ? { ...a, level: animal.level + count } : a),
       }
     })
   }, [setGameState])
@@ -376,37 +361,27 @@ export function useGameActions(ctx: GameActionsCtx) {
   // ── 재료 / 아이템 가치 ────────────────────────────────────────────────────
   const handleLevelUpItemValue = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints.current
-      let level = prev.itemValueLevels[gradeIndex] ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getItemValueLevelCost(level)
-        if (points < cost) break
-        points -= cost; level++; count++
-      }
+      const level = prev.itemValueLevels[gradeIndex] ?? 1
+      const count = getBulkCount(getItemValueLevelCost, level, amount, prev.prestigePoints.current)
       if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getItemValueLevelCost(level + i)
       const itemValueLevels = [...prev.itemValueLevels]
-      itemValueLevels[gradeIndex] = level
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, itemValueLevels }
+      itemValueLevels[gradeIndex] = level + count
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, itemValueLevels }
     })
   }, [setGameState])
 
   const handleUpgradeMaterialQuantity = useCallback((gradeIndex: number, amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let goldAmt = goldRef.current
-      let level = prev.materialQuantityLevels[gradeIndex] ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0, spent = 0
-      while (count < limit) {
-        const cost = getMaterialQuantityLevelCost(level)
-        if (goldAmt < cost) break
-        goldAmt -= cost; spent += cost; level++; count++
-      }
+      const level = prev.materialQuantityLevels[gradeIndex] ?? 1
+      const count = getBulkCount(getMaterialQuantityLevelCost, level, amount, goldRef.current)
       if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getMaterialQuantityLevelCost(level + i)
       setGold(g => g - spent)
       const materialQuantityLevels = [...prev.materialQuantityLevels]
-      materialQuantityLevels[gradeIndex] = level
+      materialQuantityLevels[gradeIndex] = level + count
       return { ...prev, materialQuantityLevels }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -414,94 +389,92 @@ export function useGameActions(ctx: GameActionsCtx) {
   // ── 버퍼 / 레일 ───────────────────────────────────────────────────────────
   const handleUpgradeRsBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints.current
-      let level = prev.rsBufferLevel
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getBufferUpgradeCost(level)
-        if (points < cost) break
-        points -= cost; level++; count++
-      }
+      const count = getBulkCount(getBufferUpgradeCost, prev.rsBufferLevel, amount, prev.prestigePoints.current)
       if (count === 0) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, rsBufferLevel: level }
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getBufferUpgradeCost(prev.rsBufferLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, rsBufferLevel: prev.rsBufferLevel + count }
     })
   }, [setGameState])
 
   const handleUpgradeFaBuffer = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints.current
-      let level = prev.faBufferLevel
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        const cost = getBufferUpgradeCost(level)
-        if (points < cost) break
-        points -= cost; level++; count++
-      }
+      const count = getBulkCount(getBufferUpgradeCost, prev.faBufferLevel, amount, prev.prestigePoints.current)
       if (count === 0) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, faBufferLevel: level }
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getBufferUpgradeCost(prev.faBufferLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, faBufferLevel: prev.faBufferLevel + count }
     })
   }, [setGameState])
 
   const handleUpgradeRailSpeed = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      let points = prev.prestigePoints.current
-      let level = prev.railSpeedLevel ?? 1
-      const limit = amount === 'MAX' ? Infinity : amount
-      let count = 0
-      while (count < limit) {
-        if (level >= CONFIG.RAIL_SPEED_MAX_LEVEL) break
-        const cost = getRailSpeedUpgradeCost(level)
-        if (points < cost) break
-        points -= cost; level++; count++
-      }
+      const currentLevel = prev.railSpeedLevel ?? 1
+      const cappedCost = (level: number) => level >= CONFIG.RAIL_SPEED_MAX_LEVEL ? Infinity : getRailSpeedUpgradeCost(level)
+      const count = getBulkCount(cappedCost, currentLevel, amount, prev.prestigePoints.current)
       if (count === 0) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: points }, railSpeedLevel: level }
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getRailSpeedUpgradeCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, railSpeedLevel: currentLevel + count }
     })
   }, [setGameState])
 
   // ── 환생 보너스 ──────────────────────────────────────────────────────────
-  const handleUpgradeBuildDiscount = useCallback(() => {
+  const handleUpgradeBuildDiscount = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      if ((prev.buildDiscountLevel ?? 0) >= CONFIG.PF_BC_PROC_MAX) return prev
-      const cost = getBuildDiscountCost(prev.buildDiscountLevel ?? 0)
-      if (prev.prestigePoints.current < cost) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, buildDiscountLevel: (prev.buildDiscountLevel ?? 0) + 1 }
+      const currentLevel = prev.buildDiscountLevel ?? 0
+      const cappedCost = (level: number) => level >= CONFIG.PF_BC_PROC_MAX ? Infinity : getBuildDiscountCost(level)
+      const count = getBulkCount(cappedCost, currentLevel, amount, prev.prestigePoints.current)
+      if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getBuildDiscountCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, buildDiscountLevel: currentLevel + count }
     })
   }, [setGameState])
 
-  const handleUpgradeBundleDiscount = useCallback(() => {
+  const handleUpgradeBundleDiscount = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      if ((prev.bundleDiscountLevel ?? 0) >= CONFIG.PF_LC_PROC_MAX) return prev
-      const cost = getBundleDiscountCost(prev.bundleDiscountLevel ?? 0)
-      if (prev.prestigePoints.current < cost) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, bundleDiscountLevel: (prev.bundleDiscountLevel ?? 0) + 1 }
+      const currentLevel = prev.bundleDiscountLevel ?? 0
+      const cappedCost = (level: number) => level >= CONFIG.PF_LC_PROC_MAX ? Infinity : getBundleDiscountCost(level)
+      const count = getBulkCount(cappedCost, currentLevel, amount, prev.prestigePoints.current)
+      if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getBundleDiscountCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, bundleDiscountLevel: currentLevel + count }
     })
   }, [setGameState])
 
-  const handleUpgradeProducerStart = useCallback(() => {
+  const handleUpgradeProducerStart = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const cost = getProducerStartCost(prev.producerStartLevel ?? 0)
-      if (prev.prestigePoints.current < cost) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, producerStartLevel: (prev.producerStartLevel ?? 0) + 1 }
+      const currentLevel = prev.producerStartLevel ?? 0
+      const count = getBulkCount(getProducerStartCost, currentLevel, amount, prev.prestigePoints.current)
+      if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getProducerStartCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, producerStartLevel: currentLevel + count }
     })
   }, [setGameState])
 
-  const handleUpgradeGoldMultiplier = useCallback(() => {
+  const handleUpgradeGoldMultiplier = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      if ((prev.goldMultiplierLevel ?? 0) >= CONFIG.PF_GM_PROC_MAX) return prev
-      const cost = getGoldMultiplierCost(prev.goldMultiplierLevel ?? 0)
-      if (prev.prestigePoints.current < cost) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, goldMultiplierLevel: (prev.goldMultiplierLevel ?? 0) + 1 }
+      const currentLevel = prev.goldMultiplierLevel ?? 0
+      const cappedCost = (level: number) => level >= CONFIG.PF_GM_PROC_MAX ? Infinity : getGoldMultiplierCost(level)
+      const count = getBulkCount(cappedCost, currentLevel, amount, prev.prestigePoints.current)
+      if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getGoldMultiplierCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, goldMultiplierLevel: currentLevel + count }
     })
   }, [setGameState])
 
-  const handleUpgradeInitialGold = useCallback(() => {
+  const handleUpgradeInitialGold = useCallback((amount: UpgradeAmount = 1) => {
     setGameState(prev => {
-      const cost = getInitialGoldCost(prev.initialGoldLevel ?? 0)
-      if (prev.prestigePoints.current < cost) return prev
-      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - cost }, initialGoldLevel: (prev.initialGoldLevel ?? 0) + 1 }
+      const currentLevel = prev.initialGoldLevel ?? 0
+      const count = getBulkCount(getInitialGoldCost, currentLevel, amount, prev.prestigePoints.current)
+      if (count === 0) return prev
+      let spent = 0
+      for (let i = 0; i < count; i++) spent += getInitialGoldCost(currentLevel + i)
+      return { ...prev, prestigePoints: { ...prev.prestigePoints, current: prev.prestigePoints.current - spent }, initialGoldLevel: currentLevel + count }
     })
   }, [setGameState])
 

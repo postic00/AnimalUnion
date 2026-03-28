@@ -1,5 +1,6 @@
 import type { GameState } from '../../types/gameState'
-import { getMaterialQuantityLevelCost, RECIPES, getEffectiveItemValue } from '../../balance'
+import { getMaterialQuantityLevelCost, RECIPES, getEffectiveItemValue, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatGold } from '../../utils/formatGold'
 import { GradeIcon } from '../common/GradeIcon'
 import { getGradeData } from '../../data/grades'
@@ -9,10 +10,11 @@ import styles from './MaterialTab.module.css'
 interface Props {
   gameState: GameState
   gold: number
+  upgradeAmount: UpgradeAmount
   onUpgradeQuantity: (gradeIndex: number) => void
 }
 
-export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Props) {
+export default function MaterialTab({ gameState, gold, upgradeAmount, onUpgradeQuantity }: Props) {
   const { materialQuantityLevels } = gameState
 
   return (
@@ -21,7 +23,8 @@ export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Prop
         {materialQuantityLevels.map((level, i) => {
           const grade = i + 1
           const mat = getGradeData(grade)
-          const cost = getMaterialQuantityLevelCost(level)
+          const cost = getBulkCost(getMaterialQuantityLevelCost, level, upgradeAmount, gold)
+          const count = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getMaterialQuantityLevelCost, level, 'MAX', gold)) : upgradeAmount
           const sellPrice = getEffectiveItemValue(grade, gameState.itemValueLevels)
 
           return (
@@ -39,7 +42,7 @@ export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Prop
                       <span className={styles.ingredientCount}>×{r.count}</span>
                     </span>
                   ))}
-                  <span className={styles.price}>💰 {formatGold(sellPrice)}G</span>
+                  <span className={styles.price}>💰 {formatGold(sellPrice)}</span>
                 </div>
               </div>
               <button
@@ -47,8 +50,11 @@ export default function MaterialTab({ gameState, gold, onUpgradeQuantity }: Prop
                 onClick={() => onUpgradeQuantity(i)}
                 disabled={gold < cost}
               >
-                <img src={coinIcon} className={styles.btnIcon} alt="" />
-                {formatGold(cost)}
+                <span className={styles.btnMain}>
+                  <img src={coinIcon} className={styles.btnIcon} alt="" />
+                  {formatGold(cost)}
+                </span>
+                {count > 0 && <span className={styles.lvSub}>+lv{count}</span>}
               </button>
             </div>
           )

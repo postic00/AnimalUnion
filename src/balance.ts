@@ -208,6 +208,36 @@ export function getClickerValue(level: number): number {
   return Math.pow(CONFIG.IC_PROC_RATE, Math.max(1, level) - 1)
 }
 
+// 일괄 업그레이드 총 비용 (MAX인 경우 gold 한도 내 최대, 아니면 count 레벨 합산)
+export function getBulkCost(getCostFn: (level: number) => number, currentLevel: number, amount: number | 'MAX', gold?: number): number {
+  if (amount === 'MAX') {
+    let total = 0
+    let i = 0
+    while (i < 10000) {
+      const c = getCostFn(currentLevel + i)
+      if (total + c > (gold ?? 0)) break
+      total += c
+      i++
+    }
+    return i === 0 ? getCostFn(currentLevel) : total
+  }
+  let total = 0
+  for (let i = 0; i < amount; i++) total += getCostFn(currentLevel + i)
+  return total
+}
+
+// 일괄 업그레이드 실제 레벨 수 (항상 currency 한도 내에서, MAX는 최대한)
+export function getBulkCount(getCostFn: (level: number) => number, currentLevel: number, amount: number | 'MAX', currency: number): number {
+  const limit = amount === 'MAX' ? 10000 : amount
+  let total = 0, i = 0
+  while (i < limit) {
+    const c = getCostFn(currentLevel + i)
+    if (total + c > currency) break
+    total += c; i++
+  }
+  return i
+}
+
 // 클릭커 업그레이드 비용
 export function getClickerUpgradeCost(level: number): number {
   return calcCost(CONFIG.PR_COST_BASE, CONFIG.PR_COST_RATE, CONFIG.PR_COST_EXP, CONFIG.PR_COST_ACC, level + 1)
@@ -267,6 +297,7 @@ export function getAnimalStat(level: number): number {
 }
 
 // 친구 순위 stat (bonus - 1 을 반환, 예: 5.0 → 4.0)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function getFriendStat(_rank: number): number {
   return 3.0
 }

@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom'
 import type { Board } from '../../types/board'
 import type { Factory } from '../../types/factory'
 import type { Animal, AnimalId } from '../../types/animal'
-import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES } from '../../balance'
+import { getFactoryBuildCost, getFactoryLevelUpgradeCost, RECIPES, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatGold } from '../../utils/formatGold'
 import coinIcon from '../../assets/coin.svg'
 import { GradeIcon } from '../common/GradeIcon'
@@ -15,6 +16,7 @@ interface Props {
   factories: Factory[]
   gold: number
   animals: Animal[]
+  upgradeAmount: UpgradeAmount
   onBuild: (row: number, col: number) => void
   onSetType: (row: number, col: number, type: Factory['type']) => void
   onSetDir: (row: number, col: number, dir: Factory['dir']) => void
@@ -104,7 +106,7 @@ function ComboBox({ label, options, selected, onSelect, color }: {
 
 const PA_MIN_GRADE = Math.min(...Object.keys(RECIPES).map(Number))
 
-export default function FactoryTab({ board, factories, gold, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
+export default function FactoryTab({ board, factories, gold, upgradeAmount, onBuild, onSetType, onSetDir, onSetGrade, onUpgradeLevel, maxGrade, focusFactory, onFocusConsumed }: Props) {
   const faCells: { row: number; col: number }[] = []
   board.forEach((row, rowIdx) => {
     row.forEach((cell, colIdx) => {
@@ -145,11 +147,8 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
       {floors.map((cells, floorIdx) => (
         <div key={floorIdx} className={styles.floor}>
           <button className={styles.floorHeader} onClick={() => toggleFloor(floorIdx)}>
-            <div className={styles.floorLeft}>
-              <span className={styles.floorBadge}>{floorIdx + 1}F</span>
-              <span className={styles.floorCount}>공장 {cells.length}개</span>
-            </div>
-            <div className={styles.floorDivider} />
+            <span className={styles.floorArrow}>{closedFloors[floorIdx] ? '▼' : '▲'}</span>
+            <span className={styles.floorBadge}>{floorIdx + 1}F</span>
             <span className={styles.floorArrow}>{closedFloors[floorIdx] ? '▼' : '▲'}</span>
           </button>
 
@@ -158,26 +157,29 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
 
             if (!factory || !factory.built) {
               return (
-                <div key={i} ref={el => { cardRefs.current[`${row}-${col}`] = el }} className={styles.card} style={{ background: '#fafafa', borderColor: '#e5e7eb' }}>
+                <div key={i} ref={el => { cardRefs.current[`${row}-${col}`] = el }} className={styles.card}>
                   <div className={styles.iconStack}>
                     <span className={styles.typeIcon}>🏭</span>
                   </div>
                   <div className={styles.cardInfo}>
                     <div className={styles.nameRow}>
-                      <span className={styles.cardName} style={{ color: '#6b7280' }}>공장 {i + 1}</span>
+                      <span className={styles.cardName} style={{ color: '#6b7280' }}>가공공장</span>
                       <span className={styles.levelBadge} style={{ background: 'var(--c-gray-300)' }}>미건설</span>
                     </div>
                   </div>
                   <button className={styles.buildBtn} onClick={() => onBuild(row, col)} disabled={gold < buildCost}>
-                    <img src={coinIcon} className={styles.btnIcon} alt="" />
-                    {formatGold(buildCost)}
+                    <span className={styles.btnMain}>
+                      <img src={coinIcon} className={styles.btnIcon} alt="" />
+                      {formatGold(buildCost)}
+                    </span>
                   </button>
                 </div>
               )
             }
 
             const meta = TYPE_META[factory.type]
-            const levelCost = getFactoryLevelUpgradeCost(factory.level)
+            const levelCost = getBulkCost(getFactoryLevelUpgradeCost, factory.level, upgradeAmount, gold)
+            const levelCount = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getFactoryLevelUpgradeCost, factory.level, 'MAX', gold)) : upgradeAmount
 
             const typeOptions = (['WA', 'PA', 'PK'] as Factory['type'][]).map(t => ({
               value: t, label: `${TYPE_META[t].icon} ${TYPE_META[t].label}`
@@ -199,7 +201,7 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
                 </div>
                 <div className={styles.cardInfo}>
                   <div className={styles.nameRow}>
-                    <span className={styles.cardName}>공장 {i + 1}</span>
+                    <span className={styles.cardName}>가공공장</span>
                     <span className={styles.levelBadge}>Lv.{factory.level}</span>
                     <div className={styles.gradeControl}>
                       <button className={styles.gradeBtn} onClick={() => onSetGrade(row, col, factory.grade - 1)} disabled={factory.grade <= (factory.type === 'PA' ? PA_MIN_GRADE : 1)}>‹</button>
@@ -227,8 +229,11 @@ export default function FactoryTab({ board, factories, gold, onBuild, onSetType,
                   </div>
                 </div>
                 <button className={styles.upgradeBtn} onClick={() => onUpgradeLevel(row, col)} disabled={gold < levelCost}>
-                  <img src={coinIcon} className={styles.btnIcon} alt="" />
-                  {formatGold(levelCost)}
+                  <span className={styles.btnMain}>
+                    <img src={coinIcon} className={styles.btnIcon} alt="" />
+                    {formatGold(levelCost)}
+                  </span>
+                  {levelCount > 0 && <span className={styles.lvSub}>+lv{levelCount}</span>}
                 </button>
               </div>
             )

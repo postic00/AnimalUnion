@@ -1,7 +1,8 @@
 import type { GameState } from '../../types/gameState'
 import type { AnimalId, FriendId } from '../../types/animal'
 import { ANIMAL_IDS } from '../../types/animal'
-import { getAnimalUpgradeCost, getAnimalUnlockCost, getAnimalStat, getFriendStat } from '../../balance'
+import { getAnimalUpgradeCost, getAnimalUnlockCost, getAnimalStat, getFriendStat, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatGold, formatNumber } from '../../utils/formatGold'
 import { AnimalSvg } from './AnimalSvg'
 import type { AnimalSpecies } from './AnimalSvg'
@@ -47,6 +48,7 @@ function getAnimalTypeName(id: string) {
 interface Props {
   gameState: GameState
   animalType: 'hamster' | 'cat' | 'dog' | 'friend'
+  upgradeAmount: UpgradeAmount
   onUnlockAnimal: (id: AnimalId) => void
   onUpgradeAnimal: (id: AnimalId) => void
   onStartPlacing: (id: AnimalId) => void
@@ -107,7 +109,7 @@ function FriendView({ gameState, onRecallFriend, onRemoveFriend, onStartPlacing 
   )
 }
 
-export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal, onRecallFriend, onRemoveFriend }: Props) {
+export default function AnimalTab({ gameState, animalType, upgradeAmount, onUnlockAnimal, onUpgradeAnimal, onStartPlacing, onRecallAnimal, onRecallFriend, onRemoveFriend }: Props) {
   if (animalType === 'friend') {
     return (
       <FriendView
@@ -139,7 +141,8 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
       <div className={styles.list}>
         {filteredIds.map(id => {
           const animal = animals.find(a => a.id === id)!
-          const upgradeCost = getAnimalUpgradeCost(animal.level)
+          const upgradeCost = getBulkCost(getAnimalUpgradeCost, animal.level, upgradeAmount, prestigePoints)
+          const upgradeCount = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getAnimalUpgradeCost, animal.level, 'MAX', prestigePoints)) : upgradeAmount
           const isPlaced = factories.some(f => f.animalId === id)
           return (
             <div key={id} className={`${styles.card} ${!animal.unlocked ? styles.cardLocked : ''}`}>
@@ -168,7 +171,8 @@ export default function AnimalTab({ gameState, animalType, onUnlockAnimal, onUpg
               </div>
               {animal.unlocked ? (
                 <button className={styles.starBtn} onClick={() => onUpgradeAnimal(id)} disabled={prestigePoints < upgradeCost}>
-                  ⭐ {formatGold(upgradeCost)}
+                  <span>⭐ {formatGold(upgradeCost)}</span>
+                  {upgradeCount > 0 && <span className={styles.lvSub}>+lv{upgradeCount}</span>}
                 </button>
               ) : (
                 <button className={styles.unlockBtn} onClick={() => onUnlockAnimal(id)} disabled={prestigePoints < unlockCost}>

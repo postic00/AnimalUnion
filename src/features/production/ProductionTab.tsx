@@ -1,22 +1,21 @@
-import { useState } from 'react'
 import type { Producer } from '../../types/producer'
 import type { Clicker } from '../../types/clicker'
-import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost } from '../../balance'
+import { getProducerUpgradeCost, getProducerBuildCost, getMaterialQuantity, getProducerInterval, getClickerValue, getClickerUpgradeCost, getBulkCost, getBulkCount } from '../../balance'
+import type { UpgradeAmount } from '../navigation/UpgradeAmountToggle'
 import { formatGold, formatQuantity } from '../../utils/formatGold'
 import { GradeIcon } from '../common/GradeIcon'
 import coinIcon from '../../assets/coin.svg'
 import styles from './ProductionTab.module.css'
-
-const CLICKER_COUNTS = [1, 5, 10, 100]
 
 interface Props {
   producers: Producer[]
   gold: number
   materialQuantityLevels: number[]
   clicker: Clicker
+  upgradeAmount: UpgradeAmount
   onBuild: (index: number) => void
   onUpgrade: (index: number) => void
-  onUpgradeClicker: (count: number) => void
+  onUpgradeClicker: () => void
   onGradeChange: (index: number, grade: number) => void
 }
 
@@ -26,11 +25,11 @@ const GRADES: Record<number, { name: string; emoji: string; color: string; borde
   3: { name: '딸기', emoji: '🍓', color: '#fdf2f8', border: '#f9a8d4', text: '#9d174d', sub: '#db2777' },
 }
 
-export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, onBuild, onUpgrade, onUpgradeClicker, onGradeChange }: Props) {
-  const [clickerCount, setClickerCount] = useState(1)
+export default function ProductionTab({ producers, gold, materialQuantityLevels, clicker, upgradeAmount, onBuild, onUpgrade, onUpgradeClicker, onGradeChange }: Props) {
   const builtCount = producers.filter(p => p.built).length
   const buildCost = getProducerBuildCost(builtCount)
-  const clickerBulkCost = Array.from({ length: clickerCount }, (_, i) => getClickerUpgradeCost(clicker.level + i)).reduce((a, b) => a + b, 0)
+  const clickerCost = getBulkCost(getClickerUpgradeCost, clicker.level, upgradeAmount, gold)
+  const clickerCount = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getClickerUpgradeCost, clicker.level, 'MAX', gold)) : upgradeAmount
   const clickerValue = getClickerValue(clicker.level)
 
   return (
@@ -43,34 +42,25 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
             <div className={styles.cardNameRow}>
               <span className={styles.cardName}>클릭 레벨</span>
               <span className={styles.levelBadge}>Lv.{clicker.level}</span>
-              <span className={styles.cardStat}>×{clickerValue % 1 === 0 ? clickerValue : clickerValue.toFixed(2)}</span>
+              <span className={styles.cardStat}>×{formatQuantity(clickerValue)}</span>
             </div>
-            <div className={styles.gradeSelector}>
-              {CLICKER_COUNTS.map(c => (
-                <button
-                  key={c}
-                  className={`${styles.gradePill} ${clickerCount === c ? styles.gradePillActive : ''}`}
-                  style={clickerCount === c ? { backgroundColor: '#bae6ff', color: '#0369a1', borderColor: '#7dd3fc' } : { color: '#0369a1', borderColor: '#7dd3fc' }}
-                  onClick={() => setClickerCount(c)}
-                >
-                  ×{c}
-                </button>
-              ))}
-            </div>
+            <span className={styles.cardSub}>클릭당 생산 증가</span>
           </div>
           <button
             className={styles.upgradeBtn}
-            onClick={() => onUpgradeClicker(clickerCount)}
-            disabled={gold < clickerBulkCost}
+            onClick={onUpgradeClicker}
+            disabled={gold < clickerCost}
           >
-            <img src={coinIcon} className={styles.btnIcon} alt="" />
-            {formatGold(clickerBulkCost)}
+            <span className={styles.btnMain}>
+              <img src={coinIcon} className={styles.btnIcon} alt="" />
+              {formatGold(clickerCost)}
+            </span>
+            {clickerCount > 0 && <span className={styles.lvSub}>+lv{clickerCount}</span>}
           </button>
         </div>
 
         {/* 생산기 목록 */}
         {producers.map((producer, index) => {
-          const grade = GRADES[producer.grade] ?? GRADES[1]
           const quantity = getMaterialQuantity(materialQuantityLevels[producer.grade - 1] ?? 1)
           const interval = getProducerInterval(producer.level) * quantity
           const perSec = interval > 0 && isFinite(interval) ? quantity * 1000 / interval : 0
@@ -78,12 +68,11 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
           if (!producer.built) {
             return (
               <div key={index} className={styles.card}>
-                <span className={styles.gradeEmoji}><GradeIcon size={36} grade={producer.grade}/></span>
+                <span className={styles.gradeEmoji}>🏭</span>
                 <div className={styles.cardInfo}>
                   <div className={styles.cardNameRow}>
                     <span className={styles.cardName}>생산공장</span>
                     <span className={styles.levelBadge} style={{ background: 'var(--c-gray-300)' }}>미건설</span>
-                    <span className={styles.cardStat}>{grade.name}</span>
                   </div>
                 </div>
                 <button
@@ -91,14 +80,17 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                   onClick={() => onBuild(index)}
                   disabled={gold < buildCost}
                 >
-                  <img src={coinIcon} className={styles.btnIcon} alt="" />
-                  {formatGold(buildCost)}
+                  <span className={styles.btnMain}>
+                    <img src={coinIcon} className={styles.btnIcon} alt="" />
+                    {formatGold(buildCost)}
+                  </span>
                 </button>
               </div>
             )
           }
 
-          const cost = getProducerUpgradeCost(producer.level)
+          const cost = getBulkCost(getProducerUpgradeCost, producer.level, upgradeAmount, gold)
+          const count = upgradeAmount === 'MAX' ? Math.max(1, getBulkCount(getProducerUpgradeCost, producer.level, 'MAX', gold)) : upgradeAmount
           const isActive = producer.level > 0
 
           return (
@@ -130,8 +122,11 @@ export default function ProductionTab({ producers, gold, materialQuantityLevels,
                 onClick={() => onUpgrade(index)}
                 disabled={gold < cost}
               >
-                <img src={coinIcon} className={styles.btnIcon} alt="" />
-                {formatGold(cost)}
+                <span className={styles.btnMain}>
+                  <img src={coinIcon} className={styles.btnIcon} alt="" />
+                  {formatGold(cost)}
+                </span>
+                {count > 0 && <span className={styles.lvSub}>+lv{count}</span>}
               </button>
             </div>
           )

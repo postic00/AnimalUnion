@@ -1,4 +1,9 @@
 import { closeView as _closeView, graniteEvent } from '@apps-in-toss/web-framework'
+import { Capacitor } from '@capacitor/core'
+
+export function isAndroid(): boolean {
+  return Capacitor.getPlatform() === 'android'
+}
 
 export function isTossEnvironment(): boolean {
   try {

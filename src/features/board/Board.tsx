@@ -85,7 +85,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
 
   const handleSecondTick = useCallback(() => { onSecondTickRef?.current?.() }, [onSecondTickRef])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, clearAll, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, initialItems as never, initialFaStates as Record<string, FAState> ?? undefined, initialRsQueues as Record<string, import('../../types/item').Item[]> ?? undefined, initialProduceTimers ?? undefined, initialPrStates as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange, handleSecondTick)
+  const { itemTick, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, clearAll, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, initialItems as never, initialFaStates as Record<string, FAState> ?? undefined, initialRsQueues as Record<string, import('../../types/item').Item[]> ?? undefined, initialProduceTimers ?? undefined, initialPrStates as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange, handleSecondTick)
 
   useLayoutEffect(() => {
     onSaveRef.current = () => {
@@ -175,7 +175,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
           </button>
         )}
         <HandLayer factories={factories} cellSize={cellSize} faPhases={faPhases} />
-        <ItemLayer items={items} cellSize={cellSize} />
+        <ItemLayer itemsRef={itemsRef} tick={itemTick} cellSize={cellSize} />
         {goldFloats.map(f => (
           <div key={f.id} className={styles.goldFloat} style={{ left: f.x, top: f.y }}>
             +{formatGold(f.amount)}

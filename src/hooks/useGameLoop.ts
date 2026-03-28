@@ -39,7 +39,7 @@ export function useGameLoop(
   onProducerProgressChange?: (progresses: Record<string, number>) => void,
   onSecondTick?: () => void,
 ) {
-  const [renderItems, setRenderItems] = useState(() => (initialItems ?? []) as import('../types/item').Item[])
+  const [itemTick, setItemTick] = useState(0)
   const [progresses, setProgresses] = useState<Progresses>({})
   const [faPhases, setFaPhases] = useState<FAPhases>({})
   const [bufferCounts, setBufferCounts] = useState<Record<string, { count: number; capacity: number }>>({})
@@ -110,6 +110,7 @@ export function useGameLoop(
     }
 
     engineRef.current = engine
+    itemsRef.current = engine.items  // 엔진 배열 직접 연결 (복사 없음)
 
     let rafId: number | null = null
     let lastItemRenderTime = 0
@@ -121,7 +122,7 @@ export function useGameLoop(
       engine.tick()
       if (now - lastItemRenderTime >= ITEM_RENDER_INTERVAL_MS) {
         lastItemRenderTime = now
-        setRenderItems(engine.getRenderItems())
+        setItemTick(t => t + 1)
       }
       if (now - lastRenderTime >= RENDER_INTERVAL_MS) {
         lastRenderTime = now
@@ -198,13 +199,15 @@ export function useGameLoop(
 
   const clearItems = useCallback(() => {
     engineRef.current?.clearItems()
-    setRenderItems([])
+    if (engineRef.current) itemsRef.current = engineRef.current.items
+    setItemTick(t => t + 1)
     setHasDerailed(false)
   }, [])
 
   const clearAll = useCallback(() => {
     engineRef.current?.clearAll()
-    setRenderItems([])
+    if (engineRef.current) itemsRef.current = engineRef.current.items
+    setItemTick(t => t + 1)
     setHasDerailed(false)
   }, [])
 
@@ -215,7 +218,7 @@ export function useGameLoop(
 
 
   return {
-    items: renderItems,
+    itemTick,
     progresses,
     faPhases,
     bufferCounts,

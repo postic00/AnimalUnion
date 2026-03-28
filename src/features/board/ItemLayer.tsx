@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import type { MutableRefObject } from 'react'
 import type { Item } from '../../types/item'
 import { CONFIG } from '../../config'
 import { formatQuantity } from '../../utils/formatGold'
@@ -16,11 +17,13 @@ function getTierStyle(grade: number): { bg: string; border: string; inset: strin
 }
 
 interface Props {
-  items: Item[]
+  itemsRef: MutableRefObject<Item[]>
+  tick: number
   cellSize: number
 }
 
-export default memo(function ItemLayer({ items, cellSize }: Props) {
+export default memo(function ItemLayer({ itemsRef, tick: _tick, cellSize }: Props) {
+  const items = itemsRef.current
   const size = cellSize * CONFIG.CM_SIZE_RATIO
   const emojiSize = Math.round(size * 0.65)
 

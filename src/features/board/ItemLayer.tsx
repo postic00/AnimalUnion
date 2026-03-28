@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/refs */
 import { memo } from 'react'
 import type { MutableRefObject } from 'react'
 import type { Item } from '../../types/item'
@@ -22,7 +23,7 @@ interface Props {
   cellSize: number
 }
 
-export default memo(function ItemLayer({ itemsRef, tick: _tick, cellSize }: Props) {
+export default memo(function ItemLayer({ itemsRef, tick: _tick, cellSize }: Props) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const items = itemsRef.current
   const size = cellSize * CONFIG.CM_SIZE_RATIO
   const emojiSize = Math.round(size * 0.65)

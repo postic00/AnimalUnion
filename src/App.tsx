@@ -483,8 +483,9 @@ export default function App() {
           }}>{item.emoji}</span>
         ))}
       </div>
-      {(isTossEnvironment() || isAndroid()) && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
-      {isAndroid() && <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 34, background: '#f3f4f6', zIndex: 9998, pointerEvents: 'none' }} />}
+      {isTossEnvironment() && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
+      {isAndroid() && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
+      {isAndroid() && <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 44, background: '#f3f4f6', zIndex: 9998, pointerEvents: 'none' }} />}
       {ui.showSplash && <SplashScreen onDone={ui.handleSplashDone} />}
       {!ui.showSplash && ui.tutorialStep !== null && <Tutorial
         step={ui.tutorialStep}
@@ -502,7 +503,8 @@ export default function App() {
           ui.setTutorialStep(null)
         }}
       />}
-      {!ui.showSplash && (isTossEnvironment() || isAndroid()) && <div style={{ height: 44 }} />}
+      {!ui.showSplash && isTossEnvironment() && <div style={{ height: 44 }} />}
+      {!ui.showSplash && isAndroid() && <div style={{ height: 44 }} />}
       {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && <Board
         key={resetKey}
@@ -884,7 +886,7 @@ export default function App() {
       {toasts.map((t, i) => (
         <Toast key={t.id} message={t.message} index={i} onHide={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
       ))}
-      {!ui.showSplash && isAndroid() && <div style={{ height: 34 }} />}
+      {!ui.showSplash && isAndroid() && <div style={{ height: 44 }} />}
     </div>
   )
 }

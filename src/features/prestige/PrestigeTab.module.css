@@ -313,6 +313,7 @@
   gap: 1px;
   width: 70px;
   height: 44px;
+  overflow: hidden;
   background: var(--btn-aqua);
   color: #fff;
   border: none;
@@ -322,6 +323,13 @@
   cursor: pointer;
   flex-shrink: 0;
   align-self: center;
+}
+
+.starBtn > span:first-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .lvSub {

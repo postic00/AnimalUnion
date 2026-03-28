@@ -101,9 +101,10 @@
   display: flex;
   align-items: center;
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: 2px;
   gap: 0;
   background: rgba(255,255,255,0.55);
+  opacity: 0.8;
 }
 
 .statItem {
@@ -117,7 +118,7 @@
 .statLabel {
   font-size: 10px;
   font-weight: 600;
-  color: var(--c-gray-400);
+  color: var(--c-gray-700);
 }
 
 .statValue {

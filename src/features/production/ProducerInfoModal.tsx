@@ -94,14 +94,14 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
             <div className={styles.stats} style={{ background: grade.bg }}>
               <div className={styles.statItem}>
                 <span className={styles.statLabel}>초당 생산량</span>
-                <span className={styles.statValue} style={{ color: grade.color }}>
+                <span className={styles.statValue} style={{ color: '#1a1a1a' }}>
                   {perSec < 10 ? perSec.toFixed(3) : perSec < 100 ? perSec.toFixed(2) : perSec < 1000 ? perSec.toFixed(1) : formatQuantity(perSec)}/s
                 </span>
               </div>
               <div className={styles.statDivider} />
               <div className={styles.statItem}>
                 <span className={styles.statLabel}>수량 배율</span>
-                <span className={styles.statValue} style={{ color: grade.color }}>
+                <span className={styles.statValue} style={{ color: '#1a1a1a' }}>
                   ×{formatQuantity(quantity)}
                 </span>
               </div>
@@ -115,8 +115,7 @@ export default function ProducerInfoModal({ producer, gold, materialQuantityLeve
           {/* 생산 프로그레스 */}
           {producer.built && (
             <div className={styles.progressWrap}>
-              <div className={styles.progressLabel}>생산 진행</div>
-              <div className={styles.progressTrack}>
+<div className={styles.progressTrack}>
                 <div className={styles.progressBar} style={{ width: `${progress * 100}%`, background: grade.color }} />
               </div>
             </div>

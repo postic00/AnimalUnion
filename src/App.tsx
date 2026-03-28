@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Board from './features/board/Board'
 import Navigation from './features/navigation/Navigation'
 import TabBar from './features/navigation/TabBar'
@@ -173,6 +173,7 @@ export default function App() {
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const boardSaveRef = useRef<() => void>(() => {})
   const boardClearRef = useRef<() => void>(() => {})
+  const onSecondTickRef = useRef<() => void>(() => {})
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
   const goldPerSecRef = useRef(goldPerSec)
@@ -266,6 +267,34 @@ export default function App() {
     })
     setRewardQueue(prev => prev.slice(1))
   }, [])  
+
+  // ── 1초 틱 콜백 (useGameLoop RAF에서 호출) ────────────────────────────────
+  useLayoutEffect(() => {
+    onSecondTickRef.current = () => {
+      useGoldStore.getState().flushTick()
+      useBoostStore.getState().tickBoosts()
+
+      const newWorkData = tickWorkData(workDataRef.current)
+      workDataRef.current = newWorkData
+      setWorkData(newWorkData)
+
+      const mealReward = calcMealReward(workDataRef.current)
+      if (mealReward) setRewardQueue(prev =>
+        prev.some(batch => batch.some(r => r.type === mealReward.type)) ? prev : [...prev, [mealReward]]
+      )
+
+      const salaryReward = calcSalaryReward(workDataRef.current, goldPerSecRef.current ?? 0)
+      if (salaryReward) {
+        const salaryGold = salaryReward.gold * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
+        useGoldStore.getState().setGold(g => g + salaryGold)
+        goldBufferRef.current += salaryReward.gold
+        totalEarnedBufferRef.current += salaryReward.gold
+        addToast(`💰 월급 +${formatGold(salaryReward.gold)}`)
+        workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
+        setWorkData(workDataRef.current)
+      }
+    }
+  })
 
   // ── UI State ──────────────────────────────────────────────────────────────
   const ui = useUIState()
@@ -373,46 +402,6 @@ export default function App() {
     window.addEventListener('beforeunload', onUnload)
     document.addEventListener('visibilitychange', onVisibility)
 
-    let rafId: number
-
-	  let lastTick = 0
-    const loop = (now: number) => {
-      // ~1000ms: 초당 골드 계산
-      if (now - lastTick >= 1000) {
-        lastTick = now
-        useGoldStore.getState().flushTick()
-        useBoostStore.getState().tickBoosts()
-
-        // workData 틱
-        const newWorkData = tickWorkData(workDataRef.current)
-        workDataRef.current = newWorkData
-        setWorkData(newWorkData)
-
-        // 식사 보상 체크 (같은 타입 중복 방지)
-        const mealReward = calcMealReward(workDataRef.current)
-        if (mealReward) setRewardQueue(prev =>
-          prev.some(batch => batch.some(r => r.type === mealReward.type)) ? prev : [...prev, [mealReward]]
-        )
-
-        // 월급 체크
-        const salaryReward = calcSalaryReward(workDataRef.current, goldPerSecRef.current ?? 0)
-        if (salaryReward) {
-          // 월급 지급
-          const salaryGold = salaryReward.gold * getGoldMultiplierBonus(goldMultiplierLevelRef.current)
-          useGoldStore.getState().setGold(g => g + salaryGold)
-          goldBufferRef.current += salaryReward.gold
-          totalEarnedBufferRef.current += salaryReward.gold
-          addToast(`💰 월급 +${formatGold(salaryReward.gold)}`)
-          // salary 리셋
-          workDataRef.current = { ...workDataRef.current, salary: { secondsAccumulated: 0 } }
-          setWorkData(workDataRef.current)
-        }
-      }
-
-      rafId = requestAnimationFrame(loop)
-    }
-    rafId = requestAnimationFrame(loop)
-
     // 60s: 저장 + 리더보드 업로드
     const saveInterval = setInterval(() => {
       save()
@@ -422,7 +411,6 @@ export default function App() {
     }, 60000)
 
     return () => {
-      cancelAnimationFrame(rafId)
       clearInterval(saveInterval)
       window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('visibilitychange', onVisibility)
@@ -540,6 +528,7 @@ export default function App() {
         onProducerProgressChange={ui.handleProducerProgressChange}
         tutorialHighlight={undefined}
         disableDerail={ui.tutorialStep !== null}
+        onSecondTickRef={onSecondTickRef}
       />}
       {!ui.showSplash && <TabBar
         clicker={gameState.clicker}

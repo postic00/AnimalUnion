@@ -36,6 +36,7 @@ export function useGameLoop(
   initialPrStates?: Record<string, unknown>,
   onFaLiveStateChange?: (states: FALiveStates) => void,
   onProducerProgressChange?: (progresses: Record<string, number>) => void,
+  onSecondTick?: () => void,
 ) {
   const [renderItems, setRenderItems] = useState(() => (initialItems ?? []) as import('../types/item').Item[])
   const [progresses, setProgresses] = useState<Progresses>({})
@@ -58,12 +59,14 @@ export function useGameLoop(
   const onFactoryProcessRef = useRef(onFactoryProcess)
   const onFaLiveStateChangeRef = useRef(onFaLiveStateChange)
   const onProducerProgressChangeRef = useRef(onProducerProgressChange)
+  const onSecondTickRef = useRef(onSecondTick)
   const speedMultiplierRef = useRef(speedMultiplier ?? 1)
   useLayoutEffect(() => {
     onGoldEarnedRef.current = onGoldEarned
     onFactoryProcessRef.current = onFactoryProcess
     onFaLiveStateChangeRef.current = onFaLiveStateChange
     onProducerProgressChangeRef.current = onProducerProgressChange
+    onSecondTickRef.current = onSecondTick
     speedMultiplierRef.current = speedMultiplier ?? 1
   })
 
@@ -109,6 +112,7 @@ export function useGameLoop(
 
     let rafId: number | null = null
     let lastRenderTime = 0
+    let lastSecondTick = 0
 
     const loop = (now: number) => {
       engine.updateConfig({ speedMultiplier: speedMultiplierRef.current })
@@ -129,12 +133,17 @@ export function useGameLoop(
         produceTimersRef.current = engine.produceTimers
         prStatesRef.current = engine.prStates
       }
+      if (now - lastSecondTick >= 1000) {
+        lastSecondTick = now
+        onSecondTickRef.current?.()
+      }
       rafId = requestAnimationFrame(loop)
     }
 
     const start = () => {
       engine.resetLastTime()
       lastRenderTime = performance.now()
+      lastSecondTick = performance.now()
       rafId = requestAnimationFrame(loop)
     }
 

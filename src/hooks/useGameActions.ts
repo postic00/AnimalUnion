@@ -345,11 +345,12 @@ export function useGameActions(ctx: GameActionsCtx) {
     const result = await CloudService.sendFriendRequest(code, myDeviceId)
     if (!result) return false
     setGameState(prev => {
-      if (prev.friends.length >= 20) return prev
-      if (prev.friends.some(f => f.deviceId === result.deviceId)) return prev
-      const nextId = `friend${prev.friends.length + 1}` as FriendId
+      const friends = prev.friends ?? []
+      if (friends.length >= 20) return prev
+      if (friends.some(f => f.deviceId === result.deviceId)) return prev
+      const nextId = `friend${friends.length + 1}` as FriendId
       const newFriend: Friend = { id: nextId, deviceId: result.deviceId, playerName: result.playerName, rank: result.rank }
-      return { ...prev, friends: [...prev.friends, newFriend] }
+      return { ...prev, friends: [...friends, newFriend] }
     })
     return true
   }, [setGameState])
@@ -367,7 +368,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     setGameState(prev => ({
       ...prev,
       factories: prev.factories.map(f => f.animalId === id ? { ...f, animalId: null } : f),
-      friends: prev.friends.filter(f => f.id !== id),
+      friends: (prev.friends ?? []).filter(f => f.id !== id),
     }))
   }, [setGameState])
 
@@ -736,16 +737,17 @@ export function useGameActions(ctx: GameActionsCtx) {
     const serverFriends = await CloudService.fetchFriends(myDeviceId)
     if (serverFriends.length === 0) return
     useGameStore.getState().setGameState(prev => {
-      const localIds = new Set(prev.friends.map(f => f.deviceId))
+      const friends = prev.friends ?? []
+      const localIds = new Set(friends.map(f => f.deviceId))
       const newFriends = serverFriends.filter(f => !localIds.has(f.deviceId))
       if (newFriends.length === 0) return prev
       const mapped = newFriends.map((f, i) => ({
-        id: `friend${prev.friends.length + i + 1}` as import('../types/animal').FriendId,
+        id: `friend${friends.length + i + 1}` as import('../types/animal').FriendId,
         deviceId: f.deviceId,
         playerName: f.playerName,
         rank: f.rank,
       }))
-      return { ...prev, friends: [...prev.friends, ...mapped] }
+      return { ...prev, friends: [...friends, ...mapped] }
     })
   }, [])
 

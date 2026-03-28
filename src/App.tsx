@@ -786,6 +786,7 @@ export default function App() {
             gold={gold}
             materialQuantityLevels={gameState.materialQuantityLevels}
             builtCount={builtCount}
+            capacity={getRsBufferCapacity(gameState.rsBufferLevel)}
             onBuild={() => actions.handleBuildProducer(producerIndex)}
             onUpgrade={() => actions.handleUpgradeProducer(producerIndex, ui.upgradeAmount)}
             onClose={() => { ui.setSelectedProducer(null) }}

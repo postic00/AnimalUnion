@@ -172,6 +172,7 @@ export default function App() {
   // Board 내부에서 사용하는 clicker ref 등
   const spawnClickerItemRef = useRef<((grade: number) => void) | null>(null)
   const boardSaveRef = useRef<() => void>(() => {})
+  const boardClearRef = useRef<() => void>(() => {})
   const clickerGradeRef = useRef<number>(1)
   const spawnUnlockTimeRef = useRef<number>(0)
   const goldPerSecRef = useRef(goldPerSec)
@@ -270,6 +271,7 @@ export default function App() {
   // ── Game Actions ──────────────────────────────────────────────────────────
   const actions = useGameActions({
     boardSaveRef,
+    boardClearRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
     platform,
     setClickerGrade: ui.setClickerGrade,
@@ -525,6 +527,7 @@ export default function App() {
         onCancelPlacing={ui.handleCancelPlacing}
         spawnClickerItemRef={spawnClickerItemRef}
         onSaveRef={boardSaveRef}
+        onClearRef={boardClearRef}
         muted={muted}
         speedMultiplier={speedBoostRemaining > 0 ? 2 : 1}
         onFactoryClick={handleFactoryClick}

@@ -41,6 +41,7 @@ interface Props {
   onCancelPlacing: () => void
   spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
   onSaveRef: MutableRefObject<() => void>
+  onClearRef: MutableRefObject<() => void>
   muted: boolean
   speedMultiplier: number
   onFactoryClick?: (row: number, col: number) => void
@@ -52,7 +53,7 @@ interface Props {
   disableDerail?: boolean
 }
 
-export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, levelConfig, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onRsClick, onFaLiveStateChange, onProducerProgressChange, tutorialHighlight, disableDerail }: Props) {
+export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCost, canAddBundle, producers, factories, animals, levelConfig, placingAnimalId, onPlaceAnimal, onCancelPlacing, spawnClickerItemRef, onSaveRef, onClearRef, muted, speedMultiplier, onFactoryClick, onProducerClick, onRsClick, onFaLiveStateChange, onProducerProgressChange, tutorialHighlight, disableDerail }: Props) {
   const { materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel } = levelConfig
   const [cellSize, setCellSize] = useState(0)
 
@@ -81,7 +82,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
     if (!muted) soundByAnimalId(animalId)
   }, [muted])
 
-  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, initialItems as never, initialFaStates as Record<string, FAState> ?? undefined, initialRsQueues as Record<string, import('../../types/item').Item[]> ?? undefined, initialProduceTimers ?? undefined, initialPrStates as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange)
+  const { items, progresses, faPhases, bufferCounts, spawnClickerItem, faStatesRef, itemsRef, rsQueuesRef, produceTimersRef, prStatesRef, hasDerailed, clearItems, clearAll, dismissDerail } = useGameLoop(board, cellSize, handleGoldEarned, producers, factories, animals, materialQuantityLevels, itemValueLevels, faBufferLevel, rsBufferLevel, railSpeedLevel, handleFactoryProcess, speedMultiplier, initialItems as never, initialFaStates as Record<string, FAState> ?? undefined, initialRsQueues as Record<string, import('../../types/item').Item[]> ?? undefined, initialProduceTimers ?? undefined, initialPrStates as Record<string, PRState> ?? undefined, onFaLiveStateChange, onProducerProgressChange)
 
   useLayoutEffect(() => {
     onSaveRef.current = () => {
@@ -94,6 +95,7 @@ export default memo(function Board({ board, onAddBundle, onGoldEarned, bundleCos
       })
     }
     spawnClickerItemRef.current = spawnClickerItem
+    onClearRef.current = clearAll
   })
 
   const producersByPos = useMemo(() =>

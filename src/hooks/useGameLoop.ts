@@ -187,6 +187,12 @@ export function useGameLoop(
     setHasDerailed(false)
   }, [])
 
+  const clearAll = useCallback(() => {
+    engineRef.current?.clearAll()
+    setRenderItems([])
+    setHasDerailed(false)
+  }, [])
+
   const dismissDerail = useCallback(() => {
     engineRef.current?.dismissDerail()
     setHasDerailed(false)
@@ -206,6 +212,7 @@ export function useGameLoop(
     prStatesRef,
     hasDerailed,
     clearItems,
+    clearAll,
     dismissDerail,
   }
 }

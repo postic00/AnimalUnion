@@ -47,8 +47,9 @@ import type { WorkData } from '../types/workData'
 
 // ── Context 타입 ─────────────────────────────────────────────────────────────
 export interface GameActionsCtx {
-  // Board 저장 ref (Board 컴포넌트 내부 상태)
+  // Board 저장/초기화 ref (Board 컴포넌트 내부 상태)
   boardSaveRef: MutableRefObject<() => void>
+  boardClearRef: MutableRefObject<() => void>
   // clicker
   spawnClickerItemRef: MutableRefObject<((grade: number) => void) | null>
   clickerGradeRef: MutableRefObject<number>
@@ -74,7 +75,7 @@ export interface GameActionsCtx {
 
 export function useGameActions(ctx: GameActionsCtx) {
   const {
-    boardSaveRef,
+    boardSaveRef, boardClearRef,
     spawnClickerItemRef, clickerGradeRef, spawnUnlockTimeRef,
     platform,
     setClickerGrade, setTutorialStep, setTutorialItemCount, setSelectedFactory,
@@ -511,6 +512,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     const isNewSeason = CONFIG.WEEK > CONFIG.CURRENT_WEEK
     if (!mutedRef.current) soundCat()
     boardSaveRef.current = () => {}
+    boardClearRef.current()
     SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
@@ -551,6 +553,7 @@ export function useGameActions(ctx: GameActionsCtx) {
     if (weekConfig) applyWeekConfig(weekConfig)
     if (!mutedRef.current) soundCat()
     boardSaveRef.current = () => {}
+    boardClearRef.current()
     SaveService.saveEngineState({ items: [], faStates: {}, rsQueues: {}, produceTimers: {}, prStates: {} })
     setResetKey(k => k + 1)
     setBoard(initialBoard)
@@ -645,6 +648,7 @@ export function useGameActions(ctx: GameActionsCtx) {
 
   const handleHardReset = useCallback(() => {
     boardSaveRef.current = () => {} // 구 Board가 스토리지에 재저장하지 못하도록 차단
+    boardClearRef.current()
     const deviceId = SaveService.getDeviceId()
     ScoreService.deleteAllScores(deviceId)
     CloudService.clearCloudSave(deviceId)

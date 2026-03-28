@@ -150,6 +150,16 @@ export class GameEngine {
     this.gameTimeSinceLastGold = 0
   }
 
+  clearAll(): void {
+    this.items = []
+    this.rsQueues = {}
+    this.faStates = {}
+    this.prStates = {}
+    this.produceTimers = {}
+    this.hasDerailed = false
+    this.gameTimeSinceLastGold = 0
+  }
+
   dismissDerail(): void {
     this.hasDerailed = false
     this.gameTimeSinceLastGold = 0

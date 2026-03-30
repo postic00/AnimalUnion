@@ -3,7 +3,7 @@ import { Capacitor } from '@capacitor/core'
 import { isTossAdSupported, showTossRewardedAd, preloadTossAd } from './tossAd'
 
 // 테스트 ID → 실제 ID로 교체 필요
-const REWARDED_AD_ID = 'ca-app-pub-1253913975799895~7503847506'
+const REWARDED_AD_ID = 'ca-app-pub-1253913975799895~7795966902'
 
 export async function initAdMob() {
   if (isTossAdSupported()) {

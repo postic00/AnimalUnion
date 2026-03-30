@@ -467,6 +467,7 @@ export default function App() {
   }), [gameState.materialQuantityLevels, gameState.itemValueLevels, gameState.faBufferLevel, gameState.rsBufferLevel, gameState.railSpeedLevel])
 
   return (
+    <div style={isAndroid() ? { height: '100vh', boxSizing: 'border-box', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', overflow: 'hidden' } : undefined} >
     <div style={{ minHeight: '100vh', paddingBottom: ui.activeTab !== null ? 'calc(40vh + 68px + var(--safe-area-inset-bottom, 0px))' : 'calc(68px + var(--safe-area-inset-bottom, 0px))', position: 'relative', transition: 'padding-bottom 0.25s ease' }}>
       {/* 배경 이모지 레이어 */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -904,6 +905,7 @@ export default function App() {
       {toasts.map((t, i) => (
         <Toast key={t.id} message={t.message} index={i} onHide={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
       ))}
+    </div>
     </div>
   )
 }

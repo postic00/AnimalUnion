@@ -142,7 +142,7 @@
   align-items: center;
   justify-content: center;
   gap: 1px;
-  width: 70px;
+  width: 90px;
   height: 44px;
   padding: 0;
   overflow: hidden;
@@ -183,7 +183,7 @@
   justify-content: center;
   gap: 3px;
   height: 44px;
-  width: 70px;
+  width: 90px;
   padding: 0 10px;
   background: var(--btn-aqua);
   color: #fff;

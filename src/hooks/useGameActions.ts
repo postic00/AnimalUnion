@@ -516,6 +516,9 @@ export function useGameActions(ctx: GameActionsCtx) {
       currentWeek: CONFIG.WEEK,
       friends: prevState.friends ?? [],
     }))
+    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
+    SaveService.saveWeekConfig(updatedConfig)
+    applyWeekConfig(updatedConfig)
     setTimeout(() => {
       const fullState = { ...gameStateRef.current, gold: startGold, totalEarned: 0, goldPerSec: 0 }
       saveGame(boardRef.current, fullState, {
@@ -524,9 +527,6 @@ export function useGameActions(ctx: GameActionsCtx) {
       })
     }, 0)
     resetSalary()
-    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
-    SaveService.saveWeekConfig(updatedConfig)
-    applyWeekConfig(updatedConfig)
   }, [resetSalary]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const doPrestigeKeepPoints = useCallback(async (multiplier = 1) => {
@@ -558,6 +558,9 @@ export function useGameActions(ctx: GameActionsCtx) {
       ScoreService.submitPrestige(deviceId, prevState.playerName, newTotal, newPrestigeCount)
       ScoreService.submitGold(deviceId, prevState.playerName, 0)
     }
+    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
+    SaveService.saveWeekConfig(updatedConfig)
+    applyWeekConfig(updatedConfig)
     setGameState(() => ({
       ...initialGameState,
       gold: startGold,
@@ -587,9 +590,6 @@ export function useGameActions(ctx: GameActionsCtx) {
 	}, 0)
 
     resetSalary()
-    const updatedConfig = { ...(weekConfig ?? {}), CURRENT_WEEK: CONFIG.WEEK }
-    SaveService.saveWeekConfig(updatedConfig)
-    applyWeekConfig(updatedConfig)
   }, [resetSalary]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrestige = useCallback(async () => {

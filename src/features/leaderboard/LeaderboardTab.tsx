@@ -35,9 +35,9 @@ export default function LeaderboardTab({
   const myEntry = myIndex >= 0 ? entries[myIndex] : null
   const myRank = myEntry?.rank ?? (myIndex >= 0 ? startRank + myIndex : null)
   const myScore = mode === 'gold' ? myGoldScore : myPrestigeScore
-  const myUnregistered = myScore === 0
+  const myUnregistered = !hasGoldSeason
 
-  const notParticipating = mode === 'gold' ? !hasGoldSeason : myPrestigeScore === 0
+  const notParticipating = !hasGoldSeason
   useEffect(() => {
     if (notParticipating) { onRankUpdate?.(null, null); return }
     onRankUpdate?.(myUnregistered ? null : myRank, myEntry?.score ?? null)
@@ -53,9 +53,10 @@ export default function LeaderboardTab({
     return [...deduped, { id: myDeviceId, player_name: playerName, score: myScore }]
   }
 
-  const doFetch = async () => {
+  const doFetch = async (submit = false) => {
     setLoading(true)
     try {
+      if (submit && mode === 'gold' && hasGoldSeason) await onSubmitGold?.()
       if (view === 'top') {
         const data = await ScoreService.lbTop(table, { week, pageSize: 10 })
         setEntries(mode === 'gold' && !hasGoldSeason ? data : injectMe(data))
@@ -64,7 +65,6 @@ export default function LeaderboardTab({
       } else if (view === 'around') {
         const noAround = mode === 'gold' ? !hasGoldSeason : myPrestigeScore === 0
         if (noAround) { setEntries([]); setStartRank(1); return }
-        if (mode === 'gold') await onSubmitGold?.()
         const result = await ScoreService.lbAround(table, myDeviceId, { week })
         setEntries(injectMe(result.entries))
         setStartRank(result.startRank)
@@ -80,8 +80,12 @@ export default function LeaderboardTab({
   }
 
   useEffect(() => {
+    doFetch(mode === 'gold')
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     doFetch()
-  }, [mode, view]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderRow = (e: LeaderboardEntry, rank: number) => {
     const isMe = e.id === myDeviceId || e.player_name === playerName
@@ -111,7 +115,7 @@ export default function LeaderboardTab({
         <button style={{ flex: 1 }} className={view === 'top' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('top')} disabled={loading}>TOP 10</button>
         <button style={{ flex: 1 }} className={view === 'around' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('around')} disabled={loading}>내 순위</button>
         <button style={{ flex: 1 }} className={view === 'friend' ? 'aqua-btn-active' : 'aqua-btn'} onClick={() => setView('friend')} disabled={loading}>친구</button>
-        <button style={{ flex: 1 }} className="aqua-btn" onClick={() => doFetch()} disabled={loading}>{loading ? '...' : '↻'}</button>
+        <button style={{ flex: 1 }} className="aqua-btn" onClick={() => doFetch(true)} disabled={loading}>{loading ? '...' : '↻'}</button>
       </div>
 
       {view === 'around' && mode === 'prestige' && myPrestigeScore === 0 ? (

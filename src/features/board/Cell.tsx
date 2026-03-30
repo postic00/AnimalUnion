@@ -228,6 +228,7 @@ const cellStyle = useMemo<CSSProperties>(() => ({
   return (
     <div
       className={`${styles.cell} ${styles[cell.type]} ${placing ? styles.placing : ''} ${tutorialHighlight ? styles.tutorialHighlight : ''} ${(isActiveFA || isActivePR) ? styles.shake : ''}`}
+      data-tutorial={tutorialHighlight || undefined}
       style={cellStyle}
       onClick={onClick}
     >

@@ -130,7 +130,7 @@ const bgEmojis = [
   { emoji: '🐱', top: '88%', left: '75%', size: 26, rot: 10,  op: 0.13 },
 ]
 
-if(typeof window !== 'undefined' && isTossEnvironment()) {
+if(typeof window !== 'undefined' && (isTossEnvironment() || isAndroid())) {
 	document.documentElement.style.setProperty('--safe-area-inset-top', '0px')
 	document.documentElement.style.setProperty('--safe-area-inset-bottom', '0px')
 }
@@ -484,8 +484,6 @@ export default function App() {
         ))}
       </div>
       {isTossEnvironment() && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
-      {isAndroid() && <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 44, background: '#bae6ff', zIndex: 9998, pointerEvents: 'none' }} />}
-      {isAndroid() && <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: 44, background: '#f3f4f6', zIndex: 9998, pointerEvents: 'none' }} />}
       {ui.showSplash && <SplashScreen onDone={ui.handleSplashDone} />}
       {!ui.showSplash && ui.tutorialStep !== null && <Tutorial
         step={ui.tutorialStep}
@@ -494,6 +492,11 @@ export default function App() {
           if (ui.tutorialStep === 10) {
             localStorage.setItem('tutorialDone', '1')
             ui.setTutorialStep(null)
+            const weekConfig = SaveService.loadWeekConfig()
+            if(weekConfig) {
+              weekConfig.CURRENT_WEEK = CONFIG.WEEK
+              SaveService.saveWeekConfig(weekConfig)
+            }
           } else {
             ui.setTutorialStep(s => s !== null ? s + 1 : null)
           }
@@ -501,10 +504,14 @@ export default function App() {
         onSkip={() => {
           localStorage.setItem('tutorialDone', '1')
           ui.setTutorialStep(null)
+          const weekConfig = SaveService.loadWeekConfig()
+          if(weekConfig) {
+            weekConfig.CURRENT_WEEK = CONFIG.WEEK
+            SaveService.saveWeekConfig(weekConfig)           
+          }
         }}
       />}
       {!ui.showSplash && isTossEnvironment() && <div style={{ height: 44 }} />}
-      {!ui.showSplash && isAndroid() && <div style={{ height: 44 }} />}
       {!ui.showSplash && <Navigation gold={gold} goldPerSec={goldPerSec} prestigePoints={gameState.prestigePoints.current} totalPrestigePoints={gameState.prestigePoints.total} salarySecondsAccumulated={workData.salary.secondsAccumulated} expectedSalary={Math.floor(goldPerSec * CONFIG.WR_SALARY_SECONDS * CONFIG.WR_SALARY_RATE)} />}
       {!ui.showSplash && <Board
         key={resetKey}
@@ -530,7 +537,7 @@ export default function App() {
         onRsClick={ui.handleRsClick}
         onFaLiveStateChange={ui.handleFaLiveStateChange}
         onProducerProgressChange={ui.handleProducerProgressChange}
-        tutorialHighlight={undefined}
+        tutorialHighlight={ui.tutorialStep === 6 ? 'fa' : ui.tutorialStep === 8 ? 'rs' : undefined}
         disableDerail={ui.tutorialStep !== null}
         onSecondTickRef={onSecondTickRef}
       />}
@@ -708,6 +715,17 @@ export default function App() {
             onUpgradeInitialGold={() => actions.handleUpgradeInitialGold(ui.upgradeAmount)}
           />
         )}
+
+        {ui.activeTab === 4 && (() => {
+          console.log('LB', { 
+            WEEK: CONFIG.WEEK, 
+            mode: ui.lbMode, 
+            total: gameState.totalEarned, 
+            prestige: gameState.prestigePoints.total, 
+            CURRENT_WEEK: CONFIG.CURRENT_WEEK 
+            })
+          return null
+        })()}
         {ui.activeTab === 4 && (
           <LeaderboardTab
             playerName={gameState.playerName}
@@ -886,7 +904,6 @@ export default function App() {
       {toasts.map((t, i) => (
         <Toast key={t.id} message={t.message} index={i} onHide={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
       ))}
-      {!ui.showSplash && isAndroid() && <div style={{ height: 44 }} />}
     </div>
   )
 }

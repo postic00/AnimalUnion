@@ -292,18 +292,6 @@
   border-left: none;
 }
 
-/* ── 🏗️ 생산자 스포트라이트 ── */
-.prSpotlight {
-  position: fixed;
-  left: calc(100vw / 7);
-  top: calc(72px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  width: calc(100vw / 7);
-  height: calc(100vw / 7);
-  border-radius: 8px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
-  pointer-events: none;
-}
-
 .prTooltip {
   position: fixed;
   left: calc(100vw / 7 + 10px);
@@ -317,18 +305,6 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-/* ── 🏭 공장 스포트라이트 ── */
-.faSpotlight {
-  position: fixed;
-  left: calc(100vw / 7);
-  top: calc(72px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 2 * (100vw / 7));
-  width: calc(100vw / 7);
-  height: calc(100vw / 7);
-  border-radius: 8px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
-  pointer-events: none;
 }
 
 .faTooltip {

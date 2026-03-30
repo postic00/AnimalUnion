@@ -1,4 +1,5 @@
 import styles from './Tutorial.module.css'
+import { useState, useEffect } from 'react'
 
 interface Props {
   step: number
@@ -41,6 +42,16 @@ const SLIDES = [
 ]
 
 export default function Tutorial({ step, clickCount, onSkip, onNext }: Props) {
+  const [spotRect, setSpotRect] = useState<DOMRect | null>(null)
+
+  useEffect(() => {
+    if(step === 6 || step === 8) {
+      const el = document.querySelector('[data-tutorial]')
+      if (el) setSpotRect(el.getBoundingClientRect())
+    } else {
+      setSpotRect(null)
+    }
+  }, [step])
 
   /* ── Phase 1: 이미지 슬라이드 ── */
   if (step <= 2) {
@@ -121,11 +132,17 @@ export default function Tutorial({ step, clickCount, onSkip, onNext }: Props) {
     return (
       <div className={styles.tutorialOverlay}>
         <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
-        <div className={styles.faSpotlight} />
-        <div className={styles.faTooltip}>
+        {spotRect && <div style={{
+          position: 'fixed', left: spotRect.left, top: spotRect.top,
+          width: spotRect.width, height: spotRect.height,
+          borderRadius: 8, boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)', pointerEvents: 'none',
+        }} />}
+        {spotRect && <div className={styles.faTooltip} style={{
+          position: 'fixed', left: spotRect.left, top: spotRect.bottom + 8,
+        }}>
           <p className={styles.tooltipText}>공장 자리를 탭해보세요!</p>
           <p className={styles.tooltipSub}>🏗️ 공장 부지를 탭하면{'\n'}공장을 건설할 수 있어요.</p>
-        </div>
+        </div> }
       </div>
     )
   }
@@ -148,11 +165,17 @@ export default function Tutorial({ step, clickCount, onSkip, onNext }: Props) {
     return (
       <div className={styles.tutorialOverlay}>
         <button className={styles.tutorialSkip} onClick={onSkip}>건너뛰기</button>
-        <div className={styles.prSpotlight} />
-        <div className={styles.prTooltip}>
+        {spotRect && <div style={{
+          position: 'fixed', left: spotRect.left, top: spotRect.top,
+          width: spotRect.width, height: spotRect.height,
+          borderRadius: 8, boxShadow: '0 0 0 9999px rgba(0,0,0,0.72)', pointerEvents: 'none',
+        }} />}
+        {spotRect && <div className={styles.prTooltip} style={{
+          position: 'fixed', left: spotRect.left, top: spotRect.bottom + 8,
+        }}>
           <p className={styles.tooltipText}>생산자를 탭해보세요!</p>
           <p className={styles.tooltipSub}>🏗️ 생산자를 탭하면{'\n'}재료 생산 정보를 볼 수 있어요.</p>
-        </div>
+        </div> }
       </div>
     )
   }

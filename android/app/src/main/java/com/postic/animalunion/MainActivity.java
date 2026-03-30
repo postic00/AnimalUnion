@@ -12,15 +12,6 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        applySafeAreaInsets();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        applySafeAreaInsets();
     }
 
     private void applySafeAreaInsets() {
@@ -33,11 +24,9 @@ public class MainActivity extends BridgeActivity {
             float topDp = top / density;
             float bottomDp = bottom / density;
 
-            String js = String.format(
-                "document.documentElement.style.setProperty('--safe-area-inset-top', '%fpx');" +
-                "document.documentElement.style.setProperty('--safe-area-inset-bottom', '%fpx');",
-                topDp, bottomDp
-            );
+            String js =
+                "document.documentElement.style.setProperty('--safe-area-inset-top', '0px');" +
+                "document.documentElement.style.setProperty('--safe-area-inset-bottom', '0px');";
 
             if (getBridge() != null && getBridge().getWebView() != null) {
                 getBridge().getWebView().post(() ->

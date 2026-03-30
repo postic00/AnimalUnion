@@ -1,6 +1,6 @@
 import { supabase, fetchPrestigeRank } from './supabase'
 import { APP_VERSION } from '../config'
-import { saveWeekConfig, getDeviceId } from '../utils/saveLoad'
+import { saveWeekConfig, loadWeekConfig, getDeviceId } from '../utils/saveLoad'
 import type { Board } from '../types/board'
 import type { GameState } from '../types/gameState'
 import type { WorkData } from '../types/workData'
@@ -17,7 +17,9 @@ export async function fetchAndSaveWeekConfig(): Promise<void> {
 
   if (error || !data) return
 
+  const existing = loadWeekConfig()
   const weekConfig = {
+    ...(existing ?? {}),
     ...(data.config ?? {}),
     WEEK: data.week,
     WEEK_START_DATE: data.start_date,

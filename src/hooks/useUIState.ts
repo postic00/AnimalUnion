@@ -24,7 +24,7 @@ export function useUIState() {
   const [prodSection, setProdSection] = useState<'production' | 'factory'>('production')
   const [animalType, setAnimalType] = useState<'hamster' | 'cat' | 'dog' | 'friend'>('hamster')
   const [prestigeSection, setPrestigeSection] = useState<'item' | 'buffer'>('item')
-  const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('prestige')
+  const [lbMode, setLbMode] = useState<'prestige' | 'gold'>('gold')
   const [upgradeAmount, setUpgradeAmount] = useState<UpgradeAmount>(1)
 
   // ── 클릭커 ─────────────────────────────────────────────────────────────────

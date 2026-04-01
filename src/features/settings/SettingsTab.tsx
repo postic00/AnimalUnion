@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import styles from './SettingsTab.module.css'
+import { isAndroid } from '../../utils/toss'
 
 interface Props {
   savedAt: number | null
@@ -67,12 +68,14 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
     setIssuing(false)
     if (code) {
       setInviteCode(code)
-      const text = `[함께하기] 동물노동조합\n친구코드 : ${code}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
-      if (navigator.share) {
-        await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
-      } else {
-        await navigator.clipboard.writeText(text).catch(() => null)
-        showFriendMsg('클립보드에 복사됐어요', true)
+      if (isAndroid()) {
+        const text = `[함께하기] 동물노동조합\n친구코드 : ${code}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
+        if (navigator.share) {
+          await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
+        } else {
+          await navigator.clipboard.writeText(text).catch(() => null)
+          showFriendMsg('클립보드에 복사됐어요', true)
+        }
       }
     } else {
       showFriendMsg('코드 발급에 실패했어요', false)
@@ -313,12 +316,14 @@ export default function SettingsTab({ savedAt, muted, onToggleMute, onCloudSave,
               <button
                 className={styles.transferBtn}
                 onClick={async () => {
-                  const text = `[함께하기] 동물노동조합\n친구코드 : ${inviteCode}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
-                  if (navigator.share) {
-                    await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
-                  } else {
-                    await navigator.clipboard.writeText(text).catch(() => null)
-                    showFriendMsg('클립보드에 복사됐어요', true)
+                  if (isAndroid()) {
+                    const text = `[함께하기] 동물노동조합\n친구코드 : ${inviteCode}\n(24시간 이내 입력)\n구글플레이 : https://play.google.com/store/apps/details?id=com.postic.animalunion`
+                    if (navigator.share) {
+                      await navigator.share({ title: '동물노동조합 친구 추가', text }).catch(() => null)
+                    } else {
+                      await navigator.clipboard.writeText(text).catch(() => null)
+                      showFriendMsg('클립보드에 복사됐어요', true)
+                    }
                   }
                 }}
               >공유</button>

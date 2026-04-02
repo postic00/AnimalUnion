@@ -33,6 +33,24 @@
   line-height: 1;
 }
 
+.btnRow {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.confirmBtn {
+  flex: 1;
+  background: #3b82f6;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  color: #fff;
+  font-size: var(--text-base);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .skipBtn {
   background: none;
   border: 1px solid #4a5568;

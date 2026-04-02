@@ -4,14 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
 	resolve: {
-		alias: {
+		alias: mode === 'development' ? {
 			'@apps-in-toss/web-framework': path.resolve(__dirname, 'src/stubs/apps-in-toss-web-framework.ts'),
-		},
+		} : undefined,
 	},
 	build: {
 		chunkSizeWarningLimit: 600,
 	},
-})
+}))

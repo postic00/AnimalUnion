@@ -11,17 +11,7 @@ function getAdGroupId(): string {
   }
 }
 
-export function getTossAdDebugInfo() {
-  return {
-    operationalEnv: (() => { try { return getOperationalEnvironment() } catch { return 'error' } })(),
-    adGroupId: getAdGroupId(),
-    loadSupported: (() => { try { return loadFullScreenAd.isSupported() } catch { return false } })(),
-    showSupported: (() => { try { return showFullScreenAd.isSupported() } catch { return false } })(),
-    adLoaded,
-  }
-}
-
-export function isTossAdSupported(): boolean {
+function isTossAdSupported(): boolean {
   try {
     return loadFullScreenAd.isSupported() === true
   } catch {
@@ -30,22 +20,32 @@ export function isTossAdSupported(): boolean {
 }
 
 let adLoaded = false
+let adLoading = false
+
+export function isTossAdReady(): boolean {
+  return adLoaded
+}
 
 export function preloadTossAd(): void {
   if (!isTossAdSupported()) return
+  if (adLoading) return
   adLoaded = false
+  adLoading = true
   loadFullScreenAd({
     options: { adGroupId: getAdGroupId() },
     onEvent: (event) => {
-      if (event.type === 'loaded') adLoaded = true
+      if (event.type === 'loaded') { adLoaded = true; adLoading = false }
+      if (event.type === 'failedToLoad') { adLoaded = false; adLoading = false }
     },
-    onError: () => {},
+    onError: () => { adLoading = false },
   })
 }
 
 export function showTossRewardedAd(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (!showFullScreenAd.isSupported()) { resolve(false); return }
+    try {
+      if (!showFullScreenAd.isSupported()) { resolve(false); return }
+    } catch { resolve(false); return }
 
     let rewarded = false
     let resolved = false
@@ -54,9 +54,10 @@ export function showTossRewardedAd(): Promise<boolean> {
       resolved = true
       resolve(result)
     }
-    const timer = setTimeout(() => done(false), 15000)
+    const timer = setTimeout(() => { done(false); preloadTossAd() }, 5000)
 
     const show = () => {
+      adLoaded = false
       try {
         showFullScreenAd({
           options: { adGroupId: getAdGroupId() },
@@ -64,25 +65,38 @@ export function showTossRewardedAd(): Promise<boolean> {
             if (e.type === 'userEarnedReward') rewarded = true
             if (e.type === 'dismissed') {
               clearTimeout(timer)
-              preloadTossAd()
               done(rewarded)
+              preloadTossAd()
             }
             if (e.type === 'failedToShow') {
-              clearTimeout(timer); done(false)
+              clearTimeout(timer); done(false); preloadTossAd()
             }
           },
-          onError: () => { clearTimeout(timer); done(false) },
+          onError: () => { clearTimeout(timer); done(false); preloadTossAd() },
         })
       } catch {
-        clearTimeout(timer); done(false)
+        clearTimeout(timer); done(false); preloadTossAd()
       }
     }
 
     if (adLoaded) {
       show()
+    } else if (adLoading) {
+      // 프리로드 진행 중 — 완료 대기
+      const poll = setInterval(() => {
+        if (adLoaded) { clearInterval(poll); show() }
+        else if (!adLoading) { clearInterval(poll); done(false) }
+      }, 200)
     } else {
-      clearTimeout(timer)
-      done(false)
+      adLoading = true
+      loadFullScreenAd({
+        options: { adGroupId: getAdGroupId() },
+        onEvent: (event) => {
+          if (event.type === 'loaded') { adLoaded = true; adLoading = false; show() }
+          if (event.type === 'failedToLoad') { adLoading = false; done(false) }
+        },
+        onError: () => { adLoading = false; clearTimeout(timer); done(false) },
+      })
     }
   })
 }
